@@ -47,7 +47,7 @@ struct tm *getUTC()
 //------------------------------------------
 // showSettings()
 //------------------------------------------
-void showSettings(ctlList *p)
+void showSettings(pList *p)
 {
     char pathStr[128] = "";
     snprintf(pathStr, sizeof(pathStr), "/dev/i2c-%i", p->i2cBusNumber);
@@ -77,7 +77,7 @@ void showSettings(ctlList *p)
 //------------------------------------------
 // getCommandLine()
 //------------------------------------------
-int getCommandLine(int argc, char** argv, ctlList *p)
+int getCommandLine(int argc, char** argv, pList *p)
 {
     int c;
 

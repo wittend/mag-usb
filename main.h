@@ -65,109 +65,109 @@
 // Control Parameter List struct
 //------------------------------------------
 /**
- * @struct ctlList
+ * @struct pList
  * @brief Represents a control list for managing various I2C devices and system parameters.
  *
  * This structure is designed to store information related to various system configuration,
  * device handles, and control parameters needed for I2C-based device communication and processing.
  *
- * The ctlList struct includes members for maintaining I2C bus configuration, addresses for
+ * The pList struct includes members for maintaining I2C bus configuration, addresses for
  * connected devices, handles for various modules, and parameters for system settings and
  * operational modes.
  *
- * @typedef tag_ctlList ctlList
+ * @typedef tag_pList pList
  *
- * @var ctlList::adapter
+ * @var pList::adapter
  * pololu_i2c_adapter instance that handles I2C communication.
 
- * @var ctlList::ppsHandle
+ * @var pList::ppsHandle
  * Handle for pulse-per-second (PPS) signal management.
 
- * @var ctlList::edge_cb_id
+ * @var pList::edge_cb_id
  * Identifier for edge callback management.
 
- * @var ctlList::magHandle
+ * @var pList::magHandle
  * Handle for the magnetometer device.
 
- * @var ctlList::localTempHandle
+ * @var pList::localTempHandle
  * Handle for the local temperature sensor.
 
- * @var ctlList::remoteTempHandle
+ * @var pList::remoteTempHandle
  * Handle for the remote temperature sensor.
 
- * @var ctlList::magnetometerAddr
+ * @var pList::magnetometerAddr
  * Address of the magnetometer device on the I2C bus.
 
- * @var ctlList::localTempAddr
+ * @var pList::localTempAddr
  * Address of the local temperature sensor on the I2C bus.
 
- * @var ctlList::remoteTempAddr
+ * @var pList::remoteTempAddr
  * Address of the remote temperature sensor on the I2C bus.
 
- * @var ctlList::doBistMask
+ * @var pList::doBistMask
  * Mask value for Built-In Self Test (BIST) configuration.
 
- * @var ctlList::cc_x
+ * @var pList::cc_x
  * Coefficient for 'x' component.
 
- * @var ctlList::cc_y
+ * @var pList::cc_y
  * Coefficient for 'y' component.
 
- * @var ctlList::cc_z
+ * @var pList::cc_z
  * Coefficient for 'z' component.
 
- * @var ctlList::x_gain
+ * @var pList::x_gain
  * Gain factor for the x-axis.
 
- * @var ctlList::y_gain
+ * @var pList::y_gain
  * Gain factor for the y-axis.
 
- * @var ctlList::z_gain
+ * @var pList::z_gain
  * Gain factor for the z-axis.
 
- * @var ctlList::XYZ
+ * @var pList::XYZ
  * Array for storing XYZ components, size is 9.
 
- * @var ctlList::TMRCRate
+ * @var pList::TMRCRate
  * Timer sampling rate.
 
- * @var ctlList::CMMSampleRate
+ * @var pList::CMMSampleRate
  * Common Mode Sample Rate.
 
- * @var ctlList::samplingMode
+ * @var pList::samplingMode
  * Flag indicating the mode of sampling for sensors.
 
- * @var ctlList::NOSRegValue
+ * @var pList::NOSRegValue
  * Value for the NOS register.
 
- * @var ctlList::DRDYdelay
+ * @var pList::DRDYdelay
  * Delay for Data Ready (DRDY) signal.
 
- * @var ctlList::readBackCCRegs
+ * @var pList::readBackCCRegs
  * Flag indicating whether to read back the CC registers.
 
- * @var ctlList::magRevId
+ * @var pList::magRevId
  * Revision ID of the magnetometer device.
 
- * @var ctlList::i2cBusNumber
+ * @var pList::i2cBusNumber
  * Identifier for the I2C bus number being utilized.
 
- * @var ctlList::tsMilliseconds
+ * @var pList::tsMilliseconds
  * Timestamp value in milliseconds.
 
- * @var ctlList::Version
+ * @var pList::Version
  * Pointer to a string representing the version information.
 
- * @var ctlList::usePipes
+ * @var pList::usePipes
  * Flag indicating whether pipes are used.
 
- * @var ctlList::pipeInPath
+ * @var pList::pipeInPath
  * Path to the input pipe file.
 
- * @var ctlList::pipeOutPath
+ * @var pList::pipeOutPath
  * Path to the output pipe file.
  */
-typedef struct tag_ctlList
+typedef struct tag_pList
 {
     int fd;
     pololu_i2c_adapter adapter;
@@ -214,7 +214,7 @@ typedef struct tag_ctlList
     int  usePipes;
     char *pipeInPath;
     char *pipeOutPath;
-} ctlList;
+} pList;
 
 
 //------------------------------------------
@@ -222,17 +222,17 @@ typedef struct tag_ctlList
 //------------------------------------------
 int  main(int argc, char** argv);
 void onEdge(void);
-char *formatOutput(volatile ctlList *p, char *outBuf);
-int  initGPIO(volatile ctlList *p);
-void termGPIO(volatile ctlList *p);
-int  verifyMagSensor(volatile ctlList *p);
-int  initMagSensor(volatile ctlList *p);
-int  initTempSensors(volatile ctlList *p);
+char *formatOutput(volatile pList *p, char *outBuf);
+int  initGPIO(volatile pList *p);
+void termGPIO(volatile pList *p);
+int  verifyMagSensor(volatile pList *p);
+int  initMagSensor(volatile pList *p);
+int  initTempSensors(volatile pList *p);
 
-int  readLocalTemp(volatile ctlList *p);
-int  readRemoteTemp(volatile ctlList *p);
-//int  readMagCMM(volatile ctlList *p);
-int  readMagPOLL(volatile ctlList *p);
+int  readLocalTemp(volatile pList *p);
+int  readRemoteTemp(volatile pList *p);
+//int  readMagCMM(volatile pList *p);
+int  readMagPOLL(volatile pList *p);
 
 void showErrorMsg(int temp);
 

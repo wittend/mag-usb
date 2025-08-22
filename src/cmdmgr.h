@@ -14,7 +14,7 @@
 #define SWX3100CMDMGR_h
 
 //#include "magdata.h"
-#include "main.h"
+#include "../main.h"
 
 //------------------------------------------
 // Prototypes
@@ -22,8 +22,8 @@
 long currentTimeMillis();
 struct tm *getUTC();
 // void showCountGainRelationship();
-void showSettings(ctlList *p);
-int getCommandLine(int argc, char** argv, ctlList *p);
+void showSettings(pList *p);
+int getCommandLine(int argc, char** argv, pList *p);
 
 
 #endif // SWX3100CMDMGR_h

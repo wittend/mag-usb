@@ -25,9 +25,9 @@
 //#endif
 //
 ////------------------------------------------
-//// readTemp(ctlList *p)
+//// readTemp(pList *p)
 ////------------------------------------------
-//int readTemp(ctlList *p)
+//int readTemp(pList *p)
 //{
 //    int temp = -9999;
 //    char data[2] = {0};
@@ -52,7 +52,7 @@
 ////------------------------------------------
 //// readMagCMM()
 ////------------------------------------------
-//int readMagCMM(ctlList *p, int32_t *XYZ)
+//int readMagCMM(pList *p, int32_t *XYZ)
 //{
 //    int rv = 0;
 //    int bytes_read = 0;
@@ -85,7 +85,7 @@
 ////------------------------------------------
 //// readMagPOLL()
 ////------------------------------------------
-//int readMagPOLL(ctlList *p, int32_t *XYZ)
+//int readMagPOLL(pList *p, int32_t *XYZ)
 //{
 //    int rv = 0;
 //    int bytes_read = 0;
@@ -126,7 +126,7 @@
 ////------------------------------------------
 //// openI2CBus()
 ////------------------------------------------
-//int openI2CBus(ctlList *p)
+//int openI2CBus(pList *p)
 //{
 //    p->pi = -1;
 //    
@@ -155,7 +155,7 @@
 ////------------------------------------------
 //// setNOSReg()
 ////------------------------------------------
-//int setNOSReg(ctlList *p)
+//int setNOSReg(pList *p)
 //{
 //    int rv;
 //    printf("\nIn setNOSReg():: Setting undocumented NOS register to value: %2X\n", p->NOSRegValue);
@@ -166,7 +166,7 @@
 //------------------------------------------
 // setMagSampleRate()
 //------------------------------------------
-unsigned short setMagSampleRate(ctlList *p, unsigned short sample_rate)
+unsigned short setMagSampleRate(pList *p, unsigned short sample_rate)
 {
     int i;
     const unsigned short int supported_rates[][2] = 
@@ -197,16 +197,16 @@ unsigned short setMagSampleRate(ctlList *p, unsigned short sample_rate)
 // getMagSampleRate();
 // The actual sample rate of the sensor.
 //------------------------------------------
-unsigned short getMagSampleRate(ctlList *p)
+unsigned short getMagSampleRate(pList *p)
 {
     return p->CMMSampleRate;
 }
 
 //
 ////------------------------------------------
-//// getMagRev(ctlList *p)
+//// getMagRev(pList *p)
 ////------------------------------------------
-//int getMagRev(ctlList *p)
+//int getMagRev(pList *p)
 //{
 //    // Set address of the RM3100
 ////    i2c_setAddress(p->pi,  p->magnetometerAddr);
@@ -231,7 +231,7 @@ unsigned short getMagSampleRate(ctlList *p)
 ////------------------------------------------
 //// setup_mag()
 ////------------------------------------------
-//int setup_mag(ctlList *p)
+//int setup_mag(pList *p)
 //{
 //    int rv = SensorOK;
 //
@@ -258,7 +258,7 @@ unsigned short getMagSampleRate(ctlList *p)
 // runBIST()
 // Runs the Built In Self Test.
 //------------------------------------------
-int runBIST(ctlList *p)
+int runBIST(pList *p)
 {
     return 0;
     //return i2c_read(p->pi, RM3100I2C_TMRC);
@@ -268,7 +268,7 @@ int runBIST(ctlList *p)
 // startCMM()
 // Starts Continuous Measurement Mode
 //------------------------------------------
-int startCMM(ctlList *p)
+int startCMM(pList *p)
 {
     int rv = 0;
 //    short cmmMode = (CMMMODE_ALL);   // 71 d
@@ -304,7 +304,7 @@ unsigned short getCCGainEquiv(unsigned short CCVal)
 //------------------------------------------
 // setCycleCountRegs()
 //------------------------------------------
-void setCycleCountRegs(ctlList *p)
+void setCycleCountRegs(pList *p)
 {
     //int i = 0;
 //    i2c_write(p->pi, RM3100I2C_CCX_1, (p->cc_x >> 8));
@@ -328,7 +328,7 @@ void setCycleCountRegs(ctlList *p)
 //------------------------------------------
 // readCycleCountRegs()
 //------------------------------------------
-void readCycleCountRegs(ctlList *p)
+void readCycleCountRegs(pList *p)
 {
     uint8_t regCC[7]= { 0, 0, 0, 0, 0, 0, 0 };
 

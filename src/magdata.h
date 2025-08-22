@@ -18,25 +18,25 @@
 //------------------------------------------
 // Prototypes
 //------------------------------------------
-//int openI2CBus(ctlList *p);
+//int openI2CBus(pList *p);
 //void closeI2CBus(int i2c_fd);
-//int  setNOSReg(ctlList *p);
-//unsigned short setMagSampleRate(ctlList *p, unsigned short sample_rate);
-unsigned short getMagSampleRate(ctlList *p);
+//int  setNOSReg(pList *p);
+//unsigned short setMagSampleRate(pList *p, unsigned short sample_rate);
+unsigned short getMagSampleRate(pList *p);
 unsigned short getCCGainEquiv(unsigned short CCVal);
-int  startCMM(ctlList *p);
-// int  getMagRev(ctlList *p);
-// int setup_mag(ctlList *p);
-int  runBIST(ctlList *p);
-int  getCMMReg(ctlList *p);
-void setCMMReg(ctlList *p);
-int  getTMRCReg(ctlList *p);
-void setTMRCReg(ctlList *p);
-void setCycleCountRegs(ctlList *p);
-void readCycleCountRegs(ctlList *p);
+int  startCMM(pList *p);
+// int  getMagRev(pList *p);
+// int setup_mag(pList *p);
+int  runBIST(pList *p);
+int  getCMMReg(pList *p);
+void setCMMReg(pList *p);
+int  getTMRCReg(pList *p);
+void setTMRCReg(pList *p);
+void setCycleCountRegs(pList *p);
+void readCycleCountRegs(pList *p);
 
-//int readTemp(ctlList *p);
-//int readMagCMM(ctlList *p, int32_t *XYZ);
-//int readMagPOLL(ctlList *p, int32_t *XYZ);
+//int readTemp(pList *p);
+//int readMagCMM(pList *p, int32_t *XYZ);
+//int readMagPOLL(pList *p, int32_t *XYZ);
 
 #endif // SWX3100MAGData_h

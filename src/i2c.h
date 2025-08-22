@@ -10,21 +10,21 @@
 #ifndef PNIRM3100_I2C_H
 #define PNIRM3100_I2C_H
 
-#include "../main.h"
 #include "i2c_pololu.h" // your Pololu API headers
+#include "../main.h"
 
 //------------------------------------------
 // Prototypes
 //------------------------------------------
-int i2c_open(ctlList *p, const char *porthame);
-void i2c_init(ctlList *p, int adaptor);
-void i2c_setAddress(ctlList *p, int devAddr);
-void i2c_setBitRate(ctlList *p, int devspeed);
-int i2c_write(ctlList *p, uint8_t reg, uint8_t value);
-uint8_t i2c_read(ctlList *p, uint8_t reg);
-int i2c_writebyte(ctlList *p, uint8_t reg, char* buffer, short int length);
-int i2c_reabyte(ctlList *p, uint8_t reg, uint8_t* buf, short int length);
-int i2c_writebuf(ctlList *p, uint8_t reg, char* buffer, short int length);
-int i2c_readbuf(ctlList *p, uint8_t reg, uint8_t* buf, char *length);
-void i2c_close(ctlList *p);
+int i2c_open(pList *p, const char *porthame);
+void i2c_init(pList *p, int adaptor);
+void i2c_setAddress(pList *p, int devAddr);
+void i2c_setBitRate(pList *p, int devspeed);
+int i2c_write(pList *p, uint8_t reg, uint8_t value);
+uint8_t i2c_read(pList *p, uint8_t reg);
+int i2c_writebyte(pList *p, uint8_t reg, char* buffer, short int length);
+int i2c_reabyte(pList *p, uint8_t reg, uint8_t* buf, short int length);
+int i2c_writebuf(pList *p, uint8_t reg, char* buffer, short int length);
+int i2c_readbuf(pList *p, uint8_t reg, uint8_t* buf, char *length);
+void i2c_close(pList *p);
 #endif //PNIRM3100_I2C_H

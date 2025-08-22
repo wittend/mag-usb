@@ -72,8 +72,8 @@ int rc = 0;
 //---------------------------------------------------------------
 int main(int argc, char** argv)
 {
-    ctlList ctl;
-    ctlList *p = &ctl;
+    pList   ctl;
+    pList   *p = &ctl;
     int     rv = 0;
     FILE    *outfp = (FILE *)stdout;
     char    utcStr[UTCBUFLEN] = "";
@@ -93,7 +93,7 @@ int main(int argc, char** argv)
     //-----------------------------------------
     if(p != NULL)
     {
-        memset(p, 0, sizeof(ctlList));
+        memset(p, 0, sizeof(pList));
     }
 
     //p->po               = 0;
@@ -372,9 +372,9 @@ int main(int argc, char** argv)
 }
 
 //---------------------------------------------------------------
-// void formatOutput(volatile ctlList *p, char *outBuf)
+// void formatOutput(volatile pList *p, char *outBuf)
 //---------------------------------------------------------------
-char *formatOutput(volatile ctlList *p, char *outBuf)
+char *formatOutput(volatile pList *p, char *outBuf)
 {
     char fmtBuf[200] ="";
     int fmtBuf_len = sizeof fmtBuf;
@@ -475,9 +475,9 @@ char *formatOutput(volatile ctlList *p, char *outBuf)
 // #endif
 //
 //------------------------------------------
-// readLocalTemp(volatile ctlList *p)
+// readLocalTemp(volatile pList *p)
 //------------------------------------------
-int readLocalTemp(volatile ctlList *p)
+int readLocalTemp(volatile pList *p)
 {
     int temp = -9999;
     char data[2] = {0};
@@ -506,9 +506,9 @@ int readLocalTemp(volatile ctlList *p)
 }
 
 //------------------------------------------
-// readRemoteTemp(volatile ctlList *p)
+// readRemoteTemp(volatile pList *p)
 //------------------------------------------
-int readRemoteTemp(volatile ctlList *p)
+int readRemoteTemp(volatile pList *p)
 {
     int temp = -9999;
     char data[2] = {0};
@@ -540,7 +540,7 @@ int readRemoteTemp(volatile ctlList *p)
 //------------------------------------------
 // readMagPOLL()
 //------------------------------------------
-int readMagPOLL(volatile ctlList *p)
+int readMagPOLL(volatile pList *p)
 {
     int     rv = 0;
     int     bytes_read = 9;
@@ -646,9 +646,9 @@ int readMagPOLL(volatile ctlList *p)
 }
 
 //---------------------------------------------------------------
-// void verifyMagSensor(volatile ctlList *p)
+// void verifyMagSensor(volatile pList *p)
 //---------------------------------------------------------------
-int verifyMagSensor(volatile ctlList *p)
+int verifyMagSensor(volatile pList *p)
 {
     int rv = 0;
     char revBuf[] = {0};
@@ -703,9 +703,9 @@ int verifyMagSensor(volatile ctlList *p)
 }
 
 //------------------------------------------
-// setNOSReg(volatile ctlList *p)
+// setNOSReg(volatile pList *p)
 //------------------------------------------
-int setNOSReg(volatile ctlList *p)
+int setNOSReg(volatile pList *p)
 {
     int rv = 0;
 //#if _DEBUG
@@ -715,13 +715,13 @@ int setNOSReg(volatile ctlList *p)
 }
 
 //---------------------------------------------------------------
-// void initGPIO(ctlList *p)
+// void initGPIO(pList *p)
 //---------------------------------------------------------------
-int initGPIO(volatile ctlList *p)
+int initGPIO(volatile pList *p)
 {
 
 #if _DEBUG
-    fprintf(OUTPUT_PRINT, "    [CHILD]: In initGPIO(ctlList *p) before: pigpio_start()...\n");
+    fprintf(OUTPUT_PRINT, "    [CHILD]: In initGPIO(pList *p) before: pigpio_start()...\n");
     fflush(OUTPUT_PRINT);
 #endif
 
@@ -818,9 +818,9 @@ int initGPIO(volatile ctlList *p)
 }
 
 //---------------------------------------------------------------
-// void termGPIO(volatile ctlList p)
+// void termGPIO(volatile pList p)
 //---------------------------------------------------------------
-void termGPIO(volatile ctlList *p)
+void termGPIO(volatile pList *p)
 {
     // Knock down all of the pigpio setup here.
     p->magHandle = i2c_close(p->po, p->magHandle);
@@ -829,15 +829,15 @@ void termGPIO(volatile ctlList *p)
     rgpiod_stop(p->po);
 
 #if(_DEBUG)
-    fprintf(OUTPUT_PRINT, "    [Child]: termGPIO(ctlList p)...\n");
+    fprintf(OUTPUT_PRINT, "    [Child]: termGPIO(pList p)...\n");
     fflush(OUTPUT_PRINT);
 #endif
 }
 
 //---------------------------------------------------------------
-// int initMagSensor(volatile ctlList *p)
+// int initMagSensor(volatile pList *p)
 //---------------------------------------------------------------
-int initMagSensor(volatile ctlList *p)
+int initMagSensor(volatile pList *p)
 {
     int rv = 0;
 
@@ -870,9 +870,9 @@ int initMagSensor(volatile ctlList *p)
 }
 
 //---------------------------------------------------------------
-// int initTempSensors(volatile ctlList *p)
+// int initTempSensors(volatile pList *p)
 //---------------------------------------------------------------
-int initTempSensors(volatile ctlList *p)
+int initTempSensors(volatile pList *p)
 {
     int rv = 0;
     // Temp sensor doesn't need any iniutialization currently.
@@ -913,9 +913,9 @@ void onEdge(void)
 
 //
 ////------------------------------------------
-//// readMagCMM(volatile ctlList *p)
+//// readMagCMM(volatile pList *p)
 ////------------------------------------------
-//int readMagCMM(volatile ctlList *p)
+//int readMagCMM(volatile pList *p)
 //{
 //    int rv = 0;
 //    int bytes_read = 9;
