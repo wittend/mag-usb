@@ -29,7 +29,7 @@
 #include <sys/time.h>
 // #include <fcntl.h>
 // #include <memory.h>
-#include "src/i2c-pololu.h"
+#include "src/i2c_pololu.h"
 
 // #include "src/interface.h"      // defines the I2C interface to be used.
 #include "src/i2c.h"
@@ -169,7 +169,7 @@
  */
 typedef struct tag_ctlList
 {
- //   int po;
+    int fd;
     pololu_i2c_adapter adapter;
 
     int ppsHandle;

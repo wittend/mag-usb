@@ -12,7 +12,7 @@
 //=========================================================================
 #include "main.h"
 //#include <inttypes.h>
-#include "src/i2c-pololu.h"
+#include "src/i2c_pololu.h"
 #include "src/cmdmgr.h"
 
 //------------------------------------------
