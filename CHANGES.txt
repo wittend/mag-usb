@@ -1,0 +1,66 @@
+# CHANGES.txt
+===========================================================
+# Date: 2025-08-19      # new version use with pi-eliminator (Pololu Hdw.)
+#--------------------------------------------------------------------------
+Converting Grape2 version to work with any system with USB-2 ports.
+I2C calls targeting Pololu i2c rather than Raspberry Pi hardware.
+
+# Date: 2025-05-25      # new version for more general usability
+#--------------------------------------------------------------------------
+Converting Grape2 version to support Pi5, Orange Pi 5 variants, other variants
+I2C calls targeting lgpio rather than pigpio for more general usability.
+
+Further expanding code to run from an event triggered by a rising edge on
+the Pi's pin GPIO27 which is the PPS from the system's GNSS device or an RTC.
+
+# Date: 2023-12-18      # git fork for Grape2
+#--------------------------------------------------------------------------
+Converting I/O to use the Grape main program as the target for I2C calls
+targeting pigpio_if2.
+Also modifying code to run from a n event triggered by a rising edge on
+the Pi's pin GPIO27 which is the PPS from the system's GNSS device.
+
+# Date: 2022-08-8 git tag 0.1.2
+#--------------------------------------------------------------------------
+Make changes to allow arbitrary values for the Cycle Counts Register.
+Make changes to fix old CSV formatting.
+
+# Date: 2022-07-30 git tag 0.1.1
+#--------------------------------------------------------------------------
+Fix output loop (thanks Bill Engelke!) to make samples much closer to 1 s
+Added metadata.json file to the logs file in lieu of a better solution.
+
+# Date: 2021-09-14
+#--------------------------------------------------------------------------
+Created version 0.1.0
+
+# Date: 2021-08-13 git tag 0.0.17 (alpha, may become 0.1.0)
+Added required format string to line ~168 needed to print output file name.
+Re-instated the flag that keeps the CSV header from printing in JSON code.
+
+# Date: 2021-08-12 git tag 0.0.17 (alpha, may become 0.1.0)
+#--------------------------------------------------------------------------
+Changed default Cycle Count value to CC_400.  Changed default Gain value to
+GAIN_150.
+Changed the measured vector register value to be divided by the A (NOS)
+value and saved as a decimal fraction.
+Raw values are no longer divided by the -A (NOS) value.
+Attempted to adjust formatting of output values to  read consistently in
+nano-Tesla rather than micro-Tesla.
+Bump version to 0.0.17 (alpha)
+
+# Date: 2021-05-22 git tag 0.0.16
+#--------------------------------------------------------------------------
+Updating output formatting in JSON mode. Cleaning formatting code a bit.
+Bump version to 0.0.16
+
+# Date: 2021-01-17 git tag 0.0.15
+#--------------------------------------------------------------------------
+Commit some of Dave Larsen's formatting changes. Fix or mess up averaging -
+(not sure which)
+
+# Date: 2020-09-20 git tag 0.0.9
+#--------------------------------------------------------------------------
+Added function i2c_setBitRate() to i2c.c - allow code to specify the I2C
+Bus speed at runtime.
+Attempting to fix abend due to closing log file when none is in use.
