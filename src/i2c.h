@@ -16,7 +16,7 @@
 // Prototypes
 //------------------------------------------
 int i2c_open(const char *porthame);
-void I2c_init(int adaptor);
+void i2c_init(int adaptor);
 void i2c_setAddress(int fd, int devAddr);
 void i2c_setBitRate(int fd, int devspeed);
 int i2c_write(int fd, uint8_t reg, uint8_t value);

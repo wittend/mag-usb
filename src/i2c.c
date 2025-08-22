@@ -35,18 +35,20 @@
 #include "i2c.h"
 #include "i2c-pololu.h" // your Pololu API headers
 
-int pololu_i2c_write_to( pololu_i2c_adapter *adapter, uint8_t address, const uint8_t *data, uint8_t size );
-int pololu_i2c_read_from( pololu_i2c_adapter *adapter, uint8_t address, uint8_t *data, uint8_t size );
+// int pololu_i2c_write_to( pololu_i2c_adapter *adapter, uint8_t address, const uint8_t *data, uint8_t size );
+// int pololu_i2c_read_from( pololu_i2c_adapter *adapter, uint8_t address, uint8_t *data, uint8_t size );
 
-int i2c_open(const char *portname)
+int i2c_open(ctlList p, const char *portname)
 {
     // Map to Pololu open/init sequence
     //(void)portname;
-    return -1;
+
+    return pololu_i2c_connect(p->adapter, &portname);
 }
 
-void I2c_init(int adaptor)
+void i2c_init(int adaptor)
 {
+//    pololu_i2c_adapter adapter;
     (void)adaptor;
 }
 
@@ -65,22 +67,23 @@ int i2c_write(int fd, uint8_t reg, uint8_t value)
     // Translate to Pololu call
     (void)fd; (void)reg; (void)value;
 //    int pololu_i2c_write_to( pololu_i2c_adapter *adapter, uint8_t address, const uint8_t *data, uint8_t size );
-    return pololu_i2c_write_to( (pololu_i2c_adapter *) fd, (uint8_t) reg, (const uint8_t) value, (uint8_t) 1);
+    return pololu_i2c_write_to( (pololu_i2c_adapter *) fd, (uint8_t) reg, (uint8_t *) value, (uint8_t) 1);
 //    return 0;
 }
 
 uint8_t i2c_read(int fd, uint8_t reg)
 {
     (void)fd; (void)reg;
+    uint8_t  rv;
 //int pololu_i2c_read_from( pololu_i2c_adapter *adapter, uint8_t address, uint8_t *data, uint8_t size );
-    return pololu_i2c_read_from( (pololu_i2c_adapter *) fd, (uint8_t) reg, (uint8_t *) buf, (uint8_t) 1 );
-    return buf;
+    return pololu_i2c_read_from( (pololu_i2c_adapter *) fd, (uint8_t) reg, (uint8_t *) &rv, (uint8_t) 1 );
+    return rv;
 }
 
 int i2c_writebyte(int fd, uint8_t reg, char* buffer, short int length)
 {
     (void)fd; (void)reg; (void)buffer; (void)length;
-    return pololu_i2c_write_to( (pololu_i2c_adapter *) fd, (uint8_t) reg, (const uint8_t *) buffer, (uint8_t) 1 );
+    return pololu_i2c_write_to( (pololu_i2c_adapter *) fd, (uint8_t) reg, (uint8_t *) buffer, (uint8_t) 1 );
     return 0;
 }
 
@@ -95,7 +98,7 @@ int i2c_reabyte(int fd, uint8_t reg, uint8_t* buf, short int length)
 int i2c_writebuf(int fd, uint8_t reg, char* buffer, short int length)
 {
     (void)fd; (void)reg; (void)buffer; (void)length;
-    return pololu_i2c_write_to( (pololu_i2c_adapter *) fd, (uint8_t) reg, (const uint8_t *) buffer, (uint8_t) size );
+    return pololu_i2c_write_to( (pololu_i2c_adapter *) fd, (uint8_t) reg, (uint8_t *) buffer, (uint8_t) length );
 //    return 0;
 }
 

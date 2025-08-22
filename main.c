@@ -96,7 +96,8 @@ int main(int argc, char** argv)
         memset(p, 0, sizeof(ctlList));
     }
 
-    p->po               = 0;
+    //p->po               = 0;
+    p->adapter          = (pololu_i2c_adapter *) NULL;
     p->ppsHandle        = 0;
     p->magHandle        = 0;
     p->localTempHandle  = 0;
@@ -187,8 +188,9 @@ int main(int argc, char** argv)
     //     fflush(OUTPUT_PRINT);
     //     exit(2);
     // }
-    //i2c_init(po);
-    i2c_open(p-pololu_i2c_adapter)
+    i2c_init(po);
+    i2c_open(p->pololu_i2c_adapter);
+
     //-----------------------------------------
     //  Verify the Mag sensor presence and Version.
     //-----------------------------------------
@@ -485,8 +487,8 @@ int readLocalTemp(volatile ctlList *p)
     fflush(OUTPUT_PRINT);
 #endif
 
-//    if((temp = i2c_readbuf(p->pi, p->localTempHandle, MCP9808_REG_AMBIENT_TEMP, data, 2) <= 0))
-    if((temp = pololu_i2c_read_from((pololu_i2c_adapter *)p->po, p->localTempHandle, MCP9808_REG_AMBIENT_TEMP, data, 2) <= 0))
+    //if((temp = pololu_i2c_read_from((pololu_i2c_adapter *)p->po, p->localTempHandle, MCP9808_REG_AMBIENT_TEMP, data, 2) <= 0))
+    if((temp = i2c_read(p->po, p->localTempHandle, MCP9808_REG_AMBIENT_TEMP) <= 0))
     {
         fprintf(OUTPUT_ERROR, "Error : I/O error reading temp sensor at address: [0x%2X].\n", MCP9808_REG_AMBIENT_TEMP);
         showErrorMsg(temp);
