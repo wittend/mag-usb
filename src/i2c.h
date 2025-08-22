@@ -11,7 +11,7 @@
 #define PNIRM3100_I2C_H
 
 #include "i2c_pololu.h" // your Pololu API headers
-#include "../main.h"
+#include "main.h"
 
 //------------------------------------------
 // Prototypes

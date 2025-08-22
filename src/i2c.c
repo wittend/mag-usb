@@ -44,7 +44,7 @@ int i2c_open(pList *p, const char *portname)
     // int pololu_i2c_connect( pololu_i2c_adapter *adapter, const char *port_name )
     //    return pololu_i2c_connect((pololu_i2c_adapter *)p->adapter, portname);
     //    return pololu_i2c_connect(&(p->adapter), portname);
-    pololu_i2c_adapter pAdapt = p->adapter;
+    pololu_i2c_adapter *pAdapt = &p->adapter;
     return pololu_i2c_connect(pAdapt, portname);
 }
 
@@ -56,62 +56,51 @@ void i2c_init(pList *p, int adaptor)
 
 void i2c_setAddress(pList *p, int devAddr)
 {
-    p->adapter.fd; (void)devAddr;
+//    p->adapter.fd; (void)devAddr;
 }
 
 void i2c_setBitRate(pList *p, int devspeed)
 {
-    p->adapter.fd; (void)devspeed;
+//    p->adapter.fd; (void)devspeed;
 }
 
 int i2c_write(pList *p, uint8_t reg, uint8_t value)
 {
-    // Translate to Pololu call
-    (void)p; (void)reg; (void)value;
-//    int pololu_i2c_write_to( pololu_i2c_adapter *adapter, uint8_t address, const uint8_t *data, uint8_t size );
-    return pololu_i2c_write_to( (pololu_i2c_adapter *) p->adapter.fd, (uint8_t) reg, (uint8_t *) value, (uint8_t) 1);
-//    return 0;
+    int rv;
+    rv = pololu_i2c_write_to(p->adapter, (uint8_t) reg, &value, (uint8_t) 1);
+    return value;
 }
 
 uint8_t i2c_read(pList *p, uint8_t reg)
 {
-    (void)p->adapter.fd; (void)reg;
     uint8_t  rv;
-//int pololu_i2c_read_from( pololu_i2c_adapter *adapter, uint8_t address, uint8_t *data, uint8_t size );
-    return pololu_i2c_read_from( (pololu_i2c_adapter *) p->adapter.fd, (uint8_t) reg, (uint8_t *) &rv, (uint8_t) 1 );
+    pololu_i2c_read_from(p->adapter, (uint8_t) reg, (uint8_t *) &rv, (uint8_t) 1 );
     return rv;
 }
 
 int i2c_writebyte(pList *p, uint8_t reg, char* buffer, short int length)
 {
-    (void)p->adapter.fd; (void)reg; (void)buffer; (void)length;
-    return pololu_i2c_write_to( (pololu_i2c_adapter *) p->adapter.fd, (uint8_t) reg, (uint8_t *) buffer, (uint8_t) 1 );
-    return 0;
+    return pololu_i2c_write_to( p->adapter, (uint8_t) reg, (uint8_t *) buffer, (uint8_t) 1 );
 }
 
 int i2c_reabyte(pList *p, uint8_t reg, uint8_t* buf, short int length)
 {
-    (void)p->adapter.fd; (void)reg; (void)buf; (void)length;
-//t pololu_i2c_read_from( pololu_i2c_adapter *adapter, uint8_t address, uint8_t *data, uint8_t size );
-    return pololu_i2c_read_from( (pololu_i2c_adapter *) p->adapter.fd, (uint8_t) reg, (uint8_t *) buf, (uint8_t) 1 );
-//    return 0;
+    return pololu_i2c_read_from(p->adapter, (uint8_t) reg, (uint8_t *) buf, (uint8_t) 1 );
 }
 
 int i2c_writebuf(pList *p, uint8_t reg, char* buffer, short int length)
 {
-    (void)p->adapter.fd; (void)reg; (void)buffer; (void)length;
-    return pololu_i2c_write_to( (pololu_i2c_adapter *) p->adapter.fd, (uint8_t) reg, (uint8_t *) buffer, (uint8_t) length );
-//    return 0;
+    return pololu_i2c_write_to( (pololu_i2c_adapter *) p->adapter, (uint8_t) reg, (uint8_t *) buffer, (uint8_t) length );
 }
 
 int i2c_readbuf(pList *p, uint8_t reg, uint8_t* buf, char *length)
 {
-//    (void)p->adapter.fd; (void)reg; (void)buf; (void)length;
-    return pololu_i2c_read_from( (pololu_i2c_adapter *) p->adapter.fd, (uint8_t) reg, (uint8_t *) buf, (uint8_t) length );
-//    return 0;
+//    return pololu_i2c_read_from( (pololu_i2c_adapter *) p->adapter.fd, (uint8_t) reg, (uint8_t *) buf, (uint8_t) length );
+    return pololu_i2c_read_from(p->adapter, (uint8_t) reg, (uint8_t *) buf, (uint8_t) length );
 }
 
 void i2c_close(pList *p)
 {
-    (void)p->adapter.fd;
+    (void)p->adapter;
+    pololu_i2c_disconnect(p);
 }

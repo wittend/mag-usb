@@ -1,5 +1,5 @@
 //=========================================================================
-// main.h
+// magdata.h
 // 
 // An interface for the RM3100 3-axis magnetometer from PNI Sensor Corp.
 // 
@@ -13,7 +13,7 @@
 #ifndef SWX3100MAGData_h
 #define SWX3100MAGData_h
 
-#include "../main.h"
+#include "main.h"
 
 //------------------------------------------
 // Prototypes

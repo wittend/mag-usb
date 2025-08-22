@@ -12,8 +12,9 @@
 //=========================================================================
 #include "main.h"
 //#include <inttypes.h>
-#include "src/i2c_pololu.h"
-#include "src/cmdmgr.h"
+#include "i2c_pololu.h"
+#include "cmdmgr.h"
+#include "magdata.h"
 
 //------------------------------------------
 // Debugging output
@@ -96,8 +97,7 @@ int main(int argc, char** argv)
         memset(p, 0, sizeof(pList));
     }
 
-    //p->po               = 0;
-    p->adapter          = (pololu_i2c_adapter *) NULL;
+    p->adapter          = 0;
     p->ppsHandle        = 0;
     p->magHandle        = 0;
     p->localTempHandle  = 0;
@@ -188,8 +188,8 @@ int main(int argc, char** argv)
     //     fflush(OUTPUT_PRINT);
     //     exit(2);
     // }
-    i2c_init(po);
-    i2c_open(p->pololu_i2c_adapter);
+    i2c_init(p);
+    i2c_open(p);
 
     //-----------------------------------------
     //  Verify the Mag sensor presence and Version.
@@ -488,7 +488,7 @@ int readLocalTemp(volatile pList *p)
 #endif
 
     //if((temp = pololu_i2c_read_from((pololu_i2c_adapter *)p->po, p->localTempHandle, MCP9808_REG_AMBIENT_TEMP, data, 2) <= 0))
-    if((temp = i2c_read(p->po, p->localTempHandle, MCP9808_REG_AMBIENT_TEMP) <= 0))
+    if((temp = i2c_read(p, p->localTempHandle, MCP9808_REG_AMBIENT_TEMP) <= 0))
     {
         fprintf(OUTPUT_ERROR, "Error : I/O error reading temp sensor at address: [0x%2X].\n", MCP9808_REG_AMBIENT_TEMP);
         showErrorMsg(temp);
@@ -518,8 +518,8 @@ int readRemoteTemp(volatile pList *p)
     fflush(OUTPUT_PRINT);
 #endif
 
-//    if((temp = i2c_readbuf(p->pi, p->remoteTempHandle, MCP9808_REG_AMBIENT_TEMP, data, 2) <= 0))
-    if((temp = pololu_i2c_read_from((pololu_i2c_adapter *)adapter, p->localTempHandle, MCP9808_REG_AMBIENT_TEMP, data, 2) <= 0))
+//    if((temp = pololu_i2c_read_from((pololu_i2c_adapter *)adapter, p->localTempHandle, MCP9808_REG_AMBIENT_TEMP, data, 2) <= 0))
+    if((temp = i2c_readbuf(p, p->remoteTempHandle, MCP9808_REG_AMBIENT_TEMP, data, 2) <= 0))
     {
         fprintf(OUTPUT_ERROR, "Error : I/O error reading temp sensor at address: [0x%2X].\n", MCP9808_REG_AMBIENT_TEMP);
         showErrorMsg(temp);
@@ -554,9 +554,7 @@ int readMagPOLL(volatile pList *p)
 #endif
 
     // Write command to  use Polled measurement Mode.
-//    rv = i2c_write_byte_data(p->pi, p->magHandle, RM3100_MAG_POLL, pmMode);
-//    pololu_i2c_read_from(pololu_i2c_adapter *adapter, p->localTempHandle, MCP9808_REG_AMBIENT_TEMP, data, 2)
-    rv = pololu_i2c_read_from( pololu_i2c_adapter *adapter, uint8_t address, uint8_t *data, uint8_t size );
+    rv = i2c_read(p, MCP9808_REG_AMBIENT_TEMP);
     if(rv != 0)
     {
         showErrorMsg(rv);
@@ -587,8 +585,9 @@ int readMagPOLL(volatile pList *p)
 
     // Tell the sensor that you want to read XYZ data. RM3100I2C_POLLXYZ
     // rv = i2c_write_byte_data(p->pi, p->magHandle, RM3100I2C_XYZ, TRUE);
-    rv = i2c_write_byte(p->po, p->magHandle, RM3100I2C_XYZ);
-    rv = pololu_i2c_write_to( pololu_i2c_adapter *adapter, uint8_t address, const uint8_t *data, uint8_t 1 );
+    rv = i2c_write(p, p->magHandle,RM3100I2C_XYZ);
+//    rv = pololu_i2c_write_to( pololu_i2c_adapter *adapter, uint8_t address, const uint8_t *data, uint8_t 1 );
+    rv = i2c_readbuf(p, RM3100I2C_XYZ, xyzBuf, 3 );
     if(rv < 0)
     {
         showErrorMsg(p->magHandle);
@@ -596,11 +595,13 @@ int readMagPOLL(volatile pList *p)
     else if(rv == 0)
     {
         // Wait for DReady Flag.
-        rv = i2c_read_byte(p->po, p->magHandle);
+        //rv = i2c_readbyte(p, p->magHandle);
+        rv = i2c_read(p, p->magHandle);
         rv = (rv & RM3100I2C_READMASK);
         while((rv != RM3100I2C_READMASK))
         {
-            rv = i2c_read_byte(p->po, p->magHandle);
+    //        rv = i2c_readbyte(p, p->magHandle);
+            rv = i2c_read(p, p->magHandle);
             rv = (rv & RM3100I2C_READMASK);
         }
 
@@ -612,7 +613,8 @@ int readMagPOLL(volatile pList *p)
         // Read the data registers.
         //rv = i2c_read_device(p->pi, p->magHandle, xyzBuf, XYZ_BUFLEN);
         //rv = i2c_read_i2c_block_data(p->pi, p->magHandle, RM3100I2C_XYZ, (char *)xyzBuf, XYZ_BUFLEN);
-        rv = pololu_i2c_write_to( pololu_i2c_adapter *adapter, RM3100I2C_XYZ, (char *)xyzBuf, XYZ_BUFLEN);
+        //rv = pololu_i2c_write_to( pololu_i2c_adapter *adapter, RM3100I2C_XYZ, (char *)xyzBuf, XYZ_BUFLEN);
+        rv = i2c_readbuf(p, RM3100I2C_XYZ, xyzBuf, XYZ_BUFLEN);
         if(rv == XYZ_BUFLEN)
         {
             p->XYZ[0] = ((signed char)xyzBuf[0]) * 256 * 256;
@@ -661,14 +663,14 @@ int verifyMagSensor(volatile pList *p)
     //-----------------------------------------
     // Make sure PGPIO connection is OK.
     //-----------------------------------------
-    if(p->po >= 0)
+    if(p >= 0)
     {
         p->magRevId = 0;
 
         //-----------------------------------------
         // Read the version register.
         //-----------------------------------------
-        if((rv = i2c_read_i2c_block_data(p->po, p->magHandle, RM3100I2C_REVID, revBuf, 1)) > 0)
+        if((rv = i2c_readbuf(p, p->magHandle, RM3100I2C_REVID, revBuf, 1)) > 0)
         {
             p->magRevId = *revBuf;
             if(*revBuf != (uint8_t) RM3100_VER_EXPECTED)
@@ -714,108 +716,107 @@ int setNOSReg(volatile pList *p)
     return rv;
 }
 
-//---------------------------------------------------------------
-// void initGPIO(pList *p)
-//---------------------------------------------------------------
-int initGPIO(volatile pList *p)
-{
-
-#if _DEBUG
-    fprintf(OUTPUT_PRINT, "    [CHILD]: In initGPIO(pList *p) before: pigpio_start()...\n");
-    fflush(OUTPUT_PRINT);
-#endif
-
-#if( USE_RGPIO || USE_LGPIO || USE_PIGPIO_IF2)
-    //-----------------------------------------
-    // Try to connect to pigpio daemon.
-    //-----------------------------------------
-    #if(USE_RGPIO)
-        if((p->po = rgpiod_start(NULL, NULL)) >= 0)
-    #elif (USE_LGPIO || USE_PIGPIO_IF2)
-        if((p->po = pigpio_start(NULL, NULL)) >= 0)
-    #endif
-        {
-    #if _DEBUG
-            fprintf(OUTPUT_PRINT, "    [CHILD] pigpio_start() OK, returns handle %i...\n", p->po);
-            fflush(OUTPUT_PRINT);
-    #endif
-        }
-        else
-        {
-    #if _DEBUG
-            showErrorMsg(p->po);
-            fprintf(OUTPUT_PRINT, "    [CHILD] pigpio_start() FAIL, returns: %i...\n", p->po);
-            fflush(OUTPUT_PRINT);
-#endif
-            return -1;
-        }
-#endif
-
-
-    //-----------------------------------------
-    // Register the Magnetometer address.
-    //-----------------------------------------
-    if((p->magHandle = i2c_open(p->po, (unsigned) RASPI_I2C_BUS1, (unsigned) RM3100_I2C_ADDRESS, (unsigned) 0)) >= 0)
-    {
-#if _DEBUG
-        showErrorMsg(p->magHandle);
-        fprintf(OUTPUT_PRINT, "    [CHILD] i2c_open(RM3100) OK. Handle: %i\n", p->magHandle );
-        fflush(OUTPUT_PRINT);
-#endif
-    }
-    else
-    {
-#if _DEBUG
-        showErrorMsg(p->magHandle);
-        fprintf(OUTPUT_PRINT, "    [CHILD] i2c_open(RM3100) FAIL. Handle: %i\n", p->magHandle );
-        fflush(OUTPUT_PRINT);
-#endif
-        fflush(OUTPUT_PRINT);
-        return -1;
-    }
-
-    //-----------------------------------------
-    // Register the Local Temp Sensor address.
-    //-----------------------------------------
-    if((p->localTempHandle = i2c_open(p->po, (unsigned) RASPI_I2C_BUS1, (unsigned) MCP9808_LCL_I2CADDR_DEFAULT, (unsigned) 0) >= 0))
-    {
-#if _DEBUG
-        fprintf(OUTPUT_PRINT, "    [CHILD] i2c_open(MCP9808) OK. Handle: %i\n", p->localTempHandle );
-        fflush(OUTPUT_PRINT);
-#endif
-    }
-    else
-    {
-#if _DEBUG
-        fprintf(OUTPUT_PRINT, "    [CHILD] i2c_open(MCP9808) FAIL. Handle: %i\n", p->localTempHandle );
-        fflush(OUTPUT_PRINT);
-#endif
-        showErrorMsg(p->localTempHandle);
-        return -1;
-    }
-
-    //-----------------------------------------
-    // Register the Remote Temp Sensor address.
-    //-----------------------------------------
-    if((p->remoteTempHandle = i2c_open(p->po, (unsigned) RASPI_I2C_BUS1, (unsigned) MCP9808_RMT_I2CADDR_DEFAULT, (unsigned) 0) >= 0))
-    {
-#if _DEBUG
-        fprintf(OUTPUT_PRINT, "    [CHILD] i2c_open(MCP9808) OK. Handle: %i\n", p->remoteTempHandle );
-        fflush(OUTPUT_PRINT);
-#endif
-    }
-    else
-    {
-#if _DEBUG
-        fprintf(OUTPUT_PRINT, "    [CHILD] i2c_open(MCP9808) FAIL. Handle: %i\n", p->remoteTempHandle );
-        fflush(OUTPUT_PRINT);
-#endif
-        showErrorMsg(p->remoteTempHandle);
-        return -1;
-    }
-
-    return p->po;
-}
+// //---------------------------------------------------------------
+// // void initGPIO(pList *p)
+// //---------------------------------------------------------------
+// int initGPIO(volatile pList *p)
+// {
+//
+// #if _DEBUG
+//     fprintf(OUTPUT_PRINT, "    [CHILD]: In initGPIO(pList *p) before: pigpio_start()...\n");
+//     fflush(OUTPUT_PRINT);
+// #endif
+//
+// #if( USE_RGPIO || USE_LGPIO || USE_PIGPIO_IF2)
+//     //-----------------------------------------
+//     // Try to connect to pigpio daemon.
+//     //-----------------------------------------
+//     #if(USE_RGPIO)
+//         if((p->po = rgpiod_start(NULL, NULL)) >= 0)
+//     #elif (USE_LGPIO || USE_PIGPIO_IF2)
+//         if((p->po = pigpio_start(NULL, NULL)) >= 0)
+//     #endif
+//         {
+//     #if _DEBUG
+//             fprintf(OUTPUT_PRINT, "    [CHILD] pigpio_start() OK, returns handle %i...\n", p->po);
+//             fflush(OUTPUT_PRINT);
+//     #endif
+//         }
+//         else
+//         {
+//     #if _DEBUG
+//             showErrorMsg(p->po);
+//             fprintf(OUTPUT_PRINT, "    [CHILD] pigpio_start() FAIL, returns: %i...\n", p->po);
+//             fflush(OUTPUT_PRINT);
+// #endif
+//             return -1;
+//         }
+// #endif
+//
+//
+//     //-----------------------------------------
+//     // Register the Magnetometer address.
+//     //-----------------------------------------
+//     if((p->magHandle = i2c_open(p, (unsigned) RASPI_I2C_BUS1, (unsigned) RM3100_I2C_ADDRESS, (unsigned) 0)) >= 0)
+//     {
+// #if _DEBUG
+//         showErrorMsg(p->magHandle);
+//         fprintf(OUTPUT_PRINT, "    [CHILD] i2c_open(RM3100) OK. Handle: %i\n", p->magHandle );
+//         fflush(OUTPUT_PRINT);
+// #endif
+//     }
+//     else
+//     {
+// #if _DEBUG
+//         showErrorMsg(p->magHandle);
+//         fprintf(OUTPUT_PRINT, "    [CHILD] i2c_open(RM3100) FAIL. Handle: %i\n", p->magHandle );
+//         fflush(OUTPUT_PRINT);
+// #endif
+//         fflush(OUTPUT_PRINT);
+//         return -1;
+//     }
+//
+//     //-----------------------------------------
+//     // Register the Local Temp Sensor address.
+//     //-----------------------------------------
+//     if((p->localTempHandle = i2c_open(p, (unsigned) RASPI_I2C_BUS1, (unsigned) MCP9808_LCL_I2CADDR_DEFAULT, (unsigned) 0) >= 0))
+//     {
+// #if _DEBUG
+//         fprintf(OUTPUT_PRINT, "    [CHILD] i2c_open(MCP9808) OK. Handle: %i\n", p->localTempHandle );
+//         fflush(OUTPUT_PRINT);
+// #endif
+//     }
+//     else
+//     {
+// #if _DEBUG
+//         fprintf(OUTPUT_PRINT, "    [CHILD] i2c_open(MCP9808) FAIL. Handle: %i\n", p->localTempHandle );
+//         fflush(OUTPUT_PRINT);
+// #endif
+//         showErrorMsg(p->localTempHandle);
+//         return -1;
+//     }
+//
+//     //-----------------------------------------
+//     // Register the Remote Temp Sensor address.
+//     //-----------------------------------------
+//     if((p->remoteTempHandle = i2c_open(p, (unsigned) RASPI_I2C_BUS1, (unsigned) MCP9808_RMT_I2CADDR_DEFAULT, (unsigned) 0) >= 0))
+//     {
+// #if _DEBUG
+//         fprintf(OUTPUT_PRINT, "    [CHILD] i2c_open(MCP9808) OK. Handle: %i\n", p->remoteTempHandle );
+//         fflush(OUTPUT_PRINT);
+// #endif
+//     }
+//     else
+//     {
+// #if _DEBUG
+//         fprintf(OUTPUT_PRINT, "    [CHILD] i2c_open(MCP9808) FAIL. Handle: %i\n", p->remoteTempHandle );
+//         fflush(OUTPUT_PRINT);
+// #endif
+//         showErrorMsg(p->remoteTempHandle);
+//         return -1;
+//     }
+//     return p;
+// }
 
 //---------------------------------------------------------------
 // void termGPIO(volatile pList p)
@@ -823,10 +824,10 @@ int initGPIO(volatile pList *p)
 void termGPIO(volatile pList *p)
 {
     // Knock down all of the pigpio setup here.
-    p->magHandle = i2c_close(p->po, p->magHandle);
-    p->localTempHandle = i2c_close(p->po, p->localTempHandle);
-    p->remoteTempHandle = i2c_close(p->po, p->remoteTempHandle);
-    rgpiod_stop(p->po);
+    p->magHandle = i2c_close(p, p->magHandle);
+    // p->localTempHandle = i2c_close(p->po, p->localTempHandle);
+    // p->remoteTempHandle = i2c_close(p->po, p->remoteTempHandle);
+    // rgpiod_stop(p->po);
 
 #if(_DEBUG)
     fprintf(OUTPUT_PRINT, "    [Child]: termGPIO(pList p)...\n");
@@ -844,7 +845,7 @@ int initMagSensor(volatile pList *p)
     // Setup the Mag sensor register initial state here.
     if(p->samplingMode == POLL)                                         // (p->samplingMode == POLL [default])
     {
-        if((rv = i2c_write_byte_data(p->po, p->magHandle, RM3100_MAG_POLL, TRUE)) != 0)
+        if((rv = i2c_writebyte(p, p->magHandle, RM3100_MAG_POLL, TRUE)) != 0)
         {
             showErrorMsg(rv);
 #if(_DEBUG)
@@ -856,7 +857,7 @@ int initMagSensor(volatile pList *p)
     }
     else
     {
-        if((rv = i2c_write_byte_data(p->po, p->magHandle, RM3100I2C_CMM, TRUE) != 0))
+        if((rv = i2c_writebyte(p, p->magHandle, RM3100I2C_CMM, TRUE)) != 0)
         {
             showErrorMsg(rv);
 #if(_DEBUG)
@@ -910,89 +911,4 @@ void onEdge(void)
 #endif
     PPS_Flag = TRUE;
 }
-
-//
-////------------------------------------------
-//// readMagCMM(volatile pList *p)
-////------------------------------------------
-//int readMagCMM(volatile pList *p)
-//{
-//    int rv = 0;
-//    int bytes_read = 9;
-//    short cmMode = (CMMMODE_ALL);
-// 
-//    char xyzBuf[XYZ_BUFLEN] = "";
-//
-//#if(_DEBUG)
-//    fprintf(OUTPUT_PRINT, "[Child]: readMagCMM()...\n");
-//    fflush(OUTPUT_PRINT);
-//#endif
-//
-//    // Write command to  use Continuous measurement Mode.
-//    rv = i2c_write_byte_data(p->pi, p->magHandle, RM3100I2C_CMM, cmMode);
-//    if(rv != 0)
-//    {
-//        showErrorMsg(rv);
-//#if(_DEBUG)
-//        fprintf(OUTPUT_PRINT, "Write CMM mode < 0.\n");
-//        fflush(OUTPUT_PRINT);
-//#endif
-//        usleep(p->DRDYdelay);
-//    }
-//#if(_DEBUG)
-//    else
-//    {
-//        fprintf(OUTPUT_PRINT, "Write RM3100I2C_CMM mode == %u -- OK.\n", rv);
-//        fflush(OUTPUT_PRINT);
-//    }
-//#endif
-//
-//    // if a delay is specified after DRDY goes high, sleep it off.
-//    if(p->DRDYdelay)
-//    {
-//        usleep(p->DRDYdelay);
-//    }
-//
-//#if(_DEBUG)
-//    fprintf(OUTPUT_PRINT, "Before Write to RM3100I2C_XYZ.\n");
-//    fflush(OUTPUT_PRINT);
-//#endif
-//
-//    // Tell the sensor that you want to read XYZ data.
-//    rv = i2c_write_byte_data(p->pi, p->magHandle, RM3100I2C_XYZ, TRUE);
-//    if(rv <= 0)
-//    {
-//        // Wait for DReady Flag.
-////        while((rv = (i2c_read_byte(p->pi, p->magHandle, RM3100I2C_STATUS)) & RM3100I2C_READMASK) != RM3100I2C_READMASK)
-//        while((rv = (i2c_read_byte_data(p->pi, p->magHandle, RM3100I2C_STATUS)) & RM3100I2C_READMASK) != RM3100I2C_READMASK)
-//        {
-//            puts("*");
-//        }
-//        // Read the data registers.
-//        rv = i2c_read_i2c_block_data(p->pi, p->magHandle, RM3100I2C_XYZ, xyzBuf, XYZ_BUFLEN);
-//        if(rv == 9)
-//        {
-//            p->XYZ[0] = ((signed char)xyzBuf[0]) * 256 * 256;
-//            p->XYZ[0] |= xyzBuf[1] * 256;
-//            p->XYZ[0] |= xyzBuf[2];
-//
-//            p->XYZ[1] = ((signed char)xyzBuf[3]) * 256 * 256;
-//            p->XYZ[1] |= xyzBuf[4] * 256;
-//            p->XYZ[1] |= xyzBuf[5];
-//
-//            p->XYZ[2] = ((signed char)xyzBuf[6]) * 256 * 256;
-//            p->XYZ[2] |= xyzBuf[7] * 256;
-//            p->XYZ[2] |= xyzBuf[8];
-//        }
-//        else
-//        {
-//            showErrorMsg(rv);
-//#if(_DEBUG)
-//            fprintf(OUTPUT_PRINT, "Read BLOCK CMM mode != 0. rv = %u\n", rv);
-//            fflush(OUTPUT_PRINT);
-//#endif
-//        }
-//    }
-//    return bytes_read;
-//}
 

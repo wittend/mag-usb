@@ -11,7 +11,7 @@
 //              Also adding callbacks on GPIO27 for PPS rising edge.
 //=========================================================================
 //#include "i2c-pigpio.h"
-#include "../main.h"
+//#include "main.h"
 #include "magdata.h"
 
 //------------------------------------------

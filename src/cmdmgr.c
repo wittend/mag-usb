@@ -10,7 +10,7 @@
 //              with calls to pigpio. 
 //              Also adding callbacks on GPIO27 for PPS rising edge.
 //=========================================================================
-#include "../main.h"
+//#include "main.h"
 #include "magdata.h"
 #include "cmdmgr.h"
 

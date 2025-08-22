@@ -21,20 +21,16 @@
 #include <unistd.h>
 #include <signal.h>
 #include <math.h>
-// #include <ctype.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-// #include <sys/ioctl.h>
 #include <time.h>
 #include <sys/time.h>
-// #include <fcntl.h>
-// #include <memory.h>
-#include "src/i2c_pololu.h"
+#include "i2c_pololu.h"
 
 // #include "src/interface.h"      // defines the I2C interface to be used.
-#include "src/i2c.h"
-#include "src/rm3100.h"
-#include "src/MCP9808.h"
+#include "i2c.h"
+#include "rm3100.h"
+#include "MCP9808.h"
 
 //------------------------------------------
 // Debugging output
@@ -170,7 +166,7 @@
 typedef struct tag_pList
 {
     int fd;
-    pololu_i2c_adapter adapter;
+    pololu_i2c_adapter *adapter;
 
     int ppsHandle;
     unsigned edge_cb_id;
