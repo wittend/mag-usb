@@ -43,7 +43,7 @@ int i2c_open(ctlList *p, const char *portname)
     // Map to Pololu open/init sequence
     //(void)portname;
 
-    return pololu_i2c_connect(p->adapter.fd, &portname);
+    return pololu_i2c_connect(p->adapter, portname);
 }
 
 void i2c_init(ctlList *p, int adaptor)
