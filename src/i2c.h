@@ -11,12 +11,13 @@
 #define PNIRM3100_I2C_H
 
 #include "../main.h"
+#include "i2c_pololu.h" // your Pololu API headers
 
 //------------------------------------------
 // Prototypes
 //------------------------------------------
 int i2c_open(ctlList *p, const char *porthame);
-void i2c_init(int adaptor);
+void i2c_init(ctlList *p, int adaptor);
 void i2c_setAddress(ctlList *p, int devAddr);
 void i2c_setBitRate(ctlList *p, int devspeed);
 int i2c_write(ctlList *p, uint8_t reg, uint8_t value);

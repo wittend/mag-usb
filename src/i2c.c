@@ -41,15 +41,17 @@
 int i2c_open(ctlList *p, const char *portname)
 {
     // Map to Pololu open/init sequence
-    //(void)portname;
-
-    return pololu_i2c_connect(p->adapter, portname);
+    // int pololu_i2c_connect( pololu_i2c_adapter *adapter, const char *port_name )
+    //    return pololu_i2c_connect((pololu_i2c_adapter *)p->adapter, portname);
+    //    return pololu_i2c_connect(&(p->adapter), portname);
+    pololu_i2c_adapter pAdapt = p->adapter;
+    return pololu_i2c_connect(pAdapt, portname);
 }
 
 void i2c_init(ctlList *p, int adaptor)
 {
 //    pololu_i2c_adapter adapter;
-    pololu_i2c_init((p->adapter);
+    pololu_i2c_init(&(p->adapter));
 }
 
 void i2c_setAddress(ctlList *p, int devAddr)
