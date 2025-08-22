@@ -31,7 +31,7 @@
 //=========================================================================
 // backends/i2c_pololu.c
 #include <stdint.h>
-//#include "main.h"
+#include "main.h"
 #include "i2c.h"
 #include "i2c_pololu.h" // your Pololu API headers
 

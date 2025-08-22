@@ -7,5 +7,4 @@ add_executable(mag_usb src/main.c
         src/cmdmgr.c
         src/magdata.c
         src/i2c.c
-        src/i2c_pololu.c
-        src/i2c_pololu.h)
+        src/i2c_pololu.c)

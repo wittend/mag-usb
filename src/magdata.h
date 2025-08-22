@@ -13,7 +13,6 @@
 #ifndef SWX3100MAGData_h
 #define SWX3100MAGData_h
 
-#include "main.h"
 
 //------------------------------------------
 // Prototypes

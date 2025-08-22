@@ -12,6 +12,7 @@
 //=========================================================================
 #include "main.h"
 //#include <inttypes.h>
+#include "i2c.h"
 #include "i2c_pololu.h"
 #include "cmdmgr.h"
 #include "magdata.h"
