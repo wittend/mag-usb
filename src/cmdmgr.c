@@ -4,13 +4,14 @@
 // commandline / configuration management routines for runMag utility.
 //
 // Author:      David Witten, KD0EAG
+#include <stdio.h>
 // Date:        December 18, 2023
 // License:     GPL 3.0
 // Note:        replaces i2c.c (using file system calls to read(), write(), etc.
 //              with calls to pigpio. 
 //              Also adding callbacks on GPIO27 for PPS rising edge.
 //=========================================================================
-//#include "main.h"
+#include "main.h"
 #include "magdata.h"
 #include "cmdmgr.h"
 

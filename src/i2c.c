@@ -31,6 +31,8 @@
 //=========================================================================
 // backends/i2c_pololu.c
 #include <stdint.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 #include "main.h"
 #include "i2c.h"
 #include "i2c_pololu.h" // your Pololu API headers
@@ -38,17 +40,24 @@
 // int pololu_i2c_write_to( pololu_i2c_adapter *adapter, uint8_t address, const uint8_t *data, uint8_t size );
 // int pololu_i2c_read_from( pololu_i2c_adapter *adapter, uint8_t address, uint8_t *data, uint8_t size );
 
-int i2c_open(pList *p, const char *portname)
+int i2c_open(pList *p, const char *portpath)
 {
     // Map to Pololu open/init sequence
-    // int pololu_i2c_connect( pololu_i2c_adapter *adapter, const char *port_name )
-    //    return pololu_i2c_connect((pololu_i2c_adapter *)p->adapter, portname);
-    //    return pololu_i2c_connect(&(p->adapter), portname);
-    pololu_i2c_adapter *pAdapt = &p->adapter;
-    return pololu_i2c_connect(pAdapt, portname);
+    struct stat sb;
+    if(!stat(p->portpath, &sb))
+    {
+       pololu_i2c_adapter *pAdapt = &p->adapter;
+       return pololu_i2c_connect(pAdapt, p->portpath);
+    }
+    else
+    {
+        perror("stat");
+        exit(EXIT_FAILURE);
+    }
 }
 
-void i2c_init(pList *p, int adaptor)
+//void i2c_init(pList *p, int adaptor)
+void i2c_init(pList *p)
 {
 //    pololu_i2c_adapter adapter;
     pololu_i2c_init(&(p->adapter));
@@ -96,7 +105,7 @@ int i2c_writebuf(pList *p, uint8_t reg, char* buffer, short int length)
 int i2c_readbuf(pList *p, uint8_t reg, uint8_t* buf, char *length)
 {
 //    return pololu_i2c_read_from( (pololu_i2c_adapter *) p->adapter.fd, (uint8_t) reg, (uint8_t *) buf, (uint8_t) length );
-    return pololu_i2c_read_from(p->adapter, (uint8_t) reg, (uint8_t *) buf, (uint8_t) length );
+    return pololu_i2c_read_from(p->adapter, (uint8_t) reg, &buf, (uint8_t) length );
 }
 
 void i2c_close(pList *p)

@@ -17,18 +17,18 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <inttypes.h>
+#include <sys/types.h>
 #include <string.h>
 #include <unistd.h>
 #include <signal.h>
 #include <math.h>
-#include <sys/types.h>
 #include <sys/stat.h>
 #include <time.h>
 #include <sys/time.h>
-#include "i2c_pololu.h"
 
 // #include "src/interface.h"      // defines the I2C interface to be used.
-#include "i2c.h"
+// #include "i2c.h"
+#include "i2c_pololu.h"
 #include "rm3100.h"
 #include "MCP9808.h"
 
@@ -166,6 +166,7 @@
 typedef struct tag_pList
 {
     int fd;
+    char *portpath;
     pololu_i2c_adapter *adapter;
 
     int ppsHandle;
@@ -218,17 +219,17 @@ typedef struct tag_pList
 //------------------------------------------
 int  main(int argc, char** argv);
 void onEdge(void);
-char *formatOutput(volatile pList *p, char *outBuf);
-int  initGPIO(volatile pList *p);
-void termGPIO(volatile pList *p);
-int  verifyMagSensor(volatile pList *p);
-int  initMagSensor(volatile pList *p);
-int  initTempSensors(volatile pList *p);
+char *formatOutput(pList *p, char *outBuf);
+// int  initGPIO(volatile pList *p);
+// void termGPIO(volatile pList *p);
+int  verifyMagSensor(pList *p);
+int  initMagSensor(pList *p);
+int  initTempSensors(pList *p);
 
-int  readLocalTemp(volatile pList *p);
-int  readRemoteTemp(volatile pList *p);
+int  readLocalTemp(pList *p);
+int  readRemoteTemp(pList *p);
 //int  readMagCMM(volatile pList *p);
-int  readMagPOLL(volatile pList *p);
+int  readMagPOLL(pList *p);
 
 void showErrorMsg(int temp);
 

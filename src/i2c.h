@@ -16,8 +16,8 @@
 //------------------------------------------
 // Prototypes
 //------------------------------------------
-int i2c_open(pList *p, const char *porthame);
-void i2c_init(pList *p, int adaptor);
+int i2c_open(pList *p, const char *portname);
+void i2c_init(pList *p);
 void i2c_setAddress(pList *p, int devAddr);
 void i2c_setBitRate(pList *p, int devspeed);
 int i2c_write(pList *p, uint8_t reg, uint8_t value);

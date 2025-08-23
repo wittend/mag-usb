@@ -11,7 +11,9 @@
 //              Also adding callbacks on GPIO27 for PPS rising edge.
 //=========================================================================
 #include "main.h"
-//#include <inttypes.h>
+
+#include <linux/limits.h>
+
 #include "i2c.h"
 #include "i2c_pololu.h"
 #include "cmdmgr.h"
@@ -37,8 +39,10 @@
 //------------------------------------------
 int volatile PPS_Flag   = 0;
 int volatile killflag   = 0;
-char   Version[32]      = MAGDATA_VERSION;
+char Version[32]        = MAGDATA_VERSION;
 static char outBuf[256] = "";
+char portpath[PATH_MAX] =  "/dev/ttyACM2";
+//const char *port_name = "/dev/ttyACM2";
 
 char fifoCtrl[] = "/home/pi/PSWS/Sstat/magctl.fifo";
 char fifoData[] = "/home/pi/PSWS/Sstat/magdata.fifo";
@@ -51,7 +55,6 @@ int PIPEIN  = -1;
 int PIPEOUT = -1;
 
 #if((USE_LGPIO || USE_RGPIO) && USE_WAITFOREDGE)
-
 void cbTestFunc()
 {
     printf("Got Callback!/n");
@@ -63,10 +66,8 @@ int wait_for_edge(int sbc, int handle, int gpio_pin, int edge, CBFunc_t f, int t
     rv = callback(sbc, handle, gpio_pin, edge, f, NULL);
     return rv;
 }
-
 int rc = 0;
 // wait_for_edge((int)1, (int)1, PPS_GPIO_PIN, RISING_EDGE, cbTestFunc, PPS_TIMEOUTSECS);
-
 #endif
 
 //---------------------------------------------------------------
@@ -98,6 +99,7 @@ int main(int argc, char** argv)
         memset(p, 0, sizeof(pList));
     }
 
+    p->portpath         = portpath;
     p->adapter          = 0;
     p->ppsHandle        = 0;
     p->magHandle        = 0;
@@ -168,7 +170,6 @@ int main(int argc, char** argv)
             PIPEIN = fdPipeIn;
         }
     }
-
 #endif // USE_PIPES
 
 //    unsigned edge_cb_id = 0;
@@ -178,19 +179,8 @@ int main(int argc, char** argv)
     fflush(OUTPUT_PRINT);
 #endif
 
-    // //-----------------------------------------
-    // //  Initialize the PIGPIO interface.
-    // //-----------------------------------------
-    // if((p->pi = initGPIO(p)) < 0)
-    // {
-    //     utcTime = getUTC();
-    //     strftime(utcStr, UTCBUFLEN, "%d %b %Y %T", utcTime);
-    //     fprintf(OUTPUT_PRINT, "    [CHILD] {ts: \"%s\", lastStatus: \"Unable to set up GPIO.\"}", utcStr);
-    //     fflush(OUTPUT_PRINT);
-    //     exit(2);
-    // }
     i2c_init(p);
-    i2c_open(p);
+    i2c_open(p, portpath);
 
     //-----------------------------------------
     //  Verify the Mag sensor presence and Version.
@@ -235,93 +225,6 @@ int main(int argc, char** argv)
     fflush(OUTPUT_PRINT);
 #endif
     
-#if _DEBUG
-    fprintf(OUTPUT_PRINT, "    [CHILD] p->pi: %i - Setting child pin: %i mode to: %i for PPS.\n", p->po, PPS_GPIO_PIN, PI_INPUT);
-    fflush(OUTPUT_PRINT);
-#endif
-
-#if(USE_PIGPIO || USE_PIGPIO_IF2) 
-    //-----------------------------------------
-    //  Setup the PPS calback notification.
-    //-----------------------------------------
-    if((rv = set_mode(p->po, (unsigned) PPS_GPIO_PIN, PI_INPUT) == 0))
-    {
-#if _DEBUG
-        fprintf(OUTPUT_PRINT, "    [CHILD] Before setting up callback to: onEdge()...\n");
-        fflush(OUTPUT_PRINT);
-#endif
-        if((p->edge_cb_id = callback(p->po, (unsigned) PPS_GPIO_PIN, RISING_EDGE, (CBFunc_t) onEdge)) != 0)                   // RISING_EDGE, FALLING_EDGE, or EITHER_EDGE
-        {
-            switch(p->edge_cb_id)
-            {
-                case pigif_bad_malloc:
-                    fprintf(OUTPUT_PRINT, "    [CHILD] After setting up callback, return value = [pgif_bad_malloc]\n");
-                    fflush(OUTPUT_PRINT);
-                    exit(2);
-                    break;
-                case pigif_duplicate_callback:
-                    fprintf(OUTPUT_PRINT, "    [CHILD] After setting up callback, return value = [pigif_duplicate_callback]\n");
-                    fflush(OUTPUT_PRINT);
-                    exit(2);
-                    break;
-                case pigif_bad_callback:
-                    fprintf(OUTPUT_PRINT, "    [CHILD] After setting up callback, return value = [pigif_bad_callback]\n");
-                    fflush(OUTPUT_PRINT);
-                    exit(2);
-                    break;
-            }
-        }
-    }
-#endif
-#if(USE_RGPIO) 
-    //-----------------------------------------
-    //  Setup the PPS calback notification.
-    //-----------------------------------------
-    // if((rv = set_mode(p->pi, (unsigned) PPS_GPIO_PIN, PI_INPUT) == 0))
-    if((rv = gpio_claim_input(p->po, p->ppsHandle, 0, PPS_GPIO_PIN) == 0))    // open GPIO 27for input
-    {
-#if _DEBUG
-        fprintf(OUTPUT_PRINT, "    [CHILD] Before setting up callback to: onEdge()...\n");
-        fflush(OUTPUT_PRINT);
-#endif
-        // void (*CBFunc_t) (int sbc, int chip, int gpio, int level, uint64_t timestamp, void * userdata);
-        // int callback(int sbc, int handle, int gpio, int edge, CBFunc_t f, void *userdata)
-        if((p->edge_cb_id = callback(p->po, p->ppsHandle, (unsigned) PPS_GPIO_PIN, RISING_EDGE, (CBFunc_t) onEdge, NULL)) != 0)                   // RISING_EDGE, FALLING_EDGE, or EITHER_EDGE
-        {
-            switch(p->edge_cb_id)
-            {
-                case lgif_bad_malloc:
-                    fprintf(OUTPUT_PRINT, "    [CHILD] After setting up callback, return value = [pgif_bad_malloc]\n");
-                    fflush(OUTPUT_PRINT);
-                    exit(2);
-                    break;
-                case lgif_duplicate_callback:
-                    fprintf(OUTPUT_PRINT, "    [CHILD] After setting up callback, return value = [pigif_duplicate_callback]\n");
-                    fflush(OUTPUT_PRINT);
-                    exit(2);
-                    break;
-                case lgif_bad_callback:
-                    fprintf(OUTPUT_PRINT, "    [CHILD] After setting up callback, return value = [pigif_bad_callback]\n");
-                    fflush(OUTPUT_PRINT);
-                    exit(2);
-                    break;
-            }
-        }
-    }
-#endif
-
-
-#if _DEBUG
-    fprintf(OUTPUT_PRINT, "    [CHILD] after setting up callback to: onEdge()...\n");
-    fflush(OUTPUT_PRINT);
-#endif
-
-
-#if _DEBUG
-    fprintf(OUTPUT_PRINT, "[CHILD] Before main loop...\n");
-    fflush(OUTPUT_PRINT);
-#endif
-
     //-----------------------------------------
     //  Main program loop.
     //-----------------------------------------
@@ -368,14 +271,14 @@ int main(int argc, char** argv)
 #elif (USE_PIGPIO)  
     rv = event_callback_cancel(p->edge_cb_id);
 #endif
-    termGPIO(p);
+    //termGPIO(p);
     exit(rv);
 }
 
 //---------------------------------------------------------------
 // void formatOutput(volatile pList *p, char *outBuf)
 //---------------------------------------------------------------
-char *formatOutput(volatile pList *p, char *outBuf)
+char *formatOutput(pList *p, char *outBuf)
 {
     char fmtBuf[200] ="";
     int fmtBuf_len = sizeof fmtBuf;
@@ -478,7 +381,7 @@ char *formatOutput(volatile pList *p, char *outBuf)
 //------------------------------------------
 // readLocalTemp(volatile pList *p)
 //------------------------------------------
-int readLocalTemp(volatile pList *p)
+int readLocalTemp(pList *p)
 {
     int temp = -9999;
     char data[2] = {0};
@@ -489,7 +392,7 @@ int readLocalTemp(volatile pList *p)
 #endif
 
     //if((temp = pololu_i2c_read_from((pololu_i2c_adapter *)p->po, p->localTempHandle, MCP9808_REG_AMBIENT_TEMP, data, 2) <= 0))
-    if((temp = i2c_read(p, p->localTempHandle, MCP9808_REG_AMBIENT_TEMP) <= 0))
+    if((temp = i2c_read(p, MCP9808_REG_AMBIENT_TEMP) <= 0))
     {
         fprintf(OUTPUT_ERROR, "Error : I/O error reading temp sensor at address: [0x%2X].\n", MCP9808_REG_AMBIENT_TEMP);
         showErrorMsg(temp);
@@ -509,7 +412,7 @@ int readLocalTemp(volatile pList *p)
 //------------------------------------------
 // readRemoteTemp(volatile pList *p)
 //------------------------------------------
-int readRemoteTemp(volatile pList *p)
+int readRemoteTemp(pList *p)
 {
     int temp = -9999;
     char data[2] = {0};
@@ -520,7 +423,7 @@ int readRemoteTemp(volatile pList *p)
 #endif
 
 //    if((temp = pololu_i2c_read_from((pololu_i2c_adapter *)adapter, p->localTempHandle, MCP9808_REG_AMBIENT_TEMP, data, 2) <= 0))
-    if((temp = i2c_readbuf(p, p->remoteTempHandle, MCP9808_REG_AMBIENT_TEMP, data, 2) <= 0))
+    if((temp = i2c_readbuf(p->remoteTempHandle, MCP9808_REG_AMBIENT_TEMP, data, 2) <= 0))
     {
         fprintf(OUTPUT_ERROR, "Error : I/O error reading temp sensor at address: [0x%2X].\n", MCP9808_REG_AMBIENT_TEMP);
         showErrorMsg(temp);
@@ -541,7 +444,7 @@ int readRemoteTemp(volatile pList *p)
 //------------------------------------------
 // readMagPOLL()
 //------------------------------------------
-int readMagPOLL(volatile pList *p)
+int readMagPOLL(pList *p)
 {
     int     rv = 0;
     int     bytes_read = 9;
@@ -651,7 +554,7 @@ int readMagPOLL(volatile pList *p)
 //---------------------------------------------------------------
 // void verifyMagSensor(volatile pList *p)
 //---------------------------------------------------------------
-int verifyMagSensor(volatile pList *p)
+int verifyMagSensor(pList *p)
 {
     int rv = 0;
     char revBuf[] = {0};
@@ -708,7 +611,7 @@ int verifyMagSensor(volatile pList *p)
 //------------------------------------------
 // setNOSReg(volatile pList *p)
 //------------------------------------------
-int setNOSReg(volatile pList *p)
+int setNOSReg(pList *p)
 {
     int rv = 0;
 //#if _DEBUG
@@ -720,8 +623,7 @@ int setNOSReg(volatile pList *p)
 // //---------------------------------------------------------------
 // // void initGPIO(pList *p)
 // //---------------------------------------------------------------
-// int initGPIO(volatile pList *p)
-// {
+// int initGPIO(volatile pList *p)// {
 //
 // #if _DEBUG
 //     fprintf(OUTPUT_PRINT, "    [CHILD]: In initGPIO(pList *p) before: pigpio_start()...\n");
@@ -822,7 +724,7 @@ int setNOSReg(volatile pList *p)
 //---------------------------------------------------------------
 // void termGPIO(volatile pList p)
 //---------------------------------------------------------------
-void termGPIO(volatile pList *p)
+void termGPIO(pList *p)
 {
     // Knock down all of the pigpio setup here.
     p->magHandle = i2c_close(p, p->magHandle);
@@ -839,7 +741,7 @@ void termGPIO(volatile pList *p)
 //---------------------------------------------------------------
 // int initMagSensor(volatile pList *p)
 //---------------------------------------------------------------
-int initMagSensor(volatile pList *p)
+int initMagSensor(pList *p)
 {
     int rv = 0;
 
@@ -874,7 +776,7 @@ int initMagSensor(volatile pList *p)
 //---------------------------------------------------------------
 // int initTempSensors(volatile pList *p)
 //---------------------------------------------------------------
-int initTempSensors(volatile pList *p)
+int initTempSensors(pList *p)
 {
     int rv = 0;
     // Temp sensor doesn't need any iniutialization currently.
