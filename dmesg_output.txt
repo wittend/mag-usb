@@ -1,0 +1,10 @@
+[157127.188124] WARNING! power/level is deprecated; use power/control instead
+[157461.780768] usb 3-4: USB disconnect, device number 24
+[157494.430504] usb 3-4: new full-speed USB device number 25 using xhci_hcd
+[157494.569089] usb 3-4: New USB device found, idVendor=1ffb, idProduct=2503, bcdDevice= 1.00
+[157494.569106] usb 3-4: New USB device strings: Mfr=1, Product=2, SerialNumber=3
+[157494.569109] usb 3-4: Product: Pololu Isolated USB-to-I2C Adapter with Isolated Power
+[157494.569112] usb 3-4: Manufacturer: Pololu Corporation
+[157494.569115] usb 3-4: SerialNumber: 7400-4F00-0150-3642-4837-3020
+[157494.573223] cdc_acm 3-4:1.0: ttyACM0: USB ACM device
+
