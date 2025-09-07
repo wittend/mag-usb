@@ -1,6 +1,6 @@
 # mag-usb
 ## Work in progress!
-## to be updated further!
+## DO NOT USE YET: to be updated further!
 
 ## Version 0.0.1
 
