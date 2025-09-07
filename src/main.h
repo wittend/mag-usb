@@ -29,8 +29,14 @@
 // #include "src/interface.h"      // defines the I2C interface to be used.
 // #include "i2c.h"
 #include "i2c_pololu.h"
-#include "rm3100.h"
+//#include "rm3100.h"
 #include "MCP9808.h"
+#ifndef TRUE
+#define TRUE  1
+#endif
+#ifndef FALSE
+#define FALSE 0
+#endif
 
 //------------------------------------------
 // Debugging output
@@ -51,7 +57,11 @@
 #define OUTPUT_PRINT    stdout
 #define OUTPUT_ERROR    stderr
 
+#define USE_POLOLU          TRUE
 #define USE_PIPES           FALSE
+#define USE_LGPIO           FALSE
+#define USE_RGPIO           FALSE
+#define USE_WAITFOREDGE     FALSE
 #define MAGDATA_VERSION     "0.2.0"
 #define UTCBUFLEN           64
 #define MAXPATHBUFLEN       1025
@@ -60,114 +70,12 @@
 //------------------------------------------
 // Control Parameter List struct
 //------------------------------------------
-/**
- * @struct pList
- * @brief Represents a control list for managing various I2C devices and system parameters.
- *
- * This structure is designed to store information related to various system configuration,
- * device handles, and control parameters needed for I2C-based device communication and processing.
- *
- * The pList struct includes members for maintaining I2C bus configuration, addresses for
- * connected devices, handles for various modules, and parameters for system settings and
- * operational modes.
- *
- * @typedef tag_pList pList
- *
- * @var pList::adapter
- * pololu_i2c_adapter instance that handles I2C communication.
-
- * @var pList::ppsHandle
- * Handle for pulse-per-second (PPS) signal management.
-
- * @var pList::edge_cb_id
- * Identifier for edge callback management.
-
- * @var pList::magHandle
- * Handle for the magnetometer device.
-
- * @var pList::localTempHandle
- * Handle for the local temperature sensor.
-
- * @var pList::remoteTempHandle
- * Handle for the remote temperature sensor.
-
- * @var pList::magnetometerAddr
- * Address of the magnetometer device on the I2C bus.
-
- * @var pList::localTempAddr
- * Address of the local temperature sensor on the I2C bus.
-
- * @var pList::remoteTempAddr
- * Address of the remote temperature sensor on the I2C bus.
-
- * @var pList::doBistMask
- * Mask value for Built-In Self Test (BIST) configuration.
-
- * @var pList::cc_x
- * Coefficient for 'x' component.
-
- * @var pList::cc_y
- * Coefficient for 'y' component.
-
- * @var pList::cc_z
- * Coefficient for 'z' component.
-
- * @var pList::x_gain
- * Gain factor for the x-axis.
-
- * @var pList::y_gain
- * Gain factor for the y-axis.
-
- * @var pList::z_gain
- * Gain factor for the z-axis.
-
- * @var pList::XYZ
- * Array for storing XYZ components, size is 9.
-
- * @var pList::TMRCRate
- * Timer sampling rate.
-
- * @var pList::CMMSampleRate
- * Common Mode Sample Rate.
-
- * @var pList::samplingMode
- * Flag indicating the mode of sampling for sensors.
-
- * @var pList::NOSRegValue
- * Value for the NOS register.
-
- * @var pList::DRDYdelay
- * Delay for Data Ready (DRDY) signal.
-
- * @var pList::readBackCCRegs
- * Flag indicating whether to read back the CC registers.
-
- * @var pList::magRevId
- * Revision ID of the magnetometer device.
-
- * @var pList::i2cBusNumber
- * Identifier for the I2C bus number being utilized.
-
- * @var pList::tsMilliseconds
- * Timestamp value in milliseconds.
-
- * @var pList::Version
- * Pointer to a string representing the version information.
-
- * @var pList::usePipes
- * Flag indicating whether pipes are used.
-
- * @var pList::pipeInPath
- * Path to the input pipe file.
-
- * @var pList::pipeOutPath
- * Path to the output pipe file.
- */
 typedef struct tag_pList
 {
     int fd;
     char *portpath;
-    pololu_i2c_adapter *adapter;
+     pololu_i2c_adapter *adapter;
+//    intadapter;
 
     int ppsHandle;
     unsigned edge_cb_id;
@@ -176,7 +84,7 @@ typedef struct tag_pList
     unsigned localTempHandle;
     unsigned remoteTempHandle;
 
-    int  magnetometerAddr;
+    int  magAddr;
     int  localTempAddr;
     int  remoteTempAddr;
 

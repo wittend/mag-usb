@@ -46,7 +46,7 @@ int i2c_open(pList *p, const char *portpath)
     struct stat sb;
     if(!stat(p->portpath, &sb))
     {
-       pololu_i2c_adapter *pAdapt = &p->adapter;
+       pololu_i2c_adapter *pAdapt = p->adapter;
        return pololu_i2c_connect(pAdapt, p->portpath);
     }
     else
@@ -60,7 +60,7 @@ int i2c_open(pList *p, const char *portpath)
 void i2c_init(pList *p)
 {
 //    pololu_i2c_adapter adapter;
-    pololu_i2c_init(&(p->adapter));
+    pololu_i2c_init(p->adapter);
 }
 
 void i2c_setAddress(pList *p, int devAddr)
@@ -97,19 +97,19 @@ int i2c_reabyte(pList *p, uint8_t reg, uint8_t* buf, short int length)
     return pololu_i2c_read_from(p->adapter, (uint8_t) reg, (uint8_t *) buf, (uint8_t) 1 );
 }
 
-int i2c_writebuf(pList *p, uint8_t reg, char* buffer, short int length)
+int i2c_writebuf(pList *p, uint8_t reg, char* buf, short int length)
 {
-    return pololu_i2c_write_to( (pololu_i2c_adapter *) p->adapter, (uint8_t) reg, (uint8_t *) buffer, (uint8_t) length );
+    return pololu_i2c_write_to(p->adapter, (uint8_t) reg, buf, (uint8_t) length );
 }
 
-int i2c_readbuf(pList *p, uint8_t reg, uint8_t* buf, char *length)
+int i2c_readbuf(pList *p, uint8_t reg, uint8_t *buf, uint8_t length)
 {
 //    return pololu_i2c_read_from( (pololu_i2c_adapter *) p->adapter.fd, (uint8_t) reg, (uint8_t *) buf, (uint8_t) length );
-    return pololu_i2c_read_from(p->adapter, (uint8_t) reg, &buf, (uint8_t) length );
+    return pololu_i2c_read_from(p->adapter, (uint8_t) reg, buf, length );
 }
 
 void i2c_close(pList *p)
 {
-    (void)p->adapter;
-    pololu_i2c_disconnect(p);
+    //p->adapter = -1;
+    pololu_i2c_disconnect(p->adapter);
 }

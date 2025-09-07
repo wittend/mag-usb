@@ -14,6 +14,7 @@
 #include "main.h"
 #include "magdata.h"
 #include "cmdmgr.h"
+#include "rm3100.h"
 
 extern char Version;
 
@@ -71,7 +72,7 @@ void showSettings(pList *p)
 //    fprintf(stdout, "   CMM sample rate:                            %2X (hex)\n",   p->CMMSampleRate);
     fprintf(stdout, "   TMRC reg value:                             %2X (hex)\n",   p->TMRCRate);
     fprintf(stdout, "   Remote temperature address:                 %02X (hex)\n",  p->remoteTempAddr);
-    fprintf(stdout, "   Magnetometer address:                       %02X {hex)\n",  p->magnetometerAddr);
+    fprintf(stdout, "   Magnetometer address:                       %02X {hex)\n",  p->magAddr);
     fprintf(stdout, "\n\n");
 }
 

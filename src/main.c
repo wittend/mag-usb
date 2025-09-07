@@ -10,10 +10,9 @@
 //              with calls to pigpio. 
 //              Also adding callbacks on GPIO27 for PPS rising edge.
 //=========================================================================
-#include "main.h"
-
 #include <linux/limits.h>
-
+#include "main.h"
+#include "rm3100.h"
 #include "i2c.h"
 #include "i2c_pololu.h"
 #include "cmdmgr.h"
@@ -100,7 +99,8 @@ int main(int argc, char** argv)
     }
 
     p->portpath         = portpath;
-    p->adapter          = 0;
+ //   p->adapter          = 0;
+    p->fd               = 0;
     p->ppsHandle        = 0;
     p->magHandle        = 0;
     p->localTempHandle  = 0;
@@ -123,7 +123,7 @@ int main(int argc, char** argv)
     p->magRevId         = 0x0;
     p->i2cBusNumber     = RASPI_I2C_BUS1;
     p->remoteTempAddr   = MCP9808_RMT_I2CADDR_DEFAULT;
-    p->magnetometerAddr = RM3100_I2C_ADDRESS;
+    p->magAddr          = RM3100_I2C_ADDRESS;
     p->usePipes         = USE_PIPES;
     p->pipeInPath       = fifoCtrl;
     p->pipeOutPath      = fifoData;
@@ -423,7 +423,8 @@ int readRemoteTemp(pList *p)
 #endif
 
 //    if((temp = pololu_i2c_read_from((pololu_i2c_adapter *)adapter, p->localTempHandle, MCP9808_REG_AMBIENT_TEMP, data, 2) <= 0))
-    if((temp = i2c_readbuf(p->remoteTempHandle, MCP9808_REG_AMBIENT_TEMP, data, 2) <= 0))
+//    if((temp = i2c_readbuf(p->remoteTempHandle, MCP9808_REG_AMBIENT_TEMP, data, 2) <= 0))
+    if((temp = i2c_readbuf(p, MCP9808_REG_AMBIENT_TEMP, data, 2) <= 0))
     {
         fprintf(OUTPUT_ERROR, "Error : I/O error reading temp sensor at address: [0x%2X].\n", MCP9808_REG_AMBIENT_TEMP);
         showErrorMsg(temp);
@@ -489,7 +490,7 @@ int readMagPOLL(pList *p)
 
     // Tell the sensor that you want to read XYZ data. RM3100I2C_POLLXYZ
     // rv = i2c_write_byte_data(p->pi, p->magHandle, RM3100I2C_XYZ, TRUE);
-    rv = i2c_write(p, p->magHandle,RM3100I2C_XYZ);
+    rv = i2c_write(p, p->remoteTempAddr, RM3100I2C_XYZ, TRUE);
 //    rv = pololu_i2c_write_to( pololu_i2c_adapter *adapter, uint8_t address, const uint8_t *data, uint8_t 1 );
     rv = i2c_readbuf(p, RM3100I2C_XYZ, xyzBuf, 3 );
     if(rv < 0)
@@ -574,7 +575,7 @@ int verifyMagSensor(pList *p)
         //-----------------------------------------
         // Read the version register.
         //-----------------------------------------
-        if((rv = i2c_readbuf(p, p->magHandle, RM3100I2C_REVID, revBuf, 1)) > 0)
+        if((rv = i2c_readbuf(p, RM3100I2C_REVID, revBuf, 1)) > 0)
         {
             p->magRevId = *revBuf;
             if(*revBuf != (uint8_t) RM3100_VER_EXPECTED)
@@ -726,8 +727,8 @@ int setNOSReg(pList *p)
 //---------------------------------------------------------------
 void termGPIO(pList *p)
 {
-    // Knock down all of the pigpio setup here.
-    p->magHandle = i2c_close(p, p->magHandle);
+    // Close the adaptor here.
+    i2c_close(p);
     // p->localTempHandle = i2c_close(p->po, p->localTempHandle);
     // p->remoteTempHandle = i2c_close(p->po, p->remoteTempHandle);
     // rgpiod_stop(p->po);
@@ -783,25 +784,30 @@ int initTempSensors(pList *p)
     return rv;
 }
 
-#if(USE_PIGPIO || USE_PIGPIO_IF2)
 //---------------------------------------------------------------
 // void showErrorMsg(int rv)
 //---------------------------------------------------------------
 void showErrorMsg(int rv)
 {
     char    utcStr[UTCBUFLEN] = "";
-    struct  tm *utcTime = getUTC();  
+    struct  tm *utcTime = getUTC();
     strftime(utcStr, UTCBUFLEN, "%d %b %Y %T", utcTime);
-#if(CONSOLE_OUTPUT)
+
+#if(USE_PIGPIO || USE_PIGPIO_IF2)
+    #if(CONSOLE_OUTPUT)
+        fprintf(OUTPUT_PRINT, "    [Child]: { \"ts\": \"%s\", \"lastError\": \"%s\" }\n", utcStr, lgpio_error(rv));
+        fflush(OUTPUT_PRINT);
+    #else
+        char errstr[MAXPATHBUFLEN] = "";
+        sprintf(errstr, "    [Child]: { \"ts\": \"%s\", \"lastError\": \"%s\" }\n", utcStr, lgpio_error(rv));
+        write(PIPEOUT, errstr);
+    #endif
+#else
     fprintf(OUTPUT_PRINT, "    [Child]: { \"ts\": \"%s\", \"lastError\": \"%s\" }\n", utcStr, lgpio_error(rv));
     fflush(OUTPUT_PRINT);
-#else
-    char errstr[MAXPATHBUFLEN] = "";
-    sprintf(errstr, "    [Child]: { \"ts\": \"%s\", \"lastError\": \"%s\" }\n", utcStr, lgpio_error(rv));
-    write(PIPEOUT, errstr);
+    pololu_i2c_error_string( int error_code )
 #endif
 }
-#endif
 
 //---------------------------------------------------------------
 // void onEdge(void)
