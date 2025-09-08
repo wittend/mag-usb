@@ -28,4 +28,6 @@ int i2c_writebuf(pList *p, uint8_t reg, char* buffer, short int length);
 //int i2c_readbuf(pList *p, uint8_t reg, uint8_t buf, char *length);
 int i2c_readbuf(pList *p, uint8_t reg, uint8_t *buf, uint8_t length);
 void i2c_close(pList *p);
+
+
 #endif //PNIRM3100_I2C_H

@@ -4,17 +4,17 @@
 // commandline / configuration management routines for runMag utility.
 //
 // Author:      David Witten, KD0EAG
-#include <stdio.h>
 // Date:        December 18, 2023
 // License:     GPL 3.0
 // Note:        replaces i2c.c (using file system calls to read(), write(), etc.
 //              with calls to pigpio. 
 //              Also adding callbacks on GPIO27 for PPS rising edge.
 //=========================================================================
+#include <stdio.h>
 #include "main.h"
 #include "magdata.h"
 #include "cmdmgr.h"
-#include "rm3100.h"
+//#include "rm3100.h"
 
 extern char Version;
 
@@ -83,7 +83,7 @@ int getCommandLine(int argc, char** argv, pList *p)
 {
     int c;
 
-    while((c = getopt(argc, argv, "?B:c:CD:g:V")) != -1)
+    while((c = getopt(argc, argv, "?B:c:CD:g:SV")) != -1)
     {
         //int this_option_optind = optind ? optind : 1;
         switch(c)
@@ -97,7 +97,8 @@ int getCommandLine(int argc, char** argv, pList *p)
                 break;
             case 'c':
                 p->cc_x = p->cc_y = p->cc_z = atoi(optarg);
-                if((p->cc_x > CC_800) || (p->cc_x <= 0))
+                //if((p->cc_x > CC_800) || (p->cc_x <= 0))
+                if((p->cc_x > 0x320) || (p->cc_x <= 0))
                 {
                     fprintf(stderr, "\n ERROR Invalid: cycle count > 800 (dec) or cycle count  <= 0.\n\n");
                     exit(1);
@@ -110,6 +111,8 @@ int getCommandLine(int argc, char** argv, pList *p)
             case 'g':
                 p->samplingMode = atoi(optarg);
                 break;
+            case 'S':
+                p->scanI2CBUS = TRUE;
             case 'V':
                 fprintf(stdout, "\nVersion: %s\n", p->Version);
                 exit(0);

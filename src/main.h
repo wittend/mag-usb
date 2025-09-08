@@ -75,7 +75,8 @@ typedef struct tag_pList
     int fd;
     char *portpath;
      pololu_i2c_adapter *adapter;
-//    intadapter;
+
+    int scanI2CBUS;
 
     int ppsHandle;
     unsigned edge_cb_id;

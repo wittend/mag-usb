@@ -279,7 +279,8 @@ const uint8_t RM3100I2C_TMRC   =  0x0B;
 
 // MX     |      24 – 26     |  R       | 000000        |    Uint24      | Measurement Results – X Axis
 //#define RM3100I2C_XYZ       0x24
-const uint8_t RM3100I2C_XYZ[3] =  {0x24, 0x25, 0x26};
+//const uint8_t RM3100I2C_XYZ[3] =  {0x24, 0x25, 0x26};
+const uint8_t RM3100I2C_XYZ =  0x24;
 
 // #define RM3100I2C_MX        0x24
 // #define RM3100I2C_MX_2      0x24

@@ -100,6 +100,9 @@ int main(int argc, char** argv)
 
     p->portpath         = portpath;
  //   p->adapter          = 0;
+
+    p->scanI2CBUS       =  FALSE;
+
     p->fd               = 0;
     p->ppsHandle        = 0;
     p->magHandle        = 0;
@@ -181,6 +184,14 @@ int main(int argc, char** argv)
 
     i2c_init(p);
     i2c_open(p, portpath);
+
+    if(p->scanI2CBUS)
+    {
+        int max_devices = 128;
+        uint8_t found_addresses[max_devices];
+        pololu_i2c_scan(p->adapter, found_addresses, max_devices );
+        exit(0);
+    }
 
     //-----------------------------------------
     //  Verify the Mag sensor presence and Version.
@@ -490,7 +501,7 @@ int readMagPOLL(pList *p)
 
     // Tell the sensor that you want to read XYZ data. RM3100I2C_POLLXYZ
     // rv = i2c_write_byte_data(p->pi, p->magHandle, RM3100I2C_XYZ, TRUE);
-    rv = i2c_write(p, p->remoteTempAddr, RM3100I2C_XYZ, TRUE);
+    rv = i2c_write(p, RM3100I2C_MX, 1);
 //    rv = pololu_i2c_write_to( pololu_i2c_adapter *adapter, uint8_t address, const uint8_t *data, uint8_t 1 );
     rv = i2c_readbuf(p, RM3100I2C_XYZ, xyzBuf, 3 );
     if(rv < 0)
@@ -749,7 +760,7 @@ int initMagSensor(pList *p)
     // Setup the Mag sensor register initial state here.
     if(p->samplingMode == POLL)                                         // (p->samplingMode == POLL [default])
     {
-        if((rv = i2c_writebyte(p, p->magHandle, RM3100_MAG_POLL, TRUE)) != 0)
+        if((rv = i2c_writebyte(p, RM3100_MAG_POLL, 0, 1)) != 0)
         {
             showErrorMsg(rv);
 #if(_DEBUG)
@@ -761,7 +772,7 @@ int initMagSensor(pList *p)
     }
     else
     {
-        if((rv = i2c_writebyte(p, p->magHandle, RM3100I2C_CMM, TRUE)) != 0)
+        if((rv = i2c_writebyte(p, RM3100I2C_CMM, 0, 1)) != 0)
         {
             showErrorMsg(rv);
 #if(_DEBUG)
@@ -803,9 +814,9 @@ void showErrorMsg(int rv)
         write(PIPEOUT, errstr);
     #endif
 #else
-    fprintf(OUTPUT_PRINT, "    [Child]: { \"ts\": \"%s\", \"lastError\": \"%s\" }\n", utcStr, lgpio_error(rv));
+    fprintf(OUTPUT_PRINT, "    [Child]: { \"ts\": \"%s\", \"lastError\": \"%s\" }\n", utcStr,  pololu_i2c_error_string(rv));
     fflush(OUTPUT_PRINT);
-    pololu_i2c_error_string( int error_code )
+
 #endif
 }
 
