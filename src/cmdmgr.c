@@ -61,7 +61,7 @@ void showSettings(pList *p)
     fprintf(stdout, "   Input file path:                            %s\n",          p->pipeInPath);
     fprintf(stdout, "   Output file path:                           %s\n",          p->pipeOutPath);
 #endif
-    fprintf(stdout, "   I2C bus number as integer:                  %i (dec)\n",    p->i2cBusNumber);
+    // fprintf(stdout, "   I2C bus number as integer:                  %i (dec)\n",    p->i2cBusNumber);
     fprintf(stdout, "   I2C bus path as string:                     %s\n",          pathStr);
     fprintf(stdout, "   Built in self test (BIST) value:            %02X (hex)\n",  p->doBistMask);
     fprintf(stdout, "   Device sampling mode:                       %s\n",          p->samplingMode     ? "CONTINUOUS" : "POLL");
@@ -125,6 +125,7 @@ int getCommandLine(int argc, char** argv, pList *p)
                 fprintf(stdout, "   -c <count>             :  Set cycle counts as integer.          [ default 200 decimal]\n");
                 fprintf(stdout, "   -D <rate>              :  Set magnetometer sample rate.         [ TMRC reg 96 hex default ].\n");
                 fprintf(stdout, "   -g <mode>              :  Device sampling mode.                 [ POLL=0 (default), CONTINUOUS=1 ]\n");
+                fprintf(stdout, "   -S                     :  List devices seen on i2c bus and exit.\n");
                 fprintf(stdout, "   -V                     :  Display software version and exit.\n");
                 fprintf(stdout, "   -h or -?               :  Display this help.\n\n");
                 return 1;
