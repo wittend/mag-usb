@@ -14,10 +14,10 @@
 #define SWX3100MAIN_h
 
 #include <stdint.h>
+#include <sys/types.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <inttypes.h>
-#include <sys/types.h>
 #include <string.h>
 #include <unistd.h>
 #include <signal.h>
@@ -25,43 +25,59 @@
 #include <sys/stat.h>
 #include <time.h>
 #include <sys/time.h>
-
-// #include "src/interface.h"      // defines the I2C interface to be used.
-// #include "i2c.h"
-#include "i2c_pololu.h"
-//#include "rm3100.h"
 #include "MCP9808.h"
+
 #ifndef TRUE
-#define TRUE  1
+    #define TRUE  1
 #endif
 #ifndef FALSE
-#define FALSE 0
+    #define FALSE 0
 #endif
 
 //------------------------------------------
 // Debugging output
 //------------------------------------------
-#define _DEBUG          FALSE
 #define CONSOLE_OUTPUT  TRUE
 
 //------------------------------------------
-// Pi related stuff
+// Pi specific stuff
 //------------------------------------------
-#define USE_WAITFOREDGE FALSE
-#define FOR_GRAPE2      FALSE
-#define PPS_TIMEOUTSECS 2.0
+#define USE_WAITFOREDGE     FALSE
+#define FOR_GRAPE2          FALSE
+
+//------------------------------------------
+// ic stuff
+//------------------------------------------
+#define USE_PIGPIO          FALSE
+#define USE_LGPIO           FALSE
+#define USE_RGPIO           FALSE
+#define USE_POLOLU          TRUE
+
+#if(USE_PIGPIO)
+    #include "pigpio.h"
+#endif
+#if(USE_LGPIO)
+    #include "lgpio.h"
+#endif
+#if(USE_POLOLU)
+    #include "i2c_pololu.h"
+#endif
+#if(USE_RGPIO)
+    #include "rgpio.h"
+#endif
+#if(USE_POLOLU)
+    #include "i2c_pololu.h"
+#endif
+
 
 //------------------------------------------
 // Macros and runtime options.
 //------------------------------------------
-#define OUTPUT_PRINT    stdout
-#define OUTPUT_ERROR    stderr
+#define OUTPUT_PRINT        stdout
+#define OUTPUT_ERROR        stderr
+#define PPS_TIMEOUTSECS     2.0
 
-#define USE_POLOLU          TRUE
 #define USE_PIPES           FALSE
-#define USE_LGPIO           FALSE
-#define USE_RGPIO           FALSE
-#define USE_WAITFOREDGE     FALSE
 #define MAGDATA_VERSION     "0.2.0"
 #define UTCBUFLEN           64
 #define MAXPATHBUFLEN       1025
@@ -74,8 +90,9 @@ typedef struct tag_pList
 {
     int fd;
     char *portpath;
-     pololu_i2c_adapter *adapter;
-
+#if(USE_POLOLU)
+    pololu_i2c_adapter *adapter;
+#endif
     int scanI2CBUS;
 
     int ppsHandle;
@@ -113,15 +130,15 @@ typedef struct tag_pList
     int  readBackCCRegs;
     uint8_t magRevId;
 
+#if(!USE_POLOLU)
     int  i2cBusNumber;
-
+#endif
     int  tsMilliseconds;
     char *Version;
     int  usePipes;
     char *pipeInPath;
     char *pipeOutPath;
 } pList;
-
 
 //------------------------------------------
 // Prototypes
@@ -141,8 +158,6 @@ int  readRemoteTemp(pList *p);
 int  readMagPOLL(pList *p);
 
 void showErrorMsg(int temp);
-
-//void showPIGPIOErrMsg(int rv);
 
 #endif //SWX3100MAIN_h
 

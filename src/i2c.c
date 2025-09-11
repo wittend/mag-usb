@@ -51,7 +51,9 @@ int i2c_open(pList *p, const char *portpath)
     }
     else
     {
-        perror("stat");
+        char errstr[1024]= "";
+        sprintf(errstr, "Failed to open port %s. Exiting.", p->portpath);
+        perror(errstr);
         exit(EXIT_FAILURE);
     }
 }

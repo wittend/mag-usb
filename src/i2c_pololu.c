@@ -326,8 +326,8 @@ int pololu_i2c_scan(pololu_i2c_adapter *adapter, uint8_t *found_addresses, int m
         return -1;
     }
 
-    uint8_t cmd_bytes[128 * 3];
-    for(int i = 0; i < 128; ++i)
+    uint8_t cmd_bytes[max_devices * 3];
+    for(int i = 0; i < max_devices; ++i)
     {
         cmd_bytes[i * 3] = 0x91; // write_to
         cmd_bytes[i * 3 + 1] = i; // address
@@ -373,7 +373,7 @@ int pololu_i2c_scan(pololu_i2c_adapter *adapter, uint8_t *found_addresses, int m
             fprintf(stderr, "Unexpected error when scanning address %d: error code %d.\n", i, responses[i]);
         }
     }
-    return found_count;
+   return found_count;
 }
 
 const char *pololu_i2c_error_string(int error_code)
