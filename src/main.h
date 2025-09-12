@@ -26,6 +26,7 @@
 #include <time.h>
 #include <sys/time.h>
 #include "MCP9808.h"
+//#include "rm3100.h"
 
 #ifndef TRUE
     #define TRUE  1
@@ -53,6 +54,8 @@
 #define USE_RGPIO           FALSE
 #define USE_POLOLU          TRUE
 
+#define USE_PIPES           FALSE
+
 #if(USE_PIGPIO)
     #include "pigpio.h"
 #endif
@@ -69,7 +72,6 @@
     #include "i2c_pololu.h"
 #endif
 
-
 //------------------------------------------
 // Macros and runtime options.
 //------------------------------------------
@@ -77,7 +79,6 @@
 #define OUTPUT_ERROR        stderr
 #define PPS_TIMEOUTSECS     2.0
 
-#define USE_PIPES           FALSE
 #define MAGDATA_VERSION     "0.2.0"
 #define UTCBUFLEN           64
 #define MAXPATHBUFLEN       1025
@@ -145,18 +146,16 @@ typedef struct tag_pList
 //------------------------------------------
 int  main(int argc, char** argv);
 void onEdge(void);
-char *formatOutput(pList *p, char *outBuf);
-// int  initGPIO(volatile pList *p);
-// void termGPIO(volatile pList *p);
+char *formatOutput(pList *p);
 int  verifyMagSensor(pList *p);
 int  initMagSensor(pList *p);
 int  initTempSensors(pList *p);
-
 int  readLocalTemp(pList *p);
 int  readRemoteTemp(pList *p);
 //int  readMagCMM(volatile pList *p);
 int  readMagPOLL(pList *p);
 
+struct tm *getUTC();
 void showErrorMsg(int temp);
 
 #endif //SWX3100MAIN_h

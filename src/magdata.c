@@ -14,17 +14,123 @@
 //#include "main.h"
 #include "main.h"
 #include "magdata.h"
+#include "i2c.h"
+//#include "rm3100.h"
+//#include "rm3100.h"
 
 //------------------------------------------
 // Static variables
 //------------------------------------------
 // static char  mSamples[9];
-// extern char *version;
+extern char *Version;
 //#if(USE_PIPES)
 //char outputPipeName[MAXPATHBUFLEN]  = "/home/web/wsroot/pipein.fifo";
 //char inputPipeName[MAXPATHBUFLEN]   = "/home/web/wsroot/pipeout.fifo";
 //#endif
+
+
+
+// //---------------------------------------------------------------
+// // void initGPIO(pList *p)
+// //---------------------------------------------------------------
+// int initGPIO(volatile pList *p)// {
 //
+// #if __DEBUG
+//     fprintf(OUTPUT_PRINT, "    [CHILD]: In initGPIO(pList *p) before: pigpio_start()...\n");
+//     fflush(OUTPUT_PRINT);
+// #endif
+//
+// #if( USE_RGPIO || USE_LGPIO || USE_PIGPIO_IF2)
+//     //-----------------------------------------
+//     // Try to connect to pigpio daemon.
+//     //-----------------------------------------
+//     #if(USE_RGPIO)
+//         if((p->po = rgpiod_start(NULL, NULL)) >= 0)
+//     #elif (USE_LGPIO || USE_PIGPIO_IF2)
+//         if((p->po = pigpio_start(NULL, NULL)) >= 0)
+//     #endif
+//         {
+//     #if __DEBUG
+//             fprintf(OUTPUT_PRINT, "    [CHILD] pigpio_start() OK, returns handle %i...\n", p->po);
+//             fflush(OUTPUT_PRINT);
+//     #endif
+//         }
+//         else
+//         {
+//     #if __DEBUG
+//             showErrorMsg(p->po);
+//             fprintf(OUTPUT_PRINT, "    [CHILD] pigpio_start() FAIL, returns: %i...\n", p->po);
+//             fflush(OUTPUT_PRINT);
+// #endif
+//             return -1;
+//         }
+// #endif
+//
+//
+//     //-----------------------------------------
+//     // Register the Magnetometer address.
+//     //-----------------------------------------
+//     if((p->magHandle = i2c_open(p, (unsigned) RASPI_I2C_BUS1, (unsigned) RM3100_I2C_ADDRESS, (unsigned) 0)) >= 0)
+//     {
+// #if __DEBUG
+//         showErrorMsg(p->magHandle);
+//         fprintf(OUTPUT_PRINT, "    [CHILD] i2c_open(RM3100) OK. Handle: %i\n", p->magHandle );
+//         fflush(OUTPUT_PRINT);
+// #endif
+//     }
+//     else
+//     {
+// #if __DEBUG
+//         showErrorMsg(p->magHandle);
+//         fprintf(OUTPUT_PRINT, "    [CHILD] i2c_open(RM3100) FAIL. Handle: %i\n", p->magHandle );
+//         fflush(OUTPUT_PRINT);
+// #endif
+//         fflush(OUTPUT_PRINT);
+//         return -1;
+//     }
+//
+//     //-----------------------------------------
+//     // Register the Local Temp Sensor address.
+//     //-----------------------------------------
+//     if((p->localTempHandle = i2c_open(p, (unsigned) RASPI_I2C_BUS1, (unsigned) MCP9808_LCL_I2CADDR_DEFAULT, (unsigned) 0) >= 0))
+//     {
+// #if __DEBUG
+//         fprintf(OUTPUT_PRINT, "    [CHILD] i2c_open(MCP9808) OK. Handle: %i\n", p->localTempHandle );
+//         fflush(OUTPUT_PRINT);
+// #endif
+//     }
+//     else
+//     {
+// #if __DEBUG
+//         fprintf(OUTPUT_PRINT, "    [CHILD] i2c_open(MCP9808) FAIL. Handle: %i\n", p->localTempHandle );
+//         fflush(OUTPUT_PRINT);
+// #endif
+//         showErrorMsg(p->localTempHandle);
+//         return -1;
+//     }
+//
+//     //-----------------------------------------
+//     // Register the Remote Temp Sensor address.
+//     //-----------------------------------------
+//     if((p->remoteTempHandle = i2c_open(p, (unsigned) RASPI_I2C_BUS1, (unsigned) MCP9808_RMT_I2CADDR_DEFAULT, (unsigned) 0) >= 0))
+//     {
+// #if __DEBUG
+//         fprintf(OUTPUT_PRINT, "    [CHILD] i2c_open(MCP9808) OK. Handle: %i\n", p->remoteTempHandle );
+//         fflush(OUTPUT_PRINT);
+// #endif
+//     }
+//     else
+//     {
+// #if __DEBUG
+//         fprintf(OUTPUT_PRINT, "    [CHILD] i2c_open(MCP9808) FAIL. Handle: %i\n", p->remoteTempHandle );
+//         fflush(OUTPUT_PRINT);
+// #endif
+//         showErrorMsg(p->remoteTempHandle);
+//         return -1;
+//     }
+//     return p;
+// }
+
 ////------------------------------------------
 //// readTemp(pList *p)
 ////------------------------------------------
@@ -49,7 +155,7 @@
 ////    }
 //    return temp;
 //}
-//
+
 ////------------------------------------------
 //// readMagCMM()
 ////------------------------------------------
@@ -82,7 +188,7 @@
 //
 //    return bytes_read;
 //}
-//
+
 ////------------------------------------------
 //// readMagPOLL()
 ////------------------------------------------
@@ -123,7 +229,8 @@
 //
 //    return bytes_read;
 //}
-//
+
+
 ////------------------------------------------
 //// openI2CBus()
 ////------------------------------------------
@@ -141,7 +248,7 @@
 //    }
 //    return p->pi;
 //}
-//
+
 ////--------------------------------------------------------------------
 //// closeI2CBus()
 ////
@@ -152,7 +259,6 @@
 //    close(pi);
 //}
 
-//
 ////------------------------------------------
 //// setNOSReg()
 ////------------------------------------------
@@ -228,7 +334,7 @@ unsigned short getMagSampleRate(pList *p)
 ////    }
 //    return p->magRevId;
 //}
-//
+
 ////------------------------------------------
 //// setup_mag()
 ////------------------------------------------
@@ -254,6 +360,58 @@ unsigned short getMagSampleRate(pList *p)
 //    usleep(100000);                           // delay to help monitor DRDY pin on eval board
 //    return rv;
 //}
+
+//---------------------------------------------------------------
+// void termGPIO(volatile pList p)
+//---------------------------------------------------------------
+void termGPIO(pList *p)
+{
+    // Close the adaptor here.
+    i2c_close(p);
+    // p->localTempHandle = i2c_close(p->po, p->localTempHandle);
+    // p->remoteTempHandle = i2c_close(p->po, p->remoteTempHandle);
+    // rgpiod_stop(p->po);
+
+#if(__DEBUG)
+    fprintf(OUTPUT_PRINT, "    [Child]: termGPIO(pList p)...\n");
+    fflush(OUTPUT_PRINT);
+#endif
+}
+
+//---------------------------------------------------------------
+// void showErrorMsg(int rv)
+//---------------------------------------------------------------
+void showErrorMsg(int rv)
+{
+    char    utcStr[UTCBUFLEN] = "";
+    struct  tm *utcTime = getUTC();
+    strftime(utcStr, UTCBUFLEN, "%d %b %Y %T", utcTime);
+
+#if(USE_PIGPIO || USE_PIGPIO_IF2)
+    #if(CONSOLE_OUTPUT)
+        fprintf(OUTPUT_PRINT, "    [Child]: { \"ts\": \"%s\", \"lastError\": \"%s\" }\n", utcStr, lgpio_error(rv));
+        fflush(OUTPUT_PRINT);
+    #else
+        char errstr[MAXPATHBUFLEN] = "";
+        sprintf(errstr, "    [Child]: { \"ts\": \"%s\", \"lastError\": \"%s\" }\n", utcStr, lgpio_error(rv));
+        write(PIPEOUT, errstr);
+    #endif
+#else
+    fprintf(OUTPUT_PRINT, "    [Child]: { \"ts\": \"%s\", \"lastError\": \"%s\" }\n", utcStr,  pololu_i2c_error_string(rv));
+    fflush(OUTPUT_PRINT);
+#endif
+}
+//------------------------------------------
+// setNOSReg(volatile pList *p)
+//------------------------------------------
+int setNOSReg(pList *p)
+{
+    int rv = 0;
+    //#if __DEBUG
+    //    fprintf(OUTPUT_PRINT, "    [Child]: In setNOSReg():: Setting undocumented NOS register to value: %2X\n", p->NOSRegValue);
+    //#endif
+    return rv;
+}
 
 //------------------------------------------
 // runBIST()

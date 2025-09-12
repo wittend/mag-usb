@@ -14,7 +14,7 @@
 #define SWX3100CMDMGR_h
 
 //#include "magdata.h"
-#include "main.h"
+//#include "main.h"
 
 //------------------------------------------
 // Prototypes
