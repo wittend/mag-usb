@@ -47,10 +47,6 @@ char portpath[PATH_MAX] = "/dev/ttyACM0";          // default path for pololu i2
     char fifoCtrl[] = "/home/pi/PSWS/Sstat/magctl.fifo";
     char fifoData[] = "/home/pi/PSWS/Sstat/magdata.fifo";
     char fifoHome[] = "/run/user/";
-    // char fifoCtrl[PATH_MAX] = "";
-    // char fifoData[PATH_MAX] = "";
-    // sprintf(fifoCtrl, "%s%d%s", fifoHome, getuid(), "/magctl.fifo");
-    // sprintf(fifoData, "%s%d%s", fifoHome, getuid(), "/magdata.fifo");
     int PIPEIN  = -1;
     int PIPEOUT = -1;
 #endif //USE_PIPES
@@ -241,7 +237,7 @@ int main(int argc, char** argv)
         {
             fprintf(stderr, "An error occurred during the I2C scan: %s\n", pololu_i2c_error_string(device_count));
         }
-        exit(0);
+//        exit(0);
     }
 #endif
 

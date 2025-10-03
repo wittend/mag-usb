@@ -35,7 +35,7 @@
 #include <sys/stat.h>
 #include "main.h"
 #include "i2c.h"
-#include "i2c_pololu.h" // your Pololu API headers
+#include "i2c-pololu.h" // your Pololu API headers
 
 // int pololu_i2c_write_to( pololu_i2c_adapter *adapter, uint8_t address, const uint8_t *data, uint8_t size );
 // int pololu_i2c_read_from( pololu_i2c_adapter *adapter, uint8_t address, uint8_t *data, uint8_t size );
@@ -107,7 +107,7 @@ int i2c_writebuf(pList *p, uint8_t reg, char* buf, short int length)
 int i2c_readbuf(pList *p, uint8_t reg, uint8_t *buf, uint8_t length)
 {
 //    return pololu_i2c_read_from( (pololu_i2c_adapter *) p->adapter.fd, (uint8_t) reg, (uint8_t *) buf, (uint8_t) length );
-    return pololu_i2c_read_from(p->adapter, (uint8_t) reg, buf, length );
+    return pololu_i2c_read_from(p->adapter, (uint8_t) reg, (uint8_t *) buf, (uint8_t) length );
 }
 
 void i2c_close(pList *p)

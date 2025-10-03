@@ -1,2 +1,0 @@
-udevadm info -q all -a -n /dev/ttyACM0
-

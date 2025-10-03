@@ -1,13 +1,13 @@
 //
 // Created by dave on 7/17/25.
 //
-#include "i2c_pololu.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <termios.h>
+#include "i2c-pololu.h"
 
 // Helper function to check for response errors
 static int check_response( const uint8_t *response, size_t expected_len, size_t actual_len )
@@ -24,7 +24,7 @@ static int check_response( const uint8_t *response, size_t expected_len, size_t 
     return 0; // Success
 }
 
-void pololu_i2c_init( pololu_i2c_adapter *adapter )
+void i2c_pololu_init( i2c_pololu_adapter *adapter )
 {
     if(adapter)
     {
@@ -32,20 +32,18 @@ void pololu_i2c_init( pololu_i2c_adapter *adapter )
     }
 }
 
-int pololu_i2c_connect( pololu_i2c_adapter *adapter, const char *port_name )
+int i2c_pololu_connect( i2c_pololu_adapter *adapter, const char *port_name )
 {
     if(!adapter || !port_name)
     {
         return -1;
     }
-
     adapter->fd = open(port_name, O_RDWR | O_NOCTTY);
     if(adapter->fd < 0)
     {
         perror("Error opening serial port");
         return -1;
     }
-
     struct termios tty;
     memset(&tty, 0, sizeof tty);
     if(tcgetattr(adapter->fd, &tty) != 0)
@@ -55,7 +53,6 @@ int pololu_i2c_connect( pololu_i2c_adapter *adapter, const char *port_name )
         adapter->fd = -1;
         return -1;
     }
-
     cfsetospeed(&tty, B115200);
     cfsetispeed(&tty, B115200);
     // cfsetospeed(&tty, B38400);
@@ -83,11 +80,10 @@ int pololu_i2c_connect( pololu_i2c_adapter *adapter, const char *port_name )
     }
     // Discard old received data
     tcflush(adapter->fd, TCIFLUSH);
-
     return 0;
 }
 
-void pololu_i2c_disconnect( pololu_i2c_adapter *adapter )
+void i2c_pololu_disconnect( i2c_pololu_adapter *adapter )
 {
     if(adapter && adapter->fd >= 0)
     {
@@ -96,14 +92,14 @@ void pololu_i2c_disconnect( pololu_i2c_adapter *adapter )
     }
 }
 
-bool pololu_i2c_is_connected( const pololu_i2c_adapter *adapter )
+bool i2c_pololu_is_connected( const i2c_pololu_adapter *adapter )
 {
     return adapter && adapter->fd >= 0;
 }
 
-int pololu_i2c_write_to( pololu_i2c_adapter *adapter, uint8_t address, const uint8_t *data, uint8_t size )
+int i2c_pololu_write_to( i2c_pololu_adapter *adapter, uint8_t address, uint8_t reg, const uint8_t *data, uint8_t size )
 {
-    if(!pololu_i2c_is_connected(adapter))
+    if(!i2c_pololu_is_connected(adapter))
     {
         return -1;
     }
@@ -113,16 +109,16 @@ int pololu_i2c_write_to( pololu_i2c_adapter *adapter, uint8_t address, const uin
     }
 
     uint8_t cmd[258];
-    cmd[0] = 0x91;
+    cmd[0] = CMD_I2C_WRITE;
     cmd[1] = address;
-    cmd[2] = size;
-    memcpy(&cmd[3], data, size);
-    if(write(adapter->fd, cmd, size + 3) != size + 3)
+    cmd[2] = 1 + size;  // Length includes register byte + data
+    cmd[3] = reg;
+    memcpy(&cmd[4], data, size);
+    if(write(adapter->fd, cmd, size + 4) != size + 4)
     {
         perror("Failed to write to adapter");
         return -1;
     }
-
     uint8_t response[1];
     ssize_t len = read(adapter->fd, response, 1);
     int error = check_response(response, 1, len);
@@ -134,9 +130,68 @@ int pololu_i2c_write_to( pololu_i2c_adapter *adapter, uint8_t address, const uin
     return size;
 }
 
-int pololu_i2c_read_from( pololu_i2c_adapter *adapter, uint8_t address, uint8_t *data, uint8_t size )
+int i2c_pololu_read_from( i2c_pololu_adapter *adapter, uint8_t address, uint8_t reg, uint8_t *data, uint8_t size )
 {
-    if(!pololu_i2c_is_connected(adapter))
+    if(!i2c_pololu_is_connected(adapter))
+    {
+        return -1;
+    }
+    if(size > 255)
+    {
+        return -1;
+    }
+    
+    // First, write the register address to the device
+    uint8_t write_cmd[4];
+    write_cmd[0] = CMD_I2C_WRITE;
+    write_cmd[1] = address;
+    write_cmd[2] = 1;  // Writing 1 byte (the register address)
+    write_cmd[3] = reg;
+    
+    if(write(adapter->fd, write_cmd, 4) != 4)
+    {
+        perror("Failed to write register address to adapter");
+        return -1;
+    }
+    
+    // Read the write response
+    uint8_t write_response[1];
+    ssize_t len = read(adapter->fd, write_response, 1);
+    int error = check_response(write_response, 1, len);
+    if(error)
+    {
+        fprintf(stderr, "Error writing register address: %s\n", i2c_pololu_error_string(error));
+        return error;
+    }
+    
+    // Now read from the device
+    uint8_t read_cmd[3];
+    read_cmd[0] = CMD_I2C_READ;
+    read_cmd[1] = address;
+    read_cmd[2] = size;
+
+    if(write(adapter->fd, read_cmd, 3) != 3)
+    {
+        perror("Failed to write read command to adapter");
+        return -1;
+    }
+
+    uint8_t response[256];
+    len = read(adapter->fd, response, 1 + size);  // Error byte + data
+    error = check_response(response, 1 + size, len);
+    if(error)
+    {
+        fprintf(stderr, "Error reading from device: %s\n", i2c_pololu_error_string(error));
+        return error;
+    }
+    
+    memcpy(data, &response[1], size);  // Skip error byte, copy data
+    return size;
+}
+
+int i2c_pololu_write_and_read_from( i2c_pololu_adapter *adapter, uint8_t address, uint8_t reg, uint8_t *data, uint8_t size )
+{
+    if(!i2c_pololu_is_connected(adapter))
     {
         return -1;
     }
@@ -145,63 +200,79 @@ int pololu_i2c_read_from( pololu_i2c_adapter *adapter, uint8_t address, uint8_t 
         return -1;
     }
 
-    uint8_t cmd[] = { 0x92, address, size };
-    if(write(adapter->fd, cmd, 3) != 3)
+    uint8_t cmd[258];
+    cmd[0] = CMD_I2C_WRITE_AND_READ;
+    cmd[1] = address;
+    cmd[2] = 1;  // Write 1 byte (register address)
+    cmd[3] = size;  // Read 'size' bytes
+    cmd[4] = reg;  // Register to read from
+
+    if(write(adapter->fd, cmd, 5) != 5)
     {
         perror("Failed to write to adapter");
         return -1;
     }
-
+    
     uint8_t response[256];
-    ssize_t len = read(adapter->fd, response, 1 + size);
+    ssize_t len = read(adapter->fd, response, 1 + size);  // Error byte + data
     int error = check_response(response, 1 + size, len);
     if(error)
     {
+        fprintf(stderr, "Error in write-and-read: %s\n", i2c_pololu_error_string(error));
         return error;
     }
-    memcpy(data, &response[1], size);
+    
+    memcpy(data, &response[1], size);  // Skip error byte, copy data
     return size;
 }
 
+/*
 // Set I²C mode
 int pololu_set_i2c_mode(int mode)
 {
-    return 0;
+   uint8_t cmd[] = { CMD_I2C_READ, address, size };
+   return 0;
 }
 
 // Set I²C timeout
 int pololu_set_i2c_timeout()
 {
+    uint8_t cmd[] = { CMD_I2C_READ, address, size };
     return 0;
 }
 
 // Set STM32 timing
 int pololu_set_STM32_timing()
 {
+    uint8_t cmd[] = { CMD_I2C_READ, address, size };
     return 0;
 }
 
 // Digital read
 int pololu_digital_read()
 {
+    uint8_t cmd[] = { CMD_I2C_READ, address, size };
     return 0;
 }
 
 // Enable VCC Out
 int pololu_enable_VCC_out()
 {
+    uint8_t cmd[] = { CMD_I2C_READ, address, size };
     return 0;
 }
 
 // Get device info
 int pololu_get_device_info()
 {
-    return 0;
+     uint8_t cmd[] = { CMD_I2C_READ, address, size };
+   return 0;
 }
+*/
 
-int pololu_i2c_set_frequency( pololu_i2c_adapter *adapter, unsigned int frequency_khz )
+int i2c_pololu_set_frequency( i2c_pololu_adapter *adapter, unsigned int frequency_khz )
 {
-    if(!pololu_i2c_is_connected(adapter))
+    if(!i2c_pololu_is_connected(adapter))
     {
         return -1;
     }
@@ -224,7 +295,7 @@ int pololu_i2c_set_frequency( pololu_i2c_adapter *adapter, unsigned int frequenc
         mode = I2C_10_KHZ;
     }
 
-    uint8_t cmd[] = { 0x94, mode };
+    uint8_t cmd[] = { CMD_SET_I2C_MODE, mode };
     if(write(adapter->fd, cmd, 2) != 2)
     {
         perror("Failed to set frequency");
@@ -233,13 +304,13 @@ int pololu_i2c_set_frequency( pololu_i2c_adapter *adapter, unsigned int frequenc
     return 0;
 }
 
-int pololu_i2c_clear_bus( pololu_i2c_adapter *adapter )
+int i2c_pololu_clear_bus( i2c_pololu_adapter *adapter )
 {
-    if(!pololu_i2c_is_connected(adapter))
+    if(!i2c_pololu_is_connected(adapter))
     {
         return -1;
     }
-    uint8_t cmd = 0x98;
+    uint8_t cmd = CMD_CLEAR_BUS;
     if(write(adapter->fd, &cmd, 1) != 1)
     {
         perror("Failed to clear bus");
@@ -248,13 +319,13 @@ int pololu_i2c_clear_bus( pololu_i2c_adapter *adapter )
     return 0;
 }
 
-int pololu_i2c_get_device_info( pololu_i2c_adapter *adapter, pololu_i2c_device_info *info )
+int i2c_pololu_get_device_info( i2c_pololu_adapter *adapter, i2c_pololu_device_info *info )
 {
-    if(!pololu_i2c_is_connected(adapter) || !info)
+    if(!i2c_pololu_is_connected(adapter) || !info)
     {
         return -1;
     }
-    uint8_t cmd = 0xA7;
+    uint8_t cmd = CMD_GET_DEVICE_INFO;
     if(write(adapter->fd, &cmd, 1) != 1)
     {
         perror("Failed to request device info");
@@ -319,15 +390,15 @@ int pololu_i2c_get_device_info( pololu_i2c_adapter *adapter, pololu_i2c_device_i
     return 0;
 }
 
-int pololu_i2c_scan(pololu_i2c_adapter *adapter, uint8_t *found_addresses, int max_devices)
+int i2c_pololu_scan( i2c_pololu_adapter *adapter, uint8_t *found_addresses, int max_devices )
 {
-    if(!pololu_i2c_is_connected(adapter) || !found_addresses || max_devices <= 0)
+    if(!i2c_pololu_is_connected(adapter) || !found_addresses || max_devices <= 0)
     {
         return -1;
     }
 
-    uint8_t cmd_bytes[max_devices * 3];
-    for(int i = 0; i < max_devices; ++i)
+    uint8_t cmd_bytes[128 * 3];
+    for(int i = 0; i < 128; ++i)
     {
         cmd_bytes[i * 3] = 0x91; // write_to
         cmd_bytes[i * 3 + 1] = i; // address
@@ -373,10 +444,10 @@ int pololu_i2c_scan(pololu_i2c_adapter *adapter, uint8_t *found_addresses, int m
             fprintf(stderr, "Unexpected error when scanning address %d: error code %d.\n", i, responses[i]);
         }
     }
-   return found_count;
+    return found_count;
 }
 
-const char *pololu_i2c_error_string(int error_code)
+const char *i2c_pololu_error_string( int error_code )
 {
     // Make sure we are looking at a positive error code
     if(error_code < 0)

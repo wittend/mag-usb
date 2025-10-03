@@ -229,7 +229,6 @@ const uint8_t RM3100_I2C_ADDRESS_8bit   = 0x20 << 1; // MBED uses 8 bit address
 //-------------------------------------------
 // Value of the MagI2C Version expected
 //-------------------------------------------
-// #define RM3100_VER_EXPECTED     0x22
 const uint8_t RM3100_VER_EXPECTED = 0x22;
 
 //-------------------------------------------
@@ -328,6 +327,7 @@ const uint8_t RM3100I2C_HSHAKE  =  0x35;
 
 // REVID  |      36          |  R       |       --      |    Unit8       | MagI2C Revision Identification
 // #define RM3100I2C_HSHAKE    0x35
+
 const uint8_t RM3100I2C_REVID   =  0x36;
 
 // #define RM3100I2C_READMASK  0x80

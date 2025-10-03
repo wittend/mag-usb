@@ -10,7 +10,7 @@
 #ifndef PNIRM3100_I2C_H
 #define PNIRM3100_I2C_H
 
-#include "i2c_pololu.h" // your Pololu API headers
+#include "i2c-pololu.h"     // Pololu API headers
 #include "main.h"
 
 //------------------------------------------
