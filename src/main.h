@@ -63,13 +63,10 @@
     #include "lgpio.h"
 #endif
 #if(USE_POLOLU)
-    #include "i2c_pololu.h"
+    #include "i2c-pololu.h"
 #endif
 #if(USE_RGPIO)
     #include "rgpio.h"
-#endif
-#if(USE_POLOLU)
-    #include "i2c_pololu.h"
 #endif
 
 //------------------------------------------
@@ -92,7 +89,7 @@ typedef struct tag_pList
     int fd;
     char *portpath;
 #if(USE_POLOLU)
-    pololu_i2c_adapter *adapter;
+    i2c_pololu_adapter *adapter;
 #endif
     int scanI2CBUS;
 
@@ -147,6 +144,7 @@ typedef struct tag_pList
 int  main(int argc, char** argv);
 void onEdge(void);
 char *formatOutput(pList *p);
+int  scanforBusDevices(pList *p);
 int  verifyMagSensor(pList *p);
 int  initMagSensor(pList *p);
 int  initTempSensors(pList *p);

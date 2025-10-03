@@ -74,7 +74,10 @@ int main(int argc, char** argv)
 {
     pList   ctl;
     pList   *p = &ctl;
-    pololu_i2c_adapter pAdapter;
+#if(USE_POLOLU)
+    i2c_pololu_adapter pAdapter;
+#endif
+
     int     rv = 0;
     FILE    *outfp = (FILE *)stdout;
     char    utcStr[UTCBUFLEN] = "";
@@ -97,8 +100,11 @@ int main(int argc, char** argv)
 
     p->portpath         = portpath;
     p->scanI2CBUS       = FALSE;
+#if(USE_POLOLU)
     p->adapter          = &pAdapter;
-//    p->fd               = 0;
+#else
+    p->i2cBusNumber     = RASPI_I2C_BUS1;
+#endif
     p->ppsHandle        = 0;
     p->magHandle        = 0;
     p->localTempHandle  = 0;
@@ -119,9 +125,6 @@ int main(int argc, char** argv)
     p->NOSRegValue      = 60;
     p->DRDYdelay        = 10;
     p->magRevId         = 0x0;
-#if(!USE_POLOLU)
-    p->i2cBusNumber     = RASPI_I2C_BUS1;
-#endif
     p->remoteTempAddr   = MCP9808_RMT_I2CADDR_DEFAULT;
     p->magAddr          = RM3100_I2C_ADDRESS;
     p->usePipes         = USE_PIPES;
@@ -195,49 +198,10 @@ int main(int argc, char** argv)
     //-----------------------------------------------------
     if(p->scanI2CBUS)
     {
-        //-----------------------------------------------------
-        // Get the Pololu i2c device info.
-        //-----------------------------------------------------
-        pololu_i2c_device_info info;
-        if(pololu_i2c_get_device_info(p->adapter, &info) == 0)
+        if(scanforBusDevices(p) <= 0)
         {
-            printf("Device Info:\n");
-            printf("  Vendor ID: 0x%04X\n", info.vendor_id);
-            printf("  Product ID: 0x%04X\n", info.product_id);
-            printf("  Firmware Version: %s\n", info.firmware_version);
-            printf("  Serial Number: %s\n", info.serial_number);
+            exit(1001);
         }
-        else
-        {
-            fprintf(stderr, "Failed to get device info.\n");
-        }
-
-        //-----------------------------------------------------
-        // Scan the Pololu bus for i2c devices.
-        //-----------------------------------------------------
-        printf("\nScanning for I2C devices...\n");
-        int max_devices = 128;
-        uint8_t found_addresses[max_devices];
-//        pololu_i2c_scan(p->adapter, found_addresses, max_devices );
-        //int device_count = pololu_i2c_scan(&adapter, found_addresses, 128);
-        int device_count = pololu_i2c_scan(p->adapter, found_addresses, max_devices);
-        if(device_count > 0)
-        {
-            printf("Found %d device(s):\n", device_count);
-            for(int i = 0; i < device_count; ++i)
-            {
-                printf("  Address: 0x%02X\n", found_addresses[i]);
-            }
-        }
-        else if(device_count == 0)
-        {
-            printf("No I2C devices found.\n");
-        }
-        else
-        {
-            fprintf(stderr, "An error occurred during the I2C scan: %s\n", pololu_i2c_error_string(device_count));
-        }
-//        exit(0);
     }
 #endif
 
@@ -266,18 +230,18 @@ int main(int argc, char** argv)
             exit(2);
         }
     }
-    //-----------------------------------------------------
-    //  Initialize the Temp sensor registers.
-    //-----------------------------------------------------
-    if(initTempSensors(p))
-    {
-        utcTime = getUTC();
-        strftime(utcStr, UTCBUFLEN, "%d %b %Y %T", utcTime);
-        fprintf(OUTPUT_ERROR, "    [CHILD] {ts: \"%s\", lastStatus: \"Unable to initialize the temperature sensor.\"}", utcStr); 
-        fflush(OUTPUT_ERROR);
-        exit(1);
-    }
-
+    // //-----------------------------------------------------
+    // //  Initialize the Temp sensor registers.
+    // //-----------------------------------------------------
+    // if(initTempSensors(p))
+    // {
+    //     utcTime = getUTC();
+    //     strftime(utcStr, UTCBUFLEN, "%d %b %Y %T", utcTime);
+    //     fprintf(OUTPUT_ERROR, "    [CHILD] {ts: \"%s\", lastStatus: \"Unable to initialize the temperature sensor.\"}", utcStr);
+    //     fflush(OUTPUT_ERROR);
+    //     exit(1);
+    // }
+// return 0;
 #if ___DEBUG
     fprintf(OUTPUT_PRINT, "    [CHILD] Before setting up callback to: onEdge() for PPS...\n");
     fflush(OUTPUT_PRINT);
@@ -449,7 +413,7 @@ int readLocalTemp(pList *p)
 #endif
 
     //if((temp = pololu_i2c_read_from((pololu_i2c_adapter *)p->po, p->localTempHandle, MCP9808_REG_AMBIENT_TEMP, data, 2) <= 0))
-    if((temp = i2c_read(p, MCP9808_REG_AMBIENT_TEMP) <= 0))
+    if((temp = i2c_read_temp(p, MCP9808_REG_AMBIENT_TEMP) <= 0))
     {
         fprintf(OUTPUT_ERROR, "Error : I/O error reading temp sensor at address: [0x%2X].\n", MCP9808_REG_AMBIENT_TEMP);
         showErrorMsg(temp);
@@ -481,7 +445,7 @@ int readRemoteTemp(pList *p)
 
 //    if((temp = pololu_i2c_read_from((pololu_i2c_adapter *)adapter, p->localTempHandle, MCP9808_REG_AMBIENT_TEMP, data, 2) <= 0))
 //    if((temp = i2c_readbuf(p->remoteTempHandle, MCP9808_REG_AMBIENT_TEMP, data, 2) <= 0))
-    if((temp = i2c_readbuf(p, MCP9808_REG_AMBIENT_TEMP, data, 2) <= 0))
+    if((temp = i2c_readbuf_temp(p, MCP9808_REG_AMBIENT_TEMP, data, 2) <= 0))
     {
         fprintf(OUTPUT_ERROR, "Error : I/O error reading temp sensor at address: [0x%2X].\n", MCP9808_REG_AMBIENT_TEMP);
         showErrorMsg(temp);
@@ -516,7 +480,7 @@ int readMagPOLL(pList *p)
 #endif
 
     // Write command to  use Polled measurement Mode.
-    rv = i2c_read(p, MCP9808_REG_AMBIENT_TEMP);
+    rv = i2c_read_temp(p, MCP9808_REG_AMBIENT_TEMP);
     if(rv != 0)
     {
         showErrorMsg(rv);
@@ -547,9 +511,9 @@ int readMagPOLL(pList *p)
 
     // Tell the sensor that you want to read XYZ data. RM3100I2C_POLLXYZ
     // rv = i2c_write_byte_data(p->pi, p->magHandle, RM3100I2C_XYZ, TRUE);
-    rv = i2c_write(p, RM3100I2C_MX, 1);
+    rv = i2c_write_temp(p, RM3100I2C_MX, 1);
 //    rv = pololu_i2c_write_to( pololu_i2c_adapter *adapter, uint8_t address, const uint8_t *data, uint8_t 1 );
-    rv = i2c_readbuf(p, RM3100I2C_XYZ, xyzBuf, 3 );
+    rv = i2c_readbuf_mag(p, RM3100I2C_XYZ, xyzBuf, 3 );
     if(rv < 0)
     {
         showErrorMsg(p->magHandle);
@@ -558,12 +522,12 @@ int readMagPOLL(pList *p)
     {
         // Wait for DReady Flag.
         //rv = i2c_readbyte(p, p->magHandle);
-        rv = i2c_read(p, p->magHandle);
+        rv = i2c_read_mag(p, p->magHandle);
         rv = (rv & RM3100I2C_READMASK);
         while((rv != RM3100I2C_READMASK))
         {
     //        rv = i2c_readbyte(p, p->magHandle);
-            rv = i2c_read(p, p->magHandle);
+            rv = i2c_read_mag(p, p->magHandle);
             rv = (rv & RM3100I2C_READMASK);
         }
 
@@ -576,7 +540,7 @@ int readMagPOLL(pList *p)
         //rv = i2c_read_device(p->pi, p->magHandle, xyzBuf, XYZ_BUFLEN);
         //rv = i2c_read_i2c_block_data(p->pi, p->magHandle, RM3100I2C_XYZ, (char *)xyzBuf, XYZ_BUFLEN);
         //rv = pololu_i2c_write_to( pololu_i2c_adapter *adapter, RM3100I2C_XYZ, (char *)xyzBuf, XYZ_BUFLEN);
-        rv = i2c_readbuf(p, RM3100I2C_XYZ, xyzBuf, XYZ_BUFLEN);
+        rv = i2c_readbuf_mag(p, RM3100I2C_XYZ, xyzBuf, XYZ_BUFLEN);
         if(rv == XYZ_BUFLEN)
         {
             p->XYZ[0] = ((signed char)xyzBuf[0]) * 256 * 256;
@@ -610,78 +574,108 @@ int readMagPOLL(pList *p)
 }
 
 //---------------------------------------------------------------
-// void verifyMagSensor(volatile pList *p)
+// scanforBusDevices(pList *p)
+//---------------------------------------------------------------
+int scanforBusDevices(pList *p)
+{
+    fprintf(stdout,"\nChecking Pololu I2C Adapter info:\n");
+
+    //-----------------------------------------------------
+    // Get the Pololu i2c device info.
+    //-----------------------------------------------------
+    i2c_pololu_device_info info;
+    if(i2c_pololu_get_device_info(p->adapter, &info) == 0)
+    {
+        fprintf(stdout,"  Device Info:\n");
+        fprintf(stdout,"     Vendor ID:        0x%04X\n", info.vendor_id);
+        fprintf(stdout,"     Product ID:       0x%04X\n", info.product_id);
+        fprintf(stdout,"     Firmware Version: %s\n", info.firmware_version);
+        fprintf(stdout,"     Serial Number:    %s\n", info.serial_number);
+    }
+    else
+    {
+        fprintf(stdout, "    Failed to get device info.\n");
+        return -1;
+    }
+    // Scan for I2C devices
+
+    fprintf(stdout,"\n  Scanning for I2C devices...\n");
+    uint8_t found_addresses[128];
+    i2c_pololu_scan(p->adapter, found_addresses, 128);
+    int device_count = i2c_pololu_scan(p->adapter, found_addresses, 128);
+    if (device_count > 0)
+    {
+        printf("    Found %d device(s):\n", device_count);
+        for (int i = 0; i < device_count; ++i)
+        {
+            fprintf(stdout,"      Address: 0x%02X\n", found_addresses[i]);
+        }
+        return device_count;
+    }
+    else if (device_count == 0)
+    {
+        fprintf(stderr,"      No I2C devices found.\n");
+        return -1;
+    }
+    else
+    {
+        fprintf(stderr, "    An error occurred during the I2C scan: %s\n", i2c_pololu_error_string(device_count));
+        return -1;
+    }
+}
+
+//---------------------------------------------------------------
+// int verifyMagSensor(pList *p)
 //---------------------------------------------------------------
 int verifyMagSensor(pList *p)
 {
-    int rv = 0;
-    char revBuf[] = {0};
+    fprintf(stdout, "\nVerifying Magnetometer Status & Version...\n");
 
-#if(__DEBUG)
-    fprintf(OUTPUT_PRINT,"    [Child]: In VerifyMagSensor()...\n");
-    fflush(OUTPUT_PRINT);
-#endif
-    
-    //-----------------------------------------
-    // Make sure PGPIO connection is OK.
-    //-----------------------------------------
-    if(p >= 0)
+    if(i2c_pololu_is_connected(p->adapter))
     {
-        p->magRevId = 0;
+        fprintf(stdout, "  Connection to: %s is OK!\n", p->portpath);
+    }
+    else
+    {
+        return 0;
+    }
 
-        //-----------------------------------------
-        // Read the version register.
-        //-----------------------------------------
-        if((rv = i2c_readbuf(p, RM3100I2C_REVID, revBuf, 1)) > 0)
-        {
-            p->magRevId = *revBuf;
-            if(*revBuf != (uint8_t) RM3100_VER_EXPECTED)
-            {
-                // Fail, exit...
-                fprintf(OUTPUT_ERROR, "\n    [Child]: RM3100 REVID NOT CORRECT: ");
-                fprintf(OUTPUT_ERROR, "RM3100 REVID: 0x%X <> EXPECTED: 0x%X.\n\n", (unsigned) p->magRevId, RM3100_VER_EXPECTED);
-                fflush(OUTPUT_ERROR);
-                return 1;
-            }
-            else
-            {
-//#if(__DEBUG)
-//                fprintf(OUTPUT_PRINT,"    [Child]: RM3100 Detected Properly: ");
-//                fprintf(OUTPUT_PRINT,"REVID: %x.\n", p->magRevId);
-//                fflush(OUTPUT_PRINT);
-//#endif
-                return 0;
-            }
-        }
-        else
-        {
-            showErrorMsg(rv);
-#if(__DEBUG)
-            fprintf(OUTPUT_PRINT,"    [Child]: Error i2c_read_i2c_block_data returned: %u.\n", rv);
-            fflush(OUTPUT_PRINT);
-#endif
-            return(1);
-        }
-    }
-    return 0;
-}
+    i2c_pololu_clear_bus(p->adapter);
 
-//------------------------------------------
-// getUTC()
-//------------------------------------------
-struct tm *getUTC()
-{
-    time_t now = time(&now);
-    if(now == -1)
+    uint8_t buf[2] = {0};
+    uint8_t addr = 0x23; // example device
+    uint8_t reg  = 0x36; // example register
+    int rv = -1;
+
+    // Write register index
+    rv = i2c_pololu_write_to(p->adapter, addr, reg, "", 1);
+    if (rv < 0)
     {
-        puts("The time() function failed");
+        fprintf(stdout, "  Write failed: %s\n", i2c_pololu_error_string(-rv));
+        goto done;
     }
-    struct tm *ptm = gmtime(&now);
-    if(ptm == NULL)
+    // Read back 2 bytes
+    //    uint8_t buf[2] = {0};
+    rv = i2c_pololu_read_from(p->adapter, addr, reg, buf, 2);
+    if (rv < 0)
     {
-        puts("The gmtime() function failed");
+        fprintf(stdout, "  Read failed: %s\n", i2c_pololu_error_string(-rv));
+        goto done;
     }
-    return ptm;
+    //fprintf(stderr,"  Data: %02X %02X\n", buf[0], buf[1]);
+    rv = buf[0];
+    if(rv == (uint8_t) RM3100_VER_EXPECTED)
+    {
+        fprintf(stdout, "  Version is OK!: 0x%2X\n", rv);
+        return 0;
+    }
+    else
+    {
+        fprintf(stdout, "  Version does NOT match!\n");
+        return rv;
+    }
+done:
+    return 1;
 }
 
 //---------------------------------------------------------------
@@ -694,7 +688,7 @@ int initMagSensor(pList *p)
     // Setup the Mag sensor register initial state here.
     if(p->samplingMode == POLL)                                         // (p->samplingMode == POLL [default])
     {
-        if((rv = i2c_writebyte(p, RM3100_MAG_POLL, 0, 1)) != 0)
+        if((rv = i2c_writebyte_mag(p, RM3100_MAG_POLL, 0, 1)) != 0)
         {
             showErrorMsg(rv);
 #if(__DEBUG)
@@ -706,7 +700,7 @@ int initMagSensor(pList *p)
     }
     else
     {
-        if((rv = i2c_writebyte(p, RM3100I2C_CMM, 0, 1)) != 0)
+        if((rv = i2c_writebyte_mag(p, RM3100I2C_CMM, 0, 1)) != 0)
         {
             showErrorMsg(rv);
 #if(__DEBUG)
@@ -727,6 +721,24 @@ int initTempSensors(pList *p)
     int rv = 0;
     // Temp sensor doesn't need any iniutialization currently.
     return rv;
+}
+
+//------------------------------------------
+// getUTC()
+//------------------------------------------
+struct tm *getUTC()
+{
+    time_t now = time(&now);
+    if(now == -1)
+    {
+        puts("The time() function failed");
+    }
+    struct tm *ptm = gmtime(&now);
+    if(ptm == NULL)
+    {
+        puts("The gmtime() function failed");
+    }
+    return ptm;
 }
 
 

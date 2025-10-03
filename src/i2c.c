@@ -37,17 +37,14 @@
 #include "i2c.h"
 #include "i2c-pololu.h" // your Pololu API headers
 
-// int pololu_i2c_write_to( pololu_i2c_adapter *adapter, uint8_t address, const uint8_t *data, uint8_t size );
-// int pololu_i2c_read_from( pololu_i2c_adapter *adapter, uint8_t address, uint8_t *data, uint8_t size );
-
 int i2c_open(pList *p, const char *portpath)
 {
     // Map to Pololu open/init sequence
     struct stat sb;
     if(!stat(p->portpath, &sb))
     {
-       pololu_i2c_adapter *pAdapt = p->adapter;
-       return pololu_i2c_connect(pAdapt, p->portpath);
+       i2c_pololu_adapter *pAdapt = p->adapter;
+       return i2c_pololu_connect(pAdapt, p->portpath);
     }
     else
     {
@@ -62,7 +59,7 @@ int i2c_open(pList *p, const char *portpath)
 void i2c_init(pList *p)
 {
 //    pololu_i2c_adapter adapter;
-    pololu_i2c_init(p->adapter);
+    i2c_pololu_init(p->adapter);
 }
 
 void i2c_setAddress(pList *p, int devAddr)
@@ -75,43 +72,88 @@ void i2c_setBitRate(pList *p, int devspeed)
 //    p->adapter.fd; (void)devspeed;
 }
 
-int i2c_write(pList *p, uint8_t reg, uint8_t value)
+#if(USE_POLOLU)
+
+//-----------------------------------------------------------------------------
+// Calls for the Temperature sensor.
+//-----------------------------------------------------------------------------
+
+int i2c_write_temp(pList *p, uint8_t reg, uint8_t value)
 {
-    int rv;
-    rv = pololu_i2c_write_to(p->adapter, (uint8_t) reg, &value, (uint8_t) 1);
+    int rv = 0;
+    rv = i2c_pololu_write_to(p->adapter, (uint8_t) p->remoteTempAddr, (uint8_t) reg, &value, (uint8_t) 1);
     return value;
 }
 
-uint8_t i2c_read(pList *p, uint8_t reg)
+uint8_t i2c_read_temp(pList *p, uint8_t reg)
 {
     uint8_t  rv;
-    pololu_i2c_read_from(p->adapter, (uint8_t) reg, (uint8_t *) &rv, (uint8_t) 1 );
+    i2c_pololu_read_from(p->adapter, (uint8_t) p->remoteTempAddr, (uint8_t) reg, (uint8_t *) &rv, (uint8_t) 1 );
     return rv;
 }
 
-int i2c_writebyte(pList *p, uint8_t reg, char* buffer, short int length)
+int i2c_writebyte_temp(pList *p, uint8_t reg, char* buffer, short int length)
 {
-    return pololu_i2c_write_to( p->adapter, (uint8_t) reg, (uint8_t *) buffer, (uint8_t) 1 );
+    return i2c_pololu_write_to(p->adapter, (uint8_t) p->remoteTempAddr, (uint8_t) reg, (uint8_t *) buffer, (uint8_t) 1);
 }
 
-int i2c_reabyte(pList *p, uint8_t reg, uint8_t* buf, short int length)
+int i2c_reabyte_temp(pList *p, uint8_t reg, uint8_t* buf, short int length)
 {
-    return pololu_i2c_read_from(p->adapter, (uint8_t) reg, (uint8_t *) buf, (uint8_t) 1 );
+    return i2c_pololu_read_from(p->adapter, (uint8_t) p->remoteTempAddr, (uint8_t) reg, (uint8_t *) buf, (uint8_t) 1);
 }
 
-int i2c_writebuf(pList *p, uint8_t reg, char* buf, short int length)
+int i2c_writebuf_temp(pList *p, uint8_t reg, char* buf, short int length)
 {
-    return pololu_i2c_write_to(p->adapter, (uint8_t) reg, buf, (uint8_t) length );
+    return i2c_pololu_write_to(p->adapter,(uint8_t) p->remoteTempAddr, (uint8_t) reg, buf, (uint8_t) length);
 }
 
-int i2c_readbuf(pList *p, uint8_t reg, uint8_t *buf, uint8_t length)
+int i2c_readbuf_temp(pList *p, uint8_t reg, uint8_t *buf, uint8_t length)
 {
-//    return pololu_i2c_read_from( (pololu_i2c_adapter *) p->adapter.fd, (uint8_t) reg, (uint8_t *) buf, (uint8_t) length );
-    return pololu_i2c_read_from(p->adapter, (uint8_t) reg, (uint8_t *) buf, (uint8_t) length );
+    return i2c_pololu_read_from(p->adapter, p->remoteTempAddr, (uint8_t) reg, (uint8_t *) buf, (uint8_t) length );
 }
+
+//-----------------------------------------------------------------------------
+// Calls for the Magnetometer
+//-----------------------------------------------------------------------------
+
+int i2c_write_mag(pList *p, uint8_t reg, uint8_t value)
+{
+    int rv = 0;
+    rv = i2c_pololu_write_to(p->adapter, (uint8_t)p->magAddr, (uint8_t) reg, &value, (uint8_t) 1);
+    return value;
+}
+
+uint8_t i2c_read_mag(pList *p, uint8_t reg)
+{
+    uint8_t  rv;
+    i2c_pololu_read_from(p->adapter, (uint8_t) p->magAddr, (uint8_t) reg, (uint8_t *) &rv, (uint8_t) 1 );
+    return rv;
+}
+
+int i2c_writebyte_mag(pList *p, uint8_t reg, char* buffer, short int length)
+{
+    return i2c_pololu_write_to(p->adapter, (uint8_t) p->magAddr, (uint8_t) reg, (uint8_t *) buffer, (uint8_t) 1);
+}
+
+int i2c_reabyte_mag(pList *p, uint8_t reg, uint8_t* buf, short int length)
+{
+    return i2c_pololu_read_from(p->adapter, (uint8_t) p->magAddr, (uint8_t) reg, (uint8_t *) buf, (uint8_t) 1);
+}
+
+int i2c_writebuf_mag(pList *p, uint8_t reg, char* buf, short int length)
+{
+    return i2c_pololu_write_to(p->adapter,(uint8_t) p->magAddr, (uint8_t) reg, buf, (uint8_t) length);
+}
+
+int i2c_readbuf_mag(pList *p, uint8_t reg, uint8_t *buf, uint8_t length)
+{
+    return i2c_pololu_read_from(p->adapter, p->magAddr, (uint8_t) reg, (uint8_t *) buf, (uint8_t) length );
+}
+
+#else
+#endif
 
 void i2c_close(pList *p)
 {
-    //p->adapter = -1;
-    pololu_i2c_disconnect(p->adapter);
+    i2c_pololu_disconnect(p->adapter);
 }

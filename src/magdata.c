@@ -396,7 +396,8 @@ void showErrorMsg(int rv)
         sprintf(errstr, "    [Child]: { \"ts\": \"%s\", \"lastError\": \"%s\" }\n", utcStr, lgpio_error(rv));
         write(PIPEOUT, errstr);
     #endif
-#else
+#endif
+#if(_USE_POLOLU_I2C)
     fprintf(OUTPUT_PRINT, "    [Child]: { \"ts\": \"%s\", \"lastError\": \"%s\" }\n", utcStr,  pololu_i2c_error_string(rv));
     fflush(OUTPUT_PRINT);
 #endif
