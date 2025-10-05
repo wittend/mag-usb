@@ -15,15 +15,15 @@ It is written in simple, portable C.
 
 * The **mag-usb** utility is written as a Linux command line program and takes all configuration parameters from its commandline. 
 
-* This requires the Pi I2C kernel driver is activated (usually by configuring I2C I/O in the raspi-setup utility).
+* This This version is not intended or tested for use with a Raspberry Pi (but it might work there).
 
-* This version of the code is dependent on the presence of the pigpio library to build.
+* This version of the code does NOT use libraries like pigpio that speak directly to Pi 3/4 hardware. 
 
-* This software was written to be the Raspberry Pi 3/4 only, and will not work on similar boards (including the PI-5). It has been tested, if not thoroughly. 
+* This software does use a Pololu i2c adapter board to communicate with the sensor.  The code is written to use the Pololu USB to I2C Isolated adapter boards and therefore should work with any device that supports a USB2 bus.  
  
-The current pre-release code is 0.0.1
+The current pre-release code is 0.0.2
 
-Just clone this project into your home directory on the Raspberry Pi or board with similar bus using:
+Just create a working directory and do:
 
     git clone https://github.com/wittend/mag-usb.git
 
@@ -32,15 +32,7 @@ Then do:
     $ cd mag-usb 
     $ make
 
-
-## Example on Raspberry Pi 3/4, using logging:
- 
-    $ mkdir build
-    $ cd build
-    $ cmake ..
-    $ make
-
 ```
-dave@raspi-3: ~/projects/rm3100-runMag $ ./mag-usb -P /dev/ttyACM0
+dave@big_server: ~/projects/rm3100-runMag $ ./mag-usb -P /dev/ttyACM0
 ```
 
