@@ -2,7 +2,7 @@
 ## Work in progress!
 ## DO NOT USE YET: to be updated further!
 
-## Version 0.0.1
+## Version 0.0.2
 
 The utility **mag-usb** is a program intended to assist in testing the PNI RM3100 geomagnetic sensor.  
 It is written in simple, portable C.
@@ -15,13 +15,15 @@ They may also be used without other PSWS components for those interested in maki
 
 Various pieces of software have been used to develop, test, and run these boards as part of the hardware suite or as standalone low-cost monitors of the Earth's magnetic field.
 
-* The **mag-usb** utility is written as a Linux command line program and currently takes all configuration parameters from its commandline. 
+* The **mag-usb** utility is written as a Linux command line program and currently takes all configuration parameters from its commandline.
 
-* This version is not intended or tested for use with a Raspberry Pi (but it might work there).
+* This software **MIGHT** build and run there.
+
+* This version is not tested for use with a Raspberry Pi-like device (but it might work there). 
+
+* This software is **_not_** currently written to run on Windows. 
 
 * This version of the code does NOT use libraries like pigpio that speak directly to Pi 3/4 hardware. 
-
-* This software does use a Pololu i2c adapter board to communicate with the sensor.
 
 * The code is written to use the [Pololu Isolated USB-to-I²C Adapter with Isolated Power](https://www.pololu.com/product/5397) and [Pololu Isolated USB-to-I²C Adapter](https://www.pololu.com/product/5396) boards.
 
