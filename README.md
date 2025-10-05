@@ -4,8 +4,6 @@
 
 ## Version 0.0.1
 
-## Version 0.0.1
-
 The rm3100 support boards were developed for use with the Personal Space Weather Station (PSWS) TangerineSDR and Grape Space Weather monitors.  These board pairs report magnetic field strength as three independent vectors, from which a total field strength may be derived.  They also report the temperature in the immediate environment of the remotely placed sensor and at the near end of the pair as a fraction of a degree C.  They may also be used standalone with only a Pi or Pi clone board.  Various pieces of software have been used to develop, test, and run these boards as part of the hardware suite or as standalone low-cost monitors of the Earth's magnetic field.
 
 Currently the program code most used in this project is called **mag-usb**. 
@@ -33,6 +31,32 @@ Then do:
     $ make
 
 ```
-dave@big_server: ~/projects/rm3100-runMag $ ./mag-usb -P /dev/ttyACM0
+dave@big_server: ~/projects/mag-usb $ ./mag-usb -P /dev/ttyACM0
 ```
+
+## For usage info type:
+```
+dave@big_server: ./mag-usb -h
+```
+
+You **MAY** see something like this:
+```
+Parameters:
+
+   -B <reg mask>          :  Do built in self test (BIST).         [ Not implemented ]
+   -C                     :  Read back cycle count registers before sampling.
+   -c <count>             :  Set cycle counts as integer.          [ default: 200 decimal]
+   -D <rate>              :  Set magnetometer sample rate.         [ TMRC reg 96 hex default ].
+   -g <mode>              :  Device sampling mode.                 [ POLL=0 (default), CONTINUOUS=1 ]
+   -P                     :  Path to Pololu port in /dev.          [ default: /dev/ttyACM0 ]
+   -S                     :  List devices seen on i2c bus and exit.
+   -V                     :  Display software version and exit.
+   -h or -?               :  Display this help.
+
+```
+
+## For more info on the Pololu USB to I2C Isolated adapter boards see:
+https://www.pololu.com/product/5397
+https://www.pololu.com/product/5396
+
 
