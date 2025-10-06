@@ -55,6 +55,7 @@
 #define USE_POLOLU          TRUE
 
 #define USE_PIPES           FALSE
+#define USE_PTHREADS        TRUE
 
 #if(USE_PIGPIO)
     #include "pigpio.h"
@@ -152,6 +153,9 @@ int  readLocalTemp(pList *p);
 int  readRemoteTemp(pList *p);
 //int  readMagCMM(volatile pList *p);
 int  readMagPOLL(pList *p);
+void* read_sensor(void* arg);
+void* print_data(void* arg);
+void* signal_handler_thread(void* arg);
 
 struct tm *getUTC();
 void showErrorMsg(int temp);
