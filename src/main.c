@@ -46,7 +46,7 @@ char Version[32];
 int volatile PPS_Flag = FALSE;
 int volatile killflag;
 static char outBuf[256];
-char portpath[PATH_MAX] = "/dev/ttyACM0";          // default path for pololu i2c emulator.
+char portpath[PATH_MAX] = "/dev/ttyMAG0";          // default path for pololu i2c emulator.
 
 #ifdef USE_PIPES
     char fifoCtrl[] = "/home/pi/PSWS/Sstat/magctl.fifo";
@@ -265,9 +265,9 @@ int main(int argc, char** argv)
 
 #if(USE_PTHREADS)
 
-    fprintf(OUTPUT_PRINT, "\n");
     pthread_t sensor_thread, print_thread, signal_thread;
 
+    fprintf(OUTPUT_PRINT, "\n");
 
     // Create threads
     if (pthread_create(&sensor_thread, NULL, read_sensor, (void *) p) != 0)
@@ -340,6 +340,7 @@ int main(int argc, char** argv)
         rv = event_callback_cancel(p->edge_cb_id);
     #endif
 #endif // USE_PTHREADS
+
     printf("Program terminated.\n");
     return 0;
 }
