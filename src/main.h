@@ -156,7 +156,8 @@ int  readMagPOLL(pList *p);
 void* read_sensor(void* arg);
 void* print_data(void* arg);
 void* signal_handler_thread(void* arg);
-
+double readTemp(pList *p);
+static double mcp9808_decode_celsius(uint8_t msb, uint8_t lsb);
 struct tm *getUTC();
 void showErrorMsg(int temp);
 
