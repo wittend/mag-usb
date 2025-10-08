@@ -242,18 +242,6 @@ int main(int argc, char** argv)
             exit(2);
         }
     }
-    // //-----------------------------------------------------
-    // //  Initialize the Temp sensor registers.
-    // //-----------------------------------------------------
-    // if(initTempSensors(p))
-    // {
-    //     utcTime = getUTC();
-    //     strftime(utcStr, UTCBUFLEN, "%d %b %Y %T", utcTime);
-    //     fprintf(OUTPUT_ERROR, "    [CHILD] {ts: \"%s\", lastStatus: \"Unable to initialize the temperature sensor.\"}", utcStr);
-    //     fflush(OUTPUT_ERROR);
-    //     exit(1);
-    // }
-// return 0;
 #if ___DEBUG
     fprintf(OUTPUT_PRINT, "    [CHILD] Before setting up callback to: onEdge() for PPS...\n");
     fflush(OUTPUT_PRINT);
@@ -459,12 +447,6 @@ char *formatOutput(pList *p)
 
     strncpy(outBuf, "", 1);
 
-#if(__DEBUG)
-    fprintf(OUTPUT_PRINT, "\n    [Child]: formatOutput()...\n");
-    fflush(OUTPUT_PRINT);
-#endif
-
-
 /*
     // readMagPOLL(p);
 
@@ -505,7 +487,7 @@ char *formatOutput(pList *p)
         strncat(outBuf, fmtBuf, FMTBUFLEN);
     }
 
-    strncat(outBuf, fmtBuf, FMTBUFLEN);
+    //strncat(outBuf, fmtBuf, FMTBUFLEN);
     snprintf(fmtBuf, fmtBuf_len, ", \"x\":%.3f", xyz[0]);
     strncat(outBuf, fmtBuf, FMTBUFLEN);
     snprintf(fmtBuf, fmtBuf_len, ", \"y\":%.3f", xyz[1]);
@@ -528,68 +510,6 @@ char *formatOutput(pList *p)
     return outBuf;
 }
 
-// //------------------------------------------
-// // readLocalTemp(volatile pList *p)
-// //------------------------------------------
-// int readLocalTemp(pList *p)
-// {
-//     int temp = -9999;
-//     char data[2] = {0};
-//
-// #if(__DEBUG)
-//     fprintf(OUTPUT_PRINT, "[Child]: readLocalTemp()...\n");
-//     fflush(OUTPUT_PRINT);
-// #endif
-//
-//     //if((temp = pololu_i2c_read_from((pololu_i2c_adapter *)p->po, p->localTempHandle, MCP9808_REG_AMBIENT_TEMP, data, 2) <= 0))
-//     if((temp = i2c_read_temp(p, MCP9808_REG_AMBIENT_TEMP) <= 0))
-//     {
-//         fprintf(OUTPUT_ERROR, "Error : I/O error reading temp sensor at address: [0x%2X].\n", MCP9808_REG_AMBIENT_TEMP);
-//         showErrorMsg(temp);
-//     }
-//     else
-//     {
-//         // Convert the data to 13-bits
-//         temp = ((data[0] & 0x1F) * 256 + data[1]);
-//         if(temp > 4095)
-//         {
-//             temp -= 8192;
-//         }
-//     }
-//     return temp;
-// }
-
-// //------------------------------------------
-// // readRemoteTemp(volatile pList *p)
-// //------------------------------------------
-// int readRemoteTemp(pList *p)
-// {
-//     int temp = -9999;
-//     char data[2] = {0};
-//
-// #if(__DEBUG)
-//     fprintf(OUTPUT_PRINT, "[Child]: readRemoteTemp()...\n");
-//     fflush(OUTPUT_PRINT);
-// #endif
-//
-// //    if((temp = pololu_i2c_read_from((pololu_i2c_adapter *)adapter, p->localTempHandle, MCP9808_REG_AMBIENT_TEMP, data, 2) <= 0))
-// //    if((temp = i2c_readbuf(p->remoteTempHandle, MCP9808_REG_AMBIENT_TEMP, data, 2) <= 0))
-//     if((temp = i2c_readbuf_temp(p, MCP9808_REG_AMBIENT_TEMP, data, 2) <= 0))
-//     {
-//         fprintf(OUTPUT_ERROR, "Error : I/O error reading temp sensor at address: [0x%2X].\n", MCP9808_REG_AMBIENT_TEMP);
-//         showErrorMsg(temp);
-//     }
-//     else
-//     {
-//         // Convert the data to 13-bits
-//         temp = ((data[0] & 0x1F) * 256 + data[1]);
-//         if(temp > 4095)
-//         {
-//             temp -= 8192;
-//         }
-//     }
-//     return temp;
-// }
 
 double readTemp(pList *p)
 {

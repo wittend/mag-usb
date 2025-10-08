@@ -54,3 +54,57 @@ This default may be overridden from the command line using a parameter specifica
 #
 KERNEL=="ttyACM[0-9]*", SUBSYSTEM=="tty", ATTRS{idVendor}=="1ffb", ATTRS{idProduct}=="2503", SYMLINK+="ttyMAG0"
 ```
+
+```
+$ udevadm info --name=/dev/ttyACM2 --attribute-walk
+
+Udevadm info starts with the device specified by the devpath and then
+walks up the chain of parent devices. It prints for every device
+found, all possible attributes in the udev rules key format.
+A rule to match, can be composed by the attributes of the device
+and the attributes from one single parent device.
+
+  looking at device '/devices/pci0000:00/0000:00:14.0/usb3/3-6/3-6:1.0/tty/ttyACM2':
+    KERNEL=="ttyACM2"
+    SUBSYSTEM=="tty"
+    DRIVER==""
+    ATTR{power/async}=="disabled"
+    ATTR{power/control}=="auto"
+    ATTR{power/runtime_active_kids}=="0"
+    ATTR{power/runtime_active_time}=="0"
+    ATTR{power/runtime_enabled}=="disabled"
+    ATTR{power/runtime_status}=="unsupported"
+    ATTR{power/runtime_suspended_time}=="0"
+    ATTR{power/runtime_usage}=="0"
+
+  looking at parent device '/devices/pci0000:00/0000:00:14.0/usb3/3-6/3-6:1.0':
+    KERNELS=="3-6:1.0"
+    SUBSYSTEMS=="usb"
+    DRIVERS=="cdc_acm"
+    ATTRS{authorized}=="1"
+    ATTRS{bAlternateSetting}==" 0"
+    ATTRS{bInterfaceClass}=="02"
+    ATTRS{bInterfaceNumber}=="00"
+    ATTRS{bInterfaceProtocol}=="00"
+    ATTRS{bInterfaceSubClass}=="02"
+    ATTRS{bNumEndpoints}=="01"
+    ATTRS{bmCapabilities}=="6"
+    ATTRS{iad_bFirstInterface}=="00"
+    ATTRS{iad_bFunctionClass}=="02"
+    ATTRS{iad_bFunctionProtocol}=="00"
+    ATTRS{iad_bFunctionSubClass}=="02"
+    ATTRS{iad_bInterfaceCount}=="02"
+    ATTRS{interface}=="Pololu Isolated USB-to-I2C Adapter with Isolated Power"
+    ATTRS{physical_location/dock}=="no"
+    ATTRS{physical_location/horizontal_position}=="left"
+    ATTRS{physical_location/lid}=="no"
+    ATTRS{physical_location/panel}=="top"
+    ATTRS{physical_location/vertical_position}=="upper"
+    ATTRS{power/async}=="enabled"
+    ATTRS{power/runtime_active_kids}=="0"
+    ATTRS{power/runtime_enabled}=="enabled"
+    ATTRS{power/runtime_status}=="suspended"
+    ATTRS{power/runtime_usage}=="0"
+    ATTRS{supports_autosuspend}=="1"
+
+```
