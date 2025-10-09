@@ -17,13 +17,13 @@
 #include <sys/types.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <time.h>
 #include <inttypes.h>
 #include <string.h>
 #include <unistd.h>
 #include <signal.h>
 #include <math.h>
 #include <sys/stat.h>
-#include <time.h>
 #include <sys/time.h>
 #include "MCP9808.h"
 //#include "rm3100.h"
@@ -38,7 +38,7 @@
 //------------------------------------------
 // Debugging output
 //------------------------------------------
-#define CONSOLE_OUTPUT  TRUE
+#define CONSOLE_OUTPUT      TRUE
 
 //------------------------------------------
 // Pi specific stuff
@@ -82,6 +82,9 @@
 #define MAXPATHBUFLEN       1025
 #define XYZ_BUFLEN          9
 
+#define POLL                0
+#define CMM                 1
+
 //------------------------------------------
 // Control Parameter List struct
 //------------------------------------------
@@ -89,9 +92,11 @@ typedef struct tag_pList
 {
     int fd;
     char *portpath;
-#if(USE_POLOLU)
+//#if(USE_POLOLU)
     i2c_pololu_adapter *adapter;
-#endif
+//#else
+    int i2cBusNumber;
+//#endif
     int scanI2CBUS;
 
     int ppsHandle;
@@ -129,9 +134,6 @@ typedef struct tag_pList
     int  readBackCCRegs;
     uint8_t magRevId;
 
-#if(!USE_POLOLU)
-    int  i2cBusNumber;
-#endif
     int  tsMilliseconds;
     char *Version;
     int  usePipes;

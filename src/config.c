@@ -1,0 +1,358 @@
+//=========================================================================
+// config.c
+//
+// Simple TOML configuration parser implementation
+//=========================================================================
+#include "config.h"
+#include "main.h"
+//#include "rm3100.h"
+//#include "MCP9808.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <ctype.h>
+#include <errno.h>
+#include <limits.h>
+
+#define MAX_LINE_LENGTH 512
+#define MAX_KEY_LENGTH 64
+#define MAX_VALUE_LENGTH 256
+
+#ifdef USE_PIPES
+extern char fifoCtrl[]; // = "/home/pi/PSWS/Sstat/magctl.fifo";
+extern char fifoData[]; // = "/home/pi/PSWS/Sstat/magdata.fifo";
+extern char fifoHome[]; // = "/run/user/";
+extern int PIPEIN;      // = -1;
+extern int PIPEOUT;     // = -1;
+#endif //USE_PIPES
+
+//---------------------------------------------------------------
+// Helper: Trim leading and trailing whitespace
+//---------------------------------------------------------------
+static char *trim_whitespace(char *str)
+{
+    char *end;
+
+    // Trim leading space
+    while(isspace((unsigned char)*str)) str++;
+
+    if(*str == 0) return str;
+
+    // Trim trailing space
+    end = str + strlen(str) - 1;
+    while(end > str && isspace((unsigned char)*end)) end--;
+
+    end[1] = '\0';
+    return str;
+}
+
+//---------------------------------------------------------------
+// Helper: Remove quotes from string value
+//---------------------------------------------------------------
+static char *remove_quotes(char *str)
+{
+    size_t len = strlen(str);
+    if(len >= 2 && str[0] == '"' && str[len-1] == '"')
+    {
+        str[len-1] = '\0';
+        return str + 1;
+    }
+    return str;
+}
+
+//---------------------------------------------------------------
+// Helper: Parse boolean value (true/false)
+//---------------------------------------------------------------
+static int parse_bool(const char *value)
+{
+    if(strcmp(value, "true") == 0) return TRUE;
+    if(strcmp(value, "false") == 0) return FALSE;
+    return atoi(value) != 0;
+}
+
+//---------------------------------------------------------------
+// Helper: Parse integer with support for hex (0x) format
+//---------------------------------------------------------------
+static int parse_int(const char *value)
+{
+    return (int)strtol(value, NULL, 0);
+}
+
+//---------------------------------------------------------------
+// Helper: Parse double/float value
+//---------------------------------------------------------------
+static double parse_double(const char *value)
+{
+    return strtod(value, NULL);
+}
+
+//---------------------------------------------------------------
+// Helper: Check if line is a section header [section]
+//---------------------------------------------------------------
+static int is_section_header(const char *line, char *section_name)
+{
+    const char *ptr = line;
+
+    // Skip whitespace
+    while(isspace((unsigned char)*ptr)) ptr++;
+
+    if(*ptr != '[') return 0;
+    ptr++;
+
+    // Extract section name
+    int i = 0;
+    while(*ptr && *ptr != ']' && i < MAX_KEY_LENGTH - 1)
+    {
+        section_name[i++] = *ptr++;
+    }
+    section_name[i] = '\0';
+
+    // Trim section name
+    char *trimmed = trim_whitespace(section_name);
+    if(trimmed != section_name)
+    {
+        memmove(section_name, trimmed, strlen(trimmed) + 1);
+    }
+
+    return (*ptr == ']');
+}
+
+//---------------------------------------------------------------
+// Helper: Parse key = value line
+//---------------------------------------------------------------
+static int parse_key_value(const char *line, char *key, char *value)
+{
+    const char *equals = strchr(line, '=');
+    if(!equals) return 0;
+
+    // Extract key
+    size_t key_len = equals - line;
+    if(key_len >= MAX_KEY_LENGTH) key_len = MAX_KEY_LENGTH - 1;
+    strncpy(key, line, key_len);
+    key[key_len] = '\0';
+
+    // Extract value
+    strncpy(value, equals + 1, MAX_VALUE_LENGTH - 1);
+    value[MAX_VALUE_LENGTH - 1] = '\0';
+
+    // Trim both
+    char *trimmed_key = trim_whitespace(key);
+    char *trimmed_value = trim_whitespace(value);
+
+    if(trimmed_key != key)
+    {
+        memmove(key, trimmed_key, strlen(trimmed_key) + 1);
+    }
+    if(trimmed_value != value)
+    {
+        memmove(value, trimmed_value, strlen(trimmed_value) + 1);
+    }
+
+    // Remove quotes from value
+    trimmed_value = remove_quotes(value);
+    if(trimmed_value != value)
+    {
+        memmove(value, trimmed_value, strlen(trimmed_value) + 1);
+    }
+
+    return 1;
+}
+
+//---------------------------------------------------------------
+// Process configuration value based on section and key
+//---------------------------------------------------------------
+static void process_config_value(pList *p, const char *section, const char *key, const char *value)
+{
+    // [i2c] section
+    if(strcmp(section, "i2c") == 0)
+    {
+        if(strcmp(key, "portpath") == 0)
+        {
+            strncpy(p->portpath, value, PATH_MAX - 1);
+            p->portpath[PATH_MAX - 1] = '\0';
+        }
+        else if(strcmp(key, "bus_number") == 0)
+        {
+            p->i2cBusNumber = parse_int(value);
+        }
+        else if(strcmp(key, "scan_bus") == 0)
+        {
+            p->scanI2CBUS = parse_bool(value);
+        }
+    }
+    // [magnetometer] section
+    else if(strcmp(section, "magnetometer") == 0)
+    {
+        if(strcmp(key, "address") == 0)
+        {
+            p->magAddr = parse_int(value);
+        }
+        else if(strcmp(key, "cc_x") == 0)
+        {
+            p->cc_x = parse_int(value);
+        }
+        else if(strcmp(key, "cc_y") == 0)
+        {
+            p->cc_y = parse_int(value);
+        }
+        else if(strcmp(key, "cc_z") == 0)
+        {
+            p->cc_z = parse_int(value);
+        }
+        else if(strcmp(key, "gain_x") == 0)
+        {
+            p->x_gain = parse_double(value);
+        }
+        else if(strcmp(key, "gain_y") == 0)
+        {
+            p->y_gain = parse_double(value);
+        }
+        else if(strcmp(key, "gain_z") == 0)
+        {
+            p->z_gain = parse_double(value);
+        }
+        else if(strcmp(key, "tmrc_rate") == 0)
+        {
+            p->TMRCRate = parse_int(value);
+        }
+        else if(strcmp(key, "nos_reg_value") == 0)
+        {
+            p->NOSRegValue = parse_int(value);
+        }
+        else if(strcmp(key, "drdy_delay") == 0)
+        {
+            p->DRDYdelay = parse_int(value);
+        }
+        else if(strcmp(key, "sampling_mode") == 0)
+        {
+            if(strcmp(value, "POLL") == 0)
+            {
+                p->samplingMode = POLL;
+            }
+            else if(strcmp(value, "CMM") == 0)
+            {
+                p->samplingMode = CMM;
+            }
+        }
+        else if(strcmp(key, "cmm_sample_rate") == 0)
+        {
+            p->CMMSampleRate = parse_int(value);
+        }
+        else if(strcmp(key, "readback_cc_regs") == 0)
+        {
+            p->readBackCCRegs = parse_bool(value);
+        }
+    }
+    // [temperature] section
+    else if(strcmp(section, "temperature") == 0)
+    {
+        if(strcmp(key, "remote_temp_address") == 0)
+        {
+            p->remoteTempAddr = parse_int(value);
+        }
+    }
+    // [output] section
+    else if(strcmp(section, "output") == 0)
+    {
+#ifdef USE_PIPES
+        if(strcmp(key, "use_pipes") == 0)
+        {
+            p->usePipes = parse_bool(value);
+        }
+        else if(strcmp(key, "pipe_in_path") == 0)
+        {
+            strncpy((char*)fifoCtrl, value, PATH_MAX - 1);
+            fifoCtrl[PATH_MAX - 1] = '\0';
+            p->pipeInPath = fifoCtrl;
+        }
+        else if(strcmp(key, "pipe_out_path") == 0)
+        {
+            strncpy((char*)fifoData, value, PATH_MAX - 1);
+            fifoData[PATH_MAX - 1] = '\0';
+            p->pipeOutPath = fifoData;
+        }
+#endif
+    }
+}
+
+//---------------------------------------------------------------
+// Main configuration loader
+//---------------------------------------------------------------
+int load_config(const char *config_path, pList *p)
+{
+    FILE *fp = fopen(config_path, "r");
+    if(!fp)
+    {
+        if(errno == ENOENT)
+        {
+            // File doesn't exist - not an error, will use defaults
+            return -1;
+        }
+        else
+        {
+            fprintf(stderr, "Error opening config file '%s': %s\n",
+                    config_path, strerror(errno));
+            return -1;
+        }
+    }
+
+    char line[MAX_LINE_LENGTH];
+    char current_section[MAX_KEY_LENGTH] = "";
+    char key[MAX_KEY_LENGTH];
+    char value[MAX_VALUE_LENGTH];
+    int line_num = 0;
+    int parse_errors = 0;
+
+    while(fgets(line, sizeof(line), fp))
+    {
+        line_num++;
+
+        // Remove newline
+        size_t len = strlen(line);
+        if(len > 0 && line[len-1] == '\n') line[len-1] = '\0';
+        if(len > 1 && line[len-2] == '\r') line[len-2] = '\0';
+
+        char *trimmed = trim_whitespace(line);
+
+        // Skip empty lines and comments
+        if(trimmed[0] == '\0' || trimmed[0] == '#')
+        {
+            continue;
+        }
+
+        // Check for section header
+        if(is_section_header(trimmed, current_section))
+        {
+#if(__DEBUG)
+            fprintf(OUTPUT_PRINT, "Config: Entering section [%s]\n", current_section);
+#endif
+            continue;
+        }
+
+        // Parse key-value pair
+        if(parse_key_value(trimmed, key, value))
+        {
+#if(__DEBUG)
+            fprintf(OUTPUT_PRINT, "Config: %s.%s = %s\n", current_section, key, value);
+#endif
+            process_config_value(p, current_section, key, value);
+        }
+        else
+        {
+            fprintf(stderr, "Warning: Could not parse line %d in %s: %s\n",
+                    line_num, config_path, line);
+            parse_errors++;
+        }
+    }
+
+    fclose(fp);
+
+    if(parse_errors > 0)
+    {
+        fprintf(stderr, "Warning: %d parse error(s) in config file\n", parse_errors);
+        return -2;
+    }
+
+    printf("Configuration loaded from %s\n", config_path);
+    return 0;
+}

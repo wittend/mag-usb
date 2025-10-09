@@ -1,0 +1,56 @@
+# mag-usb Configuration File
+# Lines starting with # are comments
+
+[i2c]
+# Path to the I2C device
+portpath = "/dev/ttyMAG0"
+
+# I2C bus number (for non-Pololu setups)
+bus_number = 1
+
+# Scan I2C bus on startup
+scan_bus = false
+
+[magnetometer]
+# Magnetometer I2C address (hex format supported)
+address = 0x23
+
+# Cycle Count registers (200 or 400 typically)
+cc_x = 400
+cc_y = 400
+cc_z = 400
+
+# Gain values
+gain_x = 150.0
+gain_y = 150.0
+gain_z = 150.0
+
+# TMRC Rate register value (hex format)
+tmrc_rate = 0x96
+
+# Number of samples register value
+nos_reg_value = 60
+
+# DRDY delay in microseconds
+drdy_delay = 10
+
+# Sampling mode: "POLL" or "CMM"
+sampling_mode = "POLL"
+
+# CMM sample rate (Hz)
+cmm_sample_rate = 400
+
+# Read back cycle count registers after setting
+readback_cc_regs = false
+
+[temperature]
+# Remote temperature sensor I2C address
+remote_temp_address = 0x1F
+
+[output]
+# Use named pipes for IPC
+use_pipes = false
+
+# Pipe paths (if use_pipes is true)
+pipe_in_path = "/home/pi/PSWS/Sstat/magctl.fifo"
+pipe_out_path = "/home/pi/PSWS/Sstat/magdata.fifo"

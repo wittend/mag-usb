@@ -15,12 +15,12 @@
 #include "i2c.h"
 #include "cmdmgr.h"
 #include "rm3100.h"
+#include "config.h"
 
 #include <pthread.h>
 #include <signal.h>
 #include <unistd.h>
 #include <time.h>
-
 //------------------------------------------
 // Debugging output
 //------------------------------------------
@@ -37,11 +37,6 @@
 //------------------------------------------
 // Static and Global variables
 //------------------------------------------
-// char Version[32]        = MAGDATA_VERSION;
-// int volatile PPS_Flag   = 0;
-// int volatile killflag   = 0;
-// static char outBuf[256] = "";
-// char portpath[PATH_MAX] = "/dev/ttyACM0";          // default path for pololu i2c emulator.
 char Version[32];
 int volatile PPS_Flag = FALSE;
 int volatile killflag;
@@ -143,6 +138,19 @@ int main(int argc, char** argv)
     p->pipeInPath       = fifoCtrl;
     p->pipeOutPath      = fifoData;
     p->readBackCCRegs   = FALSE;
+
+    //-----------------------------------------
+    //  Load configuration from TOML file
+    //  (command line args will override these)
+    //-----------------------------------------
+    if (load_config("config.toml", p) == 0)
+    {
+        fprintf(OUTPUT_PRINT, "Configuration loaded successfully.\n");
+    }
+    else
+    {
+        fprintf(OUTPUT_PRINT, "Using default configuration (config.toml not found or invalid).\n");
+    }
 
     if((rv = getCommandLine(argc, argv, p)) != 0)
     {

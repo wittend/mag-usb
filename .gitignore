@@ -199,3 +199,4 @@ fabric.properties
 .dbeaver-data-sources*.xml
 
 *.geany
+!/src/config.cpp

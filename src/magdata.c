@@ -15,8 +15,6 @@
 #include "main.h"
 #include "magdata.h"
 #include "i2c.h"
-//#include "rm3100.h"
-//#include "rm3100.h"
 
 //------------------------------------------
 // Static variables
@@ -27,8 +25,6 @@ extern char *Version;
 //char outputPipeName[MAXPATHBUFLEN]  = "/home/web/wsroot/pipein.fifo";
 //char inputPipeName[MAXPATHBUFLEN]   = "/home/web/wsroot/pipeout.fifo";
 //#endif
-
-
 
 // //---------------------------------------------------------------
 // // void initGPIO(pList *p)
@@ -65,7 +61,6 @@ extern char *Version;
 //             return -1;
 //         }
 // #endif
-//
 //
 //     //-----------------------------------------
 //     // Register the Magnetometer address.
@@ -308,58 +303,6 @@ unsigned short getMagSampleRate(pList *p)
 {
     return p->CMMSampleRate;
 }
-
-//
-////------------------------------------------
-//// getMagRev(pList *p)
-////------------------------------------------
-//int getMagRev(pList *p)
-//{
-//    // Set address of the RM3100
-////    i2c_setAddress(p->pi,  p->magnetometerAddr);
-//
-//    // Check Version
-////    if((p->magRevId = i2c_read(p->pi, RM3100I2C_REVID)) != (uint8_t)RM3100_VER_EXPECTED)
-////    {
-////        // Fail, exit...
-////        fprintf(stderr, "\nRM3100 REVID NOT CORRECT: ");
-////        fprintf(stderr, "RM3100 REVID: 0x%X <> EXPECTED: 0x%X.\n\n", p->magRevId, RM3100_VER_EXPECTED);
-////        fflush(stdout);
-////        return 0;
-////    }
-////    else
-////    {
-////        fprintf(stdout,"RM3100 Detected Properly: ");
-////        fprintf(stdout,"REVID: %x.\n", p->magRevId);
-////    }
-//    return p->magRevId;
-//}
-
-////------------------------------------------
-//// setup_mag()
-////------------------------------------------
-//int setup_mag(pList *p)
-//{
-//    int rv = SensorOK;
-//
-//    // Set address of the RM3100
-////    i2c_setAddress(p->pi,  p->magnetometerAddr);
-//    // Check Version
-//    if(!getMagRev(p))
-//    {
-//        exit (1);
-//    }
-//    // Setup the NOS register
-//    // setNOSReg(p);
-//    // Clear out these registers
-////    i2c_write(p->pi, RM3100_MAG_POLL, 0);
-////    i2c_write(p->pi, RM3100I2C_CMM,  0);
-//    // Initialize CC settings
-//    setCycleCountRegs(p);
-//    // Sleep for 1 second
-//    usleep(100000);                           // delay to help monitor DRDY pin on eval board
-//    return rv;
-//}
 
 //---------------------------------------------------------------
 // void termGPIO(volatile pList p)

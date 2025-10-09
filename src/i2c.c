@@ -80,9 +80,9 @@ void i2c_setBitRate(pList *p, int devspeed)
 
 int i2c_write_temp(pList *p, uint8_t reg, uint8_t value)
 {
-    int rv = 0;
+    int rv;
     rv = i2c_pololu_write_to(p->adapter, (uint8_t) p->remoteTempAddr, (uint8_t) reg, &value, (uint8_t) 1);
-    return value;
+    return rv;
 }
 
 uint8_t i2c_read_temp(pList *p, uint8_t reg)
@@ -120,7 +120,7 @@ int i2c_write_mag(pList *p, uint8_t reg, uint8_t value)
 {
     int rv = 0;
     rv = i2c_pololu_write_to(p->adapter, (uint8_t)p->magAddr, (uint8_t) reg, &value, (uint8_t) 1);
-    return value;
+    return rv;
 }
 
 uint8_t i2c_read_mag(pList *p, uint8_t reg)
