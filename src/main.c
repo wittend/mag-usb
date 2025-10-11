@@ -104,40 +104,40 @@ int main(int argc, char** argv)
     //  Setup magnetometer parameter defaults.
     //-----------------------------------------
     memset(p, 0, sizeof(pList));
-
-    p->portpath         = portpath;
-    p->scanI2CBUS       = FALSE;
+    p->portpath          = portpath;
+    p->scanI2CBUS        = FALSE;
 #if(USE_POLOLU)
-    p->adapter          = &pAdapter;
+    p->use_I2C_converter = 1;
+    p->adapter           = &pAdapter;
 #else
-    p->i2cBusNumber     = RASPI_I2C_BUS1;
+    p->i2cBusNumber      = RASPI_I2C_BUS1;
 #endif
-    p->ppsHandle        = 0;
-    p->magHandle        = 0;
-    p->localTempHandle  = 0;
-    p->remoteTempHandle = 0;
-    p->doBistMask       = 0;
-    p->cc_x             = (int) CC_400;
-    p->cc_y             = (int) CC_400;
-    p->cc_z             = (int) CC_400;
-    p->x_gain           = GAIN_150;
-    p->y_gain           = GAIN_150;
-    p->z_gain           = GAIN_150;
-    p->tsMilliseconds   = 0;
-    p->TMRCRate         = 0x96;
-    p->Version          = Version;
-    p->samplingMode     = POLL;
-    p->readBackCCRegs   = FALSE;
-    p->CMMSampleRate    = 400;
-    p->NOSRegValue      = 60;
-    p->DRDYdelay        = 10;
-    p->magRevId         = 0x0;
-    p->remoteTempAddr   = 0x1F;
-    p->magAddr          = RM3100_I2C_ADDRESS;
-    p->usePipes         = USE_PIPES;
-    p->pipeInPath       = fifoCtrl;
-    p->pipeOutPath      = fifoData;
-    p->readBackCCRegs   = FALSE;
+    p->ppsHandle         = 0;
+    p->magHandle         = 0;
+    p->localTempHandle   = 0;
+    p->remoteTempHandle  = 0;
+    p->doBistMask        = 0;
+    p->cc_x              = (int) CC_400;
+    p->cc_y              = (int) CC_400;
+    p->cc_z              = (int) CC_400;
+    p->x_gain            = GAIN_150;
+    p->y_gain            = GAIN_150;
+    p->z_gain            = GAIN_150;
+    p->tsMilliseconds    = 0;
+    p->TMRCRate          = 0x96;
+    p->Version           = Version;
+    p->samplingMode      = POLL;
+    p->readBackCCRegs    = FALSE;
+    p->CMMSampleRate     = 400;
+    p->NOSRegValue       = 60;
+    p->DRDYdelay         = 10;
+    p->magRevId          = 0x0;
+    p->remoteTempAddr    = 0x1F;
+    p->magAddr           = RM3100_I2C_ADDRESS;
+    p->usePipes          = USE_PIPES;
+    p->pipeInPath        = fifoCtrl;
+    p->pipeOutPath       = fifoData;
+    p->readBackCCRegs    = FALSE;
 
     //-----------------------------------------
     //  Load configuration from TOML file

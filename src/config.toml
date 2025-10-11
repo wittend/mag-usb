@@ -2,6 +2,9 @@
 # Lines starting with # are comments
 
 [i2c]
+# Use external USB to I2C device
+use_I2C_converter = true
+
 # Path to the I2C device
 portpath = "/dev/ttyMAG0"
 

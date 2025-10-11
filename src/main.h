@@ -93,6 +93,7 @@ typedef struct tag_pList
     int fd;
     char *portpath;
 //#if(USE_POLOLU)
+    int use_I2C_converter;
     i2c_pololu_adapter *adapter;
 //#else
     int i2cBusNumber;
