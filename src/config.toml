@@ -6,7 +6,7 @@
 use_I2C_converter = true
 
 # Path to the I2C device
-portpath = "/dev/ttyMAG0"
+portpath = "/dev/ttyACM0"
 
 # I2C bus number (for non-Pololu setups)
 bus_number = 1

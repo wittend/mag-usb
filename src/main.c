@@ -201,14 +201,6 @@ int main(int argc, char** argv)
     fprintf(OUTPUT_PRINT, "    [CHILD] Before setting up GPIO.\n");
     fflush(OUTPUT_PRINT);
 #endif
-
-    // printf("Connecting to %s...\n", port_name);
-    // if(pololu_i2c_connect(&adapter, port_name) != 0)
-    // {
-    //     fprintf(stderr, "Failed to connect to the adapter.\n");
-    //     return 1;
-    // }
-    // printf("Connected.\n");
     i2c_init(p);
     i2c_open(p, portpath);
 
@@ -224,7 +216,6 @@ int main(int argc, char** argv)
         }
     }
 #endif
-
     //-----------------------------------------
     // Verify the Mag sensor presence and Version.
     //-----------------------------------------
@@ -528,8 +519,6 @@ double readTemp(pList *p)
 
     int rv = i2c_pololu_read_from(p->adapter, p->remoteTempAddr, MCP9808_REG_AMBIENT_TEMP, temp_buf, 2);
     char usingcall[256] = "i2c_pololu_read_from";
-    // rv = i2c_pololu_write_and_read_from(&adapter, MCP9808_LCL_I2CADDR_DEFAULT, MCP9808_REG_AMBIENT_TEMP, temp_buf, 2);
-    // char usingcall[256] = "i2c_pololu_write_and_read_from";
 #if(___DEBUG)
     fprintf(stdout,"Using %s():\n", usingcall);
     fprintf(stdout,"Read from register at: [0x%02X] returns: %i\n", MCP9808_REG_AMBIENT_TEMP, rv);
@@ -537,8 +526,8 @@ double readTemp(pList *p)
     {
         fprintf(stdout,"[0x%02X] [0x%02X]\n", temp_buf[0], temp_buf[1]);  // byte swapped ?
     }
-    #endif
-    if(rv < 0)
+#endif
+    if(rv < 2)
     {
         char ebuf[300] = "";
         snprintf(ebuf,sizeof(ebuf),"Read with: %s() ", usingcall);
