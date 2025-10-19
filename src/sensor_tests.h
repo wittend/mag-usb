@@ -11,14 +11,6 @@
 #define MAG_USB_SENSOR_TESTS_H
 
 #include "main.h"
-//#include "rm3100.h"
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <ctype.h>
-#include <errno.h>
-#include <limits.h>
 
 int  verifyPololuAdaptor(pList *p);
 int  scanforBusDevices(pList *p);
