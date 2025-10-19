@@ -6,7 +6,7 @@
 use_I2C_converter = true
 
 # Path to the I2C device
-portpath = "/dev/ttyACM0"
+portpath = "/dev/ttyMAG0"
 
 # I2C bus number (for non-Pololu setups)
 bus_number = 1
@@ -57,3 +57,6 @@ use_pipes = false
 # Pipe paths (if use_pipes is true)
 pipe_in_path = "/home/pi/PSWS/Sstat/magctl.fifo"
 pipe_out_path = "/home/pi/PSWS/Sstat/magdata.fifo"
+
+
+

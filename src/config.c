@@ -5,8 +5,6 @@
 //=========================================================================
 #include "config.h"
 #include "main.h"
-//#include "rm3100.h"
-//#include "MCP9808.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -18,14 +16,6 @@
 #define MAX_KEY_LENGTH 64
 #define MAX_VALUE_LENGTH 256
 
-#ifdef USE_PIPES
-extern char fifoCtrl[]; // = "/home/pi/PSWS/Sstat/magctl.fifo";
-extern char fifoData[]; // = "/home/pi/PSWS/Sstat/magdata.fifo";
-extern char fifoHome[]; // = "/run/user/";
-extern int PIPEIN;      // = -1;
-extern int PIPEOUT;     // = -1;
-#endif //USE_PIPES
-
 //---------------------------------------------------------------
 // Helper: Trim leading and trailing whitespace
 //---------------------------------------------------------------
@@ -34,14 +24,20 @@ static char *trim_whitespace(char *str)
     char *end;
 
     // Trim leading space
-    while(isspace((unsigned char)*str)) str++;
-
-    if(*str == 0) return str;
-
+    while(isspace((unsigned char)*str))
+    {
+        str++;
+    }
+    if(*str == 0)
+    {
+        return str;
+    }
     // Trim trailing space
     end = str + strlen(str) - 1;
-    while(end > str && isspace((unsigned char)*end)) end--;
-
+    while(end > str && isspace((unsigned char)*end))
+    {
+        end--;
+    }
     end[1] = '\0';
     return str;
 }
@@ -94,9 +90,14 @@ static int is_section_header(const char *line, char *section_name)
     const char *ptr = line;
 
     // Skip whitespace
-    while(isspace((unsigned char)*ptr)) ptr++;
-
-    if(*ptr != '[') return 0;
+    while(isspace((unsigned char)*ptr))
+    {
+        ptr++;
+    }
+    if(*ptr != '[')
+    {
+        return 0;
+    }
     ptr++;
 
     // Extract section name
@@ -113,7 +114,6 @@ static int is_section_header(const char *line, char *section_name)
     {
         memmove(section_name, trimmed, strlen(trimmed) + 1);
     }
-
     return (*ptr == ']');
 }
 
@@ -123,11 +123,16 @@ static int is_section_header(const char *line, char *section_name)
 static int parse_key_value(const char *line, char *key, char *value)
 {
     const char *equals = strchr(line, '=');
-    if(!equals) return 0;
-
+    if(!equals)
+    {
+        return 0;
+    }
     // Extract key
     size_t key_len = equals - line;
-    if(key_len >= MAX_KEY_LENGTH) key_len = MAX_KEY_LENGTH - 1;
+    if(key_len >= MAX_KEY_LENGTH)
+    {
+        key_len = MAX_KEY_LENGTH - 1;
+    }
     strncpy(key, line, key_len);
     key[key_len] = '\0';
 
@@ -138,7 +143,6 @@ static int parse_key_value(const char *line, char *key, char *value)
     // Trim both
     char *trimmed_key = trim_whitespace(key);
     char *trimmed_value = trim_whitespace(value);
-
     if(trimmed_key != key)
     {
         memmove(key, trimmed_key, strlen(trimmed_key) + 1);
@@ -147,14 +151,12 @@ static int parse_key_value(const char *line, char *key, char *value)
     {
         memmove(value, trimmed_value, strlen(trimmed_value) + 1);
     }
-
     // Remove quotes from value
     trimmed_value = remove_quotes(value);
     if(trimmed_value != value)
     {
         memmove(value, trimmed_value, strlen(trimmed_value) + 1);
     }
-
     return 1;
 }
 
@@ -168,8 +170,16 @@ static void process_config_value(pList *p, const char *section, const char *key,
     {
         if(strcmp(key, "portpath") == 0)
         {
-            strncpy(p->portpath, value, PATH_MAX - 1);
-            p->portpath[PATH_MAX - 1] = '\0';
+            if(p->portpath != NULL)
+            {
+                strncpy(p->portpath, value, PATH_MAX - 1);
+                p->portpath[PATH_MAX - 1] = '\0';
+ //               fprintf(stderr, "DEBUG: Set portpath to '%s'\n", p->portpath);
+            }
+            else
+            {
+                fprintf(stderr, "ERROR: p->portpath is NULL!\n");
+            }
         }
         else if(strcmp(key, "bus_number") == 0)
         {
@@ -254,24 +264,24 @@ static void process_config_value(pList *p, const char *section, const char *key,
     // [output] section
     else if(strcmp(section, "output") == 0)
     {
-#ifdef USE_PIPES
-        if(strcmp(key, "use_pipes") == 0)
-        {
-            p->usePipes = parse_bool(value);
-        }
-        else if(strcmp(key, "pipe_in_path") == 0)
-        {
-            strncpy((char*)fifoCtrl, value, PATH_MAX - 1);
-            fifoCtrl[PATH_MAX - 1] = '\0';
-            p->pipeInPath = fifoCtrl;
-        }
-        else if(strcmp(key, "pipe_out_path") == 0)
-        {
-            strncpy((char*)fifoData, value, PATH_MAX - 1);
-            fifoData[PATH_MAX - 1] = '\0';
-            p->pipeOutPath = fifoData;
-        }
-#endif
+// #ifdef USE_PIPES
+//         if(strcmp(key, "use_pipes") == 0)
+//         {
+//             p->usePipes = parse_bool(value);
+//         }
+//         else if(strcmp(key, "pipe_in_path") == 0)
+//         {
+//             strncpy((char*)fifoCtrl, value, PATH_MAX - 1);
+//             fifoCtrl[PATH_MAX - 1] = '\0';
+//             p->pipeInPath = fifoCtrl;
+//         }
+//         else if(strcmp(key, "pipe_out_path") == 0)
+//         {
+//             strncpy((char*)fifoData, value, PATH_MAX - 1);
+//             fifoData[PATH_MAX - 1] = '\0';
+//             p->pipeOutPath = fifoData;
+//         }
+// #endif
     }
 }
 
@@ -286,12 +296,12 @@ int load_config(const char *config_path, pList *p)
         if(errno == ENOENT)
         {
             // File doesn't exist - not an error, will use defaults
+            fprintf(stderr, "File doesn't exist:  '%s'. Will use defaults.", config_path);
             return -1;
         }
         else
         {
-            fprintf(stderr, "Error opening config file '%s': %s\n",
-                    config_path, strerror(errno));
+            fprintf(stderr, "Error opening config file '%s': %s\n", config_path, strerror(errno));
             return -1;
         }
     }
@@ -307,10 +317,20 @@ int load_config(const char *config_path, pList *p)
     {
         line_num++;
 
-        // Remove newline
+        // Remove newline and carriage return
         size_t len = strlen(line);
-        if(len > 0 && line[len-1] == '\n') line[len-1] = '\0';
-        if(len > 1 && line[len-2] == '\r') line[len-2] = '\0';
+        if(len > 0 && (line[len-1] == '\n' || line[len-1] == '\r'))
+        {
+            line[len-1] = '\0';
+            len--;
+        }
+        if(len > 0 && (line[len-1] == '\r' || line[len-1] == '\n'))
+        {
+            line[len-1] = '\0';
+        }
+
+//        fprintf(stderr, "Line: %i, %i, %s\n", line_num, (int) len, line);
+//        fflush(stderr);
 
         char *trimmed = trim_whitespace(line);
 
@@ -324,7 +344,7 @@ int load_config(const char *config_path, pList *p)
         if(is_section_header(trimmed, current_section))
         {
 #if(__DEBUG)
-            fprintf(OUTPUT_PRINT, "Config: Entering section [%s]\n", current_section);
+//            fprintf(OUTPUT_PRINT, "Config: [%s]\n", current_section);
 #endif
             continue;
         }
@@ -333,26 +353,25 @@ int load_config(const char *config_path, pList *p)
         if(parse_key_value(trimmed, key, value))
         {
 #if(__DEBUG)
-            fprintf(OUTPUT_PRINT, "Config: %s.%s = %s\n", current_section, key, value);
+//            fprintf(OUTPUT_PRINT, "Config:      %s.%s = %s\n", current_section, key, value);
 #endif
             process_config_value(p, current_section, key, value);
         }
         else
         {
-            fprintf(stderr, "Warning: Could not parse line %d in %s: %s\n",
-                    line_num, config_path, line);
+            fprintf(stderr, "Warning: Could not parse line %d in %s: %s\n", line_num, config_path, line);
             parse_errors++;
         }
     }
-
     fclose(fp);
-
     if(parse_errors > 0)
     {
         fprintf(stderr, "Warning: %d parse error(s) in config file\n", parse_errors);
         return -2;
     }
-
-    printf("Configuration loaded from %s\n", config_path);
+    // Successfully loaded configuration
+#if(__DEBUG)
+//    fprintf(OUTPUT_PRINT, "Successfully loaded configuration\n");
+#endif
     return 0;
 }

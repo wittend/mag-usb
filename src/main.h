@@ -26,7 +26,6 @@
 #include <sys/stat.h>
 #include <sys/time.h>
 #include "MCP9808.h"
-//#include "rm3100.h"
 
 #ifndef TRUE
     #define TRUE  1
@@ -38,6 +37,7 @@
 //------------------------------------------
 // Debugging output
 //------------------------------------------
+#define __DEBUG             TRUE
 #define CONSOLE_OUTPUT      TRUE
 
 //------------------------------------------
@@ -54,7 +54,8 @@
 #define USE_RGPIO           FALSE
 #define USE_POLOLU          TRUE
 
-#define USE_PIPES           FALSE
+//#define USE_PIPES           FALSE
+//#undef USE_PIPES           FALSE
 #define USE_PTHREADS        TRUE
 
 #if(USE_PIGPIO)
@@ -79,7 +80,7 @@
 
 #define MAGDATA_VERSION     "0.2.0"
 #define UTCBUFLEN           64
-#define MAXPATHBUFLEN       1025
+#define MAXPATHBUFLEN       PATH_MAX
 #define XYZ_BUFLEN          9
 
 #define POLL                0
@@ -98,17 +99,18 @@ typedef struct tag_pList
 //#else
     int i2cBusNumber;
 //#endif
+    int checkPololuAdaptor;
     int scanI2CBUS;
+    int checkTempSensor;
+    int checkMagSensor;
 
     int ppsHandle;
     unsigned edge_cb_id;
     
     unsigned magHandle;
-    unsigned localTempHandle;
     unsigned remoteTempHandle;
 
     int  magAddr;
-    int  localTempAddr;
     int  remoteTempAddr;
 
     int  doBistMask;
@@ -146,17 +148,19 @@ typedef struct tag_pList
 // Prototypes
 //------------------------------------------
 int  main(int argc, char** argv);
-void onEdge(void);
-char *formatOutput(pList *p);
-int  scanforBusDevices(pList *p);
-int  verifyMagSensor(pList *p);
+// void onEdge(void);
 int  initMagSensor(pList *p);
+char *formatOutput(pList *p);
+// int  verifyPololuAdaptor(pList *p);
+// int  scanforBusDevices(pList *p);
+// int  verifyMagSensor(pList *p);
+// int  verifyTempSensor(pList *p);
 int  initTempSensors(pList *p);
 int  readLocalTemp(pList *p);
 int  readRemoteTemp(pList *p);
 //int  readMagCMM(volatile pList *p);
 int  readMagPOLL(pList *p);
-void* read_sensor(void* arg);
+void* read_sensors(void* arg);
 void* print_data(void* arg);
 void* signal_handler_thread(void* arg);
 double readTemp(pList *p);

@@ -16,17 +16,12 @@
 #include "cmdmgr.h"
 #include "rm3100.h"
 #include "config.h"
+#include "sensor_tests.h"
 
 #include <pthread.h>
 #include <signal.h>
 #include <unistd.h>
 #include <time.h>
-//------------------------------------------
-// Debugging output
-//------------------------------------------
-// see main.h
-//
-//#define __DEBUG         FALSE
 
 //------------------------------------------
 // Macros
@@ -38,18 +33,17 @@
 // Static and Global variables
 //------------------------------------------
 char Version[32];
-int volatile PPS_Flag = FALSE;
 int volatile killflag;
 static char outBuf[256];
 char portpath[PATH_MAX] = "/dev/ttyMAG0";          // default path for pololu i2c emulator.
 
-#ifdef USE_PIPES
-    char fifoCtrl[] = "/home/pi/PSWS/Sstat/magctl.fifo";
-    char fifoData[] = "/home/pi/PSWS/Sstat/magdata.fifo";
-    char fifoHome[] = "/run/user/";
-    int PIPEIN  = -1;
-    int PIPEOUT = -1;
-#endif //USE_PIPES
+// #ifdef USE_PIPES
+//     char fifoCtrl[] = "/home/PSWS/Sstat/magctl.fifo";
+//     char fifoData[] = "/home/PSWS/Sstat/magdata.fifo";
+//     char fifoHome[] = "/run/user/";
+//     int PIPEIN  = -1;
+//     int PIPEOUT = -1;
+// #endif //USE_PIPES
 
 #if((USE_LGPIO || USE_RGPIO) && USE_WAITFOREDGE)
 void cbTestFunc()
@@ -91,120 +85,109 @@ int main(int argc, char** argv)
     struct  tm *utcTime = getUTC();
     //char    portpath[MAXPATHBUFLEN];
 
-#if(__DEBUG)
-    #if(USE_PIPES)
-        printf("fifoCtrl: %s\n", fifoCtrl);
-        printf("fifoData: %s\n", fifoData);
-    #endif
-    fprintf(OUTPUT_PRINT, "\n[CHILD] In %s child process.\n", argv[0]);
-    fflush(stdout);
-#endif
-
     //-----------------------------------------
     //  Setup magnetometer parameter defaults.
     //-----------------------------------------
     memset(p, 0, sizeof(pList));
-    p->portpath          = portpath;
-    p->scanI2CBUS        = FALSE;
+    p->portpath             = portpath;
+    p->scanI2CBUS           = FALSE;
+    p->checkPololuAdaptor   = FALSE;
+    p->checkMagSensor       = FALSE;
+    p->checkTempSensor      = FALSE;
 #if(USE_POLOLU)
-    p->use_I2C_converter = 1;
-    p->adapter           = &pAdapter;
+    p->use_I2C_converter    = 1;
+    p->adapter              = &pAdapter;
 #else
-    p->i2cBusNumber      = RASPI_I2C_BUS1;
+    p->i2cBusNumber         = RASPI_I2C_BUS1;
 #endif
-    p->ppsHandle         = 0;
-    p->magHandle         = 0;
-    p->localTempHandle   = 0;
-    p->remoteTempHandle  = 0;
-    p->doBistMask        = 0;
-    p->cc_x              = (int) CC_400;
-    p->cc_y              = (int) CC_400;
-    p->cc_z              = (int) CC_400;
-    p->x_gain            = GAIN_150;
-    p->y_gain            = GAIN_150;
-    p->z_gain            = GAIN_150;
-    p->tsMilliseconds    = 0;
-    p->TMRCRate          = 0x96;
-    p->Version           = Version;
-    p->samplingMode      = POLL;
-    p->readBackCCRegs    = FALSE;
-    p->CMMSampleRate     = 400;
-    p->NOSRegValue       = 60;
-    p->DRDYdelay         = 10;
-    p->magRevId          = 0x0;
-    p->remoteTempAddr    = 0x1F;
-    p->magAddr           = RM3100_I2C_ADDRESS;
-    p->usePipes          = USE_PIPES;
-    p->pipeInPath        = fifoCtrl;
-    p->pipeOutPath       = fifoData;
-    p->readBackCCRegs    = FALSE;
+    p->ppsHandle            = 0;
+    p->magHandle            = 0;
+    p->remoteTempHandle     = 0;
+    p->doBistMask           = 0;
+    p->cc_x                 = (int) CC_400;
+    p->cc_y                 = (int) CC_400;
+    p->cc_z                 = (int) CC_400;
+    p->x_gain               = GAIN_150;
+    p->y_gain               = GAIN_150;
+    p->z_gain               = GAIN_150;
+    p->tsMilliseconds       = 0;
+    p->TMRCRate             = 0x96;
+    p->Version              = Version;
+    p->samplingMode         = POLL;
+    p->readBackCCRegs       = FALSE;
+    p->CMMSampleRate        = 400;
+    p->NOSRegValue          = 60;
+    p->DRDYdelay            = 10;
+    p->magRevId             = 0x0;
+    p->remoteTempAddr       = 0x1F;
+    p->magAddr              = RM3100_I2C_ADDRESS;
+//    p->usePipes             = USE_PIPES;
+//    p->pipeInPath           = fifoCtrl;
+//    p->pipeOutPath          = fifoData;
+    p->readBackCCRegs       = FALSE;
 
     //-----------------------------------------
     //  Load configuration from TOML file
     //  (command line args will override these)
     //-----------------------------------------
-    if (load_config("config.toml", p) == 0)
-    {
-        fprintf(OUTPUT_PRINT, "Configuration loaded successfully.\n");
-    }
-    else
-    {
-        fprintf(OUTPUT_PRINT, "Using default configuration (config.toml not found or invalid).\n");
-    }
+    load_config("config.toml", p);
 
     if((rv = getCommandLine(argc, argv, p)) != 0)
     {
         return rv;
     }
 
-#if(USE_PIPES)
-    //-----------------------------------------
-    //  Setup the I/O pipes
-    //-----------------------------------------
-    int  fdPipeIn;
-    int  fdPipeOut;
-
-    if(p->usePipes == TRUE)
-    {
-        // Notice that fdPipeOut and fdPipeIn are intentionally reversed.
-        if(!(fdPipeOut = open(p->pipeInPath, O_WRONLY | O_CREAT)))
-        {
-            perror("    [CHILD] Open PIPE Out failed: ");
-            fprintf(OUTPUT_PRINT, "%s", p->pipeInPath);
-            exit(1);
-        }
-        else
-        {
-            fprintf(OUTPUT_PRINT, "    [CHILD] Open PIPE Out OK.\n");
-            fflush(OUTPUT_PRINT);
-            PIPEOUT = fdPipeOut;
-        }
-
-        if(!(fdPipeIn = open(p->pipeOutPath, O_RDONLY | O_CREAT)))
-        {    
-            perror("    [CHILD] Open PIPE In failed: ");
-            fprintf(OUTPUT_PRINT, "%s", p->pipeInPath);
-            exit(1);
-        }
-        else
-        {
-            fprintf(OUTPUT_PRINT, "    [CHILD] Open PIPE In OK.\n");
-            fflush(OUTPUT_PRINT);
-            PIPEIN = fdPipeIn;
-        }
-    }
-#endif // USE_PIPES
+// #if(USE_PIPES)
+//     //-----------------------------------------
+//     //  Setup the I/O pipes
+//     //-----------------------------------------
+//     int  fdPipeIn;
+//     int  fdPipeOut;
+//
+//     if(p->usePipes == TRUE)
+//     {
+//         // Notice that fdPipeOut and fdPipeIn are intentionally reversed.
+//         if(!(fdPipeOut = open(p->pipeInPath, O_WRONLY | O_CREAT)))
+//         {
+//             perror("    [CHILD] Open PIPE Out failed: ");
+//             fprintf(OUTPUT_PRINT, "%s", p->pipeInPath);
+//             exit(1);
+//         }
+//         else
+//         {
+//             fprintf(OUTPUT_PRINT, "    [CHILD] Open PIPE Out OK.\n");
+//             fflush(OUTPUT_PRINT);
+//             PIPEOUT = fdPipeOut;
+//         }
+//
+//         if(!(fdPipeIn = open(p->pipeOutPath, O_RDONLY | O_CREAT)))
+//         {
+//             perror("    [CHILD] Open PIPE In failed: ");
+//             fprintf(OUTPUT_PRINT, "%s", p->pipeInPath);
+//             exit(1);
+//         }
+//         else
+//         {
+//             fprintf(OUTPUT_PRINT, "    [CHILD] Open PIPE In OK.\n");
+//             fflush(OUTPUT_PRINT);
+//             PIPEIN = fdPipeIn;
+//         }
+//     }
+// #endif // USE_PIPES
 
 //    unsigned edge_cb_id = 0;
     
-#if(___DEBUG)
-    fprintf(OUTPUT_PRINT, "    [CHILD] Before setting up GPIO.\n");
-    fflush(OUTPUT_PRINT);
-#endif
     i2c_init(p);
     i2c_open(p, portpath);
 
 #if(USE_POLOLU)
+    if(p->checkPololuAdaptor)
+    {
+        if(verifyPololuAdaptor(p) <= 0)
+        {
+            exit(1002);
+        }
+    }
     //-----------------------------------------------------
     // Get interface info and scan for i2c devices.
     //-----------------------------------------------------
@@ -216,48 +199,52 @@ int main(int argc, char** argv)
         }
     }
 #endif
+    //-----------------------------------------------------
+    // Verify the Temp sensor presence and Version.
+    //-----------------------------------------------------
+    if(p->checkTempSensor)
+    {
+        if(verifyTempSensor(p))
+        {
+     //       exit(1002);
+        }
+    }
+
     //-----------------------------------------
     // Verify the Mag sensor presence and Version.
     //-----------------------------------------
-    if(verifyMagSensor(p))
+    if(p->checkMagSensor)
     {
-        utcTime = getUTC();
-        strftime(utcStr, UTCBUFLEN, "%d %b %Y %T", utcTime);
-        fprintf(OUTPUT_ERROR, "    [CHILD] {ts: \"%s\", lastStatus: \"Unable to Verify the magnetometer.\"}", utcStr); 
-        fflush(OUTPUT_ERROR);
-        exit(2);
-    }
-    else
-    {
-        //-----------------------------------------
-        //  Initialize the Mag sensor registers.
-        //-----------------------------------------
-        if(initMagSensor(p))
+        if(verifyMagSensor(p))
         {
             utcTime = getUTC();
             strftime(utcStr, UTCBUFLEN, "%d %b %Y %T", utcTime);
-            fprintf(OUTPUT_ERROR, "    [CHILD] {ts: \"%s\", lastStatus: \"Unable to initialize the magnetometer.\"}", utcStr); 
+            fprintf(OUTPUT_ERROR, "    [CHILD] {ts: \"%s\", lastStatus: \"Unable to Verify the magnetometer.\"}", utcStr);
             fflush(OUTPUT_ERROR);
             exit(2);
         }
     }
-#if ___DEBUG
-    fprintf(OUTPUT_PRINT, "    [CHILD] Before setting up callback to: onEdge() for PPS...\n");
-    fflush(OUTPUT_PRINT);
-#endif
-    
+
+    //-----------------------------------------
+    //  Initialize the Mag sensor registers.
+    //-----------------------------------------
+    if(initMagSensor(p))
+    {
+        utcTime = getUTC();
+        strftime(utcStr, UTCBUFLEN, "%d %b %Y %T", utcTime);
+        fprintf(OUTPUT_ERROR, "    {ts: \"%s\", lastStatus: \"Unable to initialize the magnetometer.\"}", utcStr);
+        fflush(OUTPUT_ERROR);
+        exit(2);
+    }
+
     //-----------------------------------------------------
     //  Main program loop.
     //-----------------------------------------------------
-
 #if(USE_PTHREADS)
-
     pthread_t sensor_thread, print_thread, signal_thread;
-
     fprintf(OUTPUT_PRINT, "\n");
-
     // Create threads
-    if (pthread_create(&sensor_thread, NULL, read_sensor, (void *) p) != 0)
+    if (pthread_create(&sensor_thread, NULL, read_sensors, (void *) p) != 0)
     {
         perror("pthread_create sensor");
         exit(1);
@@ -274,15 +261,13 @@ int main(int argc, char** argv)
     }
     // Wait for signal handler thread to complete (it will only return on signal)
     pthread_join(signal_thread, NULL);
-
     // Signal handler has set shutdown_requested, so wait for other threads to finish
     pthread_join(sensor_thread, NULL);
     pthread_join(print_thread, NULL);
-
     // Clean up
     pthread_mutex_destroy(&data_mutex);
-
 #else
+
     while(1)
     {
         // if(PPS_Flag)
@@ -327,7 +312,6 @@ int main(int argc, char** argv)
         rv = event_callback_cancel(p->edge_cb_id);
     #endif
 #endif // USE_PTHREADS
-
     printf("Program terminated.\n");
     return 0;
 }
@@ -335,13 +319,13 @@ int main(int argc, char** argv)
 //---------------------------------------------------------------
 // Function to simulate reading sensor data
 //---------------------------------------------------------------
-void* read_sensor(void* arg)
+void* read_sensors(void* arg)
 {
     while (!shutdown_requested)
     {
         pList * p = (pList *) arg;
         // Simulate sensor reading (replace with actual sensor code)
-        sensor_data = rand() % 100; // Random data between 0 and 99
+        //sensor_data = rand() % 100; // Random data between 0 and 99
 
         // Sleep for 1000 ms (1 second)
         usleep(1000000);
@@ -430,7 +414,6 @@ void* signal_handler_thread(void* arg)
 //---------------------------------------------------------------
 // void formatOutput(volatile pList *p, char *outBuf)
 //---------------------------------------------------------------
-//char *formatOutput(pList *p, char *outBuf)
 char *formatOutput(pList *p)
 {
 #define FMTBUFLEN  200
@@ -439,27 +422,21 @@ char *formatOutput(pList *p)
     struct tm *utcTime  = getUTC();
     char utcStr[128]    ="";
     double xyz[3];
-//    int localTemp       = 0;
     int remoteTemp      = 0;
     float rcLocalTemp   = 0.0;
     double rcRemoteTemp = 0.0;
 
     strncpy(outBuf, "", 1);
 
-/*
     // readMagPOLL(p);
-
-//    xyz[0] = (((double)p->XYZ[0] / p->NOSRegValue) / p->x_gain) * 1000; // make microTeslas -> nanoTeslas
-//    xyz[1] = (((double)p->XYZ[1] / p->NOSRegValue) / p->y_gain) * 1000; // make microTeslas -> nanoTeslas
-//    xyz[2] = (((double)p->XYZ[2] / p->NOSRegValue) / p->z_gain) * 1000; // make microTeslas -> nanoTeslas
+    //    xyz[0] = (((double)p->XYZ[0] / p->NOSRegValue) / p->x_gain) * 1000; // make microTeslas -> nanoTeslas
+    //    xyz[1] = (((double)p->XYZ[1] / p->NOSRegValue) / p->y_gain) * 1000; // make microTeslas -> nanoTeslas
+    //    xyz[2] = (((double)p->XYZ[2] / p->NOSRegValue) / p->z_gain) * 1000; // make microTeslas -> nanoTeslas
 
     xyz[0] = (((double)p->XYZ[0] / p->NOSRegValue) / p->x_gain);
     xyz[1] = (((double)p->XYZ[1] / p->NOSRegValue) / p->y_gain);
     xyz[2] = (((double)p->XYZ[2] / p->NOSRegValue) / p->z_gain);
 
-
-
-    // readMagPOLL(p);
 #if(FOR_GRAPE2)
     strftime(utcStr, UTCBUFLEN, "%Y%m%e%y%M%S", utcTime);              // YYYYMMDDHHMMSS  (Gaak!)
     snprintf(fmtBuf, fmtBuf_len, "\"ts\":%s", utcStr);
@@ -467,7 +444,7 @@ char *formatOutput(pList *p)
     strftime(utcStr, UTCBUFLEN, "%d %b %Y %T", utcTime);                // RFC 2822: "%a, %d %b %Y %T %z"
     snprintf(fmtBuf, fmtBuf_len, "\"ts\":\"%s\"", utcStr);
 #endif
-*/
+
     rcRemoteTemp = readTemp(p);
 
     utcTime = getUTC();
@@ -500,8 +477,8 @@ char *formatOutput(pList *p)
 #if(CONSOLE_OUTPUT)
     fprintf(OUTPUT_PRINT, " %s", outBuf);
     fflush(OUTPUT_PRINT);
-#elif(USE_PIPES)
-    write(PIPEOUT, outBuf);
+// #elif(USE_PIPES)
+//     write(PIPEOUT, outBuf);
 #else    
     fprintf(OUTPUT_PRINT, "  %s", outBuf);
     fflush(OUTPUT_PRINT);
@@ -509,7 +486,9 @@ char *formatOutput(pList *p)
     return outBuf;
 }
 
-
+//---------------------------------------------------------------
+// readTemp(pList *p)
+//---------------------------------------------------------------
 double readTemp(pList *p)
 {
 #if(___DEBUG)
@@ -546,7 +525,6 @@ double readTemp(pList *p)
 static double mcp9808_decode_celsius(uint8_t msb, uint8_t lsb)
 {
     uint16_t raw = ((uint16_t)msb << 8) | lsb;
-
     // First, clear alert flag bits (15, 14, 13)
     raw &= 0x1FFF;  // Keep only bits 12-0
 
@@ -565,7 +543,6 @@ static double mcp9808_decode_celsius(uint8_t msb, uint8_t lsb)
     }
     return c;
 }
-
 
 //------------------------------------------
 // readMagPOLL()
@@ -608,7 +585,6 @@ int readMagPOLL(pList *p)
     {
         usleep(p->DRDYdelay);
     }
-
 #if(__DEBUG)
     fprintf(OUTPUT_PRINT, "    [Child]: Before Write to RM3100I2C_XYZ.\n");
     fflush(OUTPUT_PRINT);
@@ -678,111 +654,190 @@ int readMagPOLL(pList *p)
     return bytes_read;
 }
 
-//---------------------------------------------------------------
-// scanforBusDevices(pList *p)
-//---------------------------------------------------------------
-int scanforBusDevices(pList *p)
-{
-    fprintf(stdout,"\nChecking Pololu I2C Adapter info:\n");
-
-    //-----------------------------------------------------
-    // Get the Pololu i2c device info.
-    //-----------------------------------------------------
-    i2c_pololu_device_info info;
-    if(i2c_pololu_get_device_info(p->adapter, &info) == 0)
-    {
-        fprintf(stdout,"  Device Info:\n");
-        fprintf(stdout,"     Vendor ID:        0x%04X\n", info.vendor_id);
-        fprintf(stdout,"     Product ID:       0x%04X\n", info.product_id);
-        fprintf(stdout,"     Firmware Version: %s\n", info.firmware_version);
-        fprintf(stdout,"     Serial Number:    %s\n", info.serial_number);
-    }
-    else
-    {
-        fprintf(stdout, "    Failed to get device info.\n");
-        return -1;
-    }
-    // Scan for I2C devices
-
-    fprintf(stdout,"\n  Scanning for I2C devices...\n");
-    uint8_t found_addresses[128];
-    i2c_pololu_scan(p->adapter, found_addresses, 128);
-    int device_count = i2c_pololu_scan(p->adapter, found_addresses, 128);
-    if (device_count > 0)
-    {
-        printf("    Found %d device(s):\n", device_count);
-        for (int i = 0; i < device_count; ++i)
-        {
-            fprintf(stdout,"      Address: 0x%02X\n", found_addresses[i]);
-        }
-        return device_count;
-    }
-    else if (device_count == 0)
-    {
-        fprintf(stderr,"      No I2C devices found.\n");
-        return -1;
-    }
-    else
-    {
-        fprintf(stderr, "    An error occurred during the I2C scan: %s\n", i2c_pololu_error_string(device_count));
-        return -1;
-    }
-}
-
-//---------------------------------------------------------------
+// //---------------------------------------------------------------
+// // scanforBusDevices(pList *p)
+// //---------------------------------------------------------------
+// int scanforBusDevices(pList *p)
+// {
+//     fprintf(stdout,"\nChecking Pololu I2C Adapter info:\n");
+//
+//     //-----------------------------------------------------
+//     // Get the Pololu i2c device info.
+//     //-----------------------------------------------------
+//     // i2c_pololu_device_info info;
+//     // if(i2c_pololu_get_device_info(p->adapter, &info) == 0)
+//     // {
+//     //     fprintf(stdout,"  Device Info:\n");
+//     //     fprintf(stdout,"     Vendor ID:        0x%04X\n", info.vendor_id);
+//     //     fprintf(stdout,"     Product ID:       0x%04X\n", info.product_id);
+//     //     fprintf(stdout,"     Firmware Version: %s\n", info.firmware_version);
+//     //     fprintf(stdout,"     Serial Number:    %s\n", info.serial_number);
+//     // }
+//     // else
+//     // {
+//     //     fprintf(stdout, "    Failed to get device info.\n");
+//     //     return -1;
+//     // }
+//
+//     // Scan for I2C devices
+//     fprintf(stdout,"\n  Scanning for I2C devices...\n");
+//     uint8_t found_addresses[128];
+//     int device_count = i2c_pololu_scan(p->adapter, found_addresses, 128);
+//     if (device_count > 0)
+//     {
+//         printf("    Found %d device(s):\n", device_count);
+//         for (int i = 0; i < device_count; ++i)
+//         {
+//             fprintf(stdout,"      Address: 0x%02X\n", found_addresses[i]);
+//         }
+//         return device_count;
+//     }
+//     else if (device_count == 0)
+//     {
+//         fprintf(stderr,"      No I2C devices found.\n");
+//         return -1;
+//     }
+//     else
+//     {
+//         fprintf(stderr, "    An error occurred during the I2C scan: %s\n", i2c_pololu_error_string(device_count));
+//         return -1;
+//     }
+// }
+//
+// //---------------------------------------------------------------
+// // int verifyPololuAdaptor(pList *p)
+// //---------------------------------------------------------------
+// int verifyPololuAdaptor(pList *p)
+// {
+//     fprintf(stdout,"\nChecking Pololu I2C Adapter info:\n");
+//     //-----------------------------------------------------
+//     // Get the Pololu i2c device info.
+//     //-----------------------------------------------------
+//     i2c_pololu_device_info info;
+//     if(i2c_pololu_get_device_info(p->adapter, &info) == 0)
+//     {
+//         fprintf(stdout,"  Device Info:\n");
+//         fprintf(stdout,"     Vendor ID:        0x%04X\n", info.vendor_id);
+//         fprintf(stdout,"     Product ID:       0x%04X\n", info.product_id);
+//         fprintf(stdout,"     Firmware Version: %s\n", info.firmware_version);
+//         fprintf(stdout,"     Serial Number:    %s\n", info.serial_number);
+//     }
+//     else
+//     {
+//         fprintf(stdout, "    Failed to get device info.\n");
+//         return -1;
+//     }
+//     return true;
+// }
+//
+// //---------------------------------------------------------------
+// // int verifyMagSensor(pList *p)
+// //---------------------------------------------------------------
+// int verifyTempSensor(pList *p)
+// {
+//     fprintf(stdout, "\nVerifying Temperature Sensor Status & Version...\n");
+//
+//     if(i2c_pololu_is_connected(p->adapter))
+//     {
+//         fprintf(stdout, "  Connection to: %s is OK!\n", p->portpath);
+//     }
+//     else
+//     {
+//         return 0;
+//     }
+//
+//     i2c_pololu_clear_bus(p->adapter);
+//
+//     // uint8_t buf[2] = {0};
+//     // uint8_t addr = 0x23; // example device
+//     // uint8_t reg  = 0x36; // example register
+//     // int rv = -1;
+//     //
+//     // // Write register index
+//     // rv = i2c_pololu_write_to(p->adapter, addr, reg, "", 1);
+//     // if (rv < 0)
+//     // {
+//     //     fprintf(stdout, "  Write failed: %s\n", i2c_pololu_error_string(-rv));
+//     //     goto done;
+//     // }
+//     // // Read back 2 bytes
+//     // //    uint8_t buf[2] = {0};
+//     // rv = i2c_pololu_read_from(p->adapter, addr, reg, buf, 2);
+//     // if (rv < 0)
+//     // {
+//     //     fprintf(stdout, "  Read failed: %s\n", i2c_pololu_error_string(-rv));
+//     //     goto done;
+//     // }
+//     // //fprintf(stderr,"  Data: %02X %02X\n", buf[0], buf[1]);
+//     // rv = buf[0];
+//     // if(rv == (uint8_t) RM3100_VER_EXPECTED)
+//     // {
+//     //     fprintf(stdout, "  Version is OK!: 0x%2X\n", rv);
+//     //     return 0;
+//     // }
+//     // else
+//     // {
+//     //     fprintf(stdout, "  Version does NOT match!\n");
+//     //     return rv;
+//     // }
+// done:
+//     return true;
+// }
+//
+// //---------------------------------------------------------------
+// // int verifyMagSensor(pList *p)
+// //---------------------------------------------------------------
 // int verifyMagSensor(pList *p)
-//---------------------------------------------------------------
-int verifyMagSensor(pList *p)
-{
-    fprintf(stdout, "\nVerifying Magnetometer Status & Version...\n");
-
-    if(i2c_pololu_is_connected(p->adapter))
-    {
-        fprintf(stdout, "  Connection to: %s is OK!\n", p->portpath);
-    }
-    else
-    {
-        return 0;
-    }
-
-    i2c_pololu_clear_bus(p->adapter);
-
-    uint8_t buf[2] = {0};
-    uint8_t addr = 0x23; // example device
-    uint8_t reg  = 0x36; // example register
-    int rv = -1;
-
-    // Write register index
-    rv = i2c_pololu_write_to(p->adapter, addr, reg, "", 1);
-    if (rv < 0)
-    {
-        fprintf(stdout, "  Write failed: %s\n", i2c_pololu_error_string(-rv));
-        goto done;
-    }
-    // Read back 2 bytes
-    //    uint8_t buf[2] = {0};
-    rv = i2c_pololu_read_from(p->adapter, addr, reg, buf, 2);
-    if (rv < 0)
-    {
-        fprintf(stdout, "  Read failed: %s\n", i2c_pololu_error_string(-rv));
-        goto done;
-    }
-    //fprintf(stderr,"  Data: %02X %02X\n", buf[0], buf[1]);
-    rv = buf[0];
-    if(rv == (uint8_t) RM3100_VER_EXPECTED)
-    {
-        fprintf(stdout, "  Version is OK!: 0x%2X\n", rv);
-        return 0;
-    }
-    else
-    {
-        fprintf(stdout, "  Version does NOT match!\n");
-        return rv;
-    }
-done:
-    return 1;
-}
-
+// {
+//     fprintf(stdout, "\nVerifying Magnetometer Status & Version...\n");
+//
+//     if(i2c_pololu_is_connected(p->adapter))
+//     {
+//         fprintf(stdout, "  Connection to: %s is OK!\n", p->portpath);
+//     }
+//     else
+//     {
+//         return 0;
+//     }
+//
+//     i2c_pololu_clear_bus(p->adapter);
+//
+//     uint8_t buf[2] = {0};
+//     uint8_t addr = 0x23; // example device
+//     uint8_t reg  = 0x36; // example register
+//     int rv = -1;
+//
+//     // Write register index
+//     rv = i2c_pololu_write_to(p->adapter, addr, reg, "", 1);
+//     if (rv < 0)
+//     {
+//         fprintf(stdout, "  Write failed: %s\n", i2c_pololu_error_string(-rv));
+//         goto done;
+//     }
+//     // Read back 2 bytes
+//     //    uint8_t buf[2] = {0};
+//     rv = i2c_pololu_read_from(p->adapter, addr, reg, buf, 2);
+//     if (rv < 0)
+//     {
+//         fprintf(stdout, "  Read failed: %s\n", i2c_pololu_error_string(-rv));
+//         goto done;
+//     }
+//     //fprintf(stderr,"  Data: %02X %02X\n", buf[0], buf[1]);
+//     rv = buf[0];
+//     if(rv == (uint8_t) RM3100_VER_EXPECTED)
+//     {
+//         fprintf(stdout, "  Version is OK!: 0x%2X\n", rv);
+//         return 0;
+//     }
+//     else
+//     {
+//         fprintf(stdout, "  Version does NOT match!\n");
+//         return rv;
+//     }
+// done:
+//     return true;
+// }
+//
 //---------------------------------------------------------------
 // int initMagSensor(volatile pList *p)
 //---------------------------------------------------------------
@@ -793,6 +848,7 @@ int initMagSensor(pList *p)
     // Setup the Mag sensor register initial state here.
     if(p->samplingMode == POLL)                                         // (p->samplingMode == POLL [default])
     {
+        //if((rv = i2c_pololu_write_to(p->adapter, addr, reg, "", 1))) !=
         if((rv = i2c_writebyte_mag(p, RM3100_MAG_POLL, "", 1)) != 0)
         {
             showErrorMsg(rv);

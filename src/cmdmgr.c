@@ -43,11 +43,11 @@ void showSettings(pList *p)
 
     fprintf(stdout, "\nVersion = %s\n", p->Version);
     fprintf(stdout, "\nCurrent Parameters:\n\n");
-#if (USE_PIPES)
+//#if (USE_PIPES)
     fprintf(stdout, "   Log output to pipes:                        %s\n",          p->usePipes ? "TRUE" : "FALSE");
     fprintf(stdout, "   Input file path:                            %s\n",          p->pipeInPath);
     fprintf(stdout, "   Output file path:                           %s\n",          p->pipeOutPath);
-#endif
+//#endif
 #if(USE_POLOLU)
     fprintf(stdout, "   I2C bus adapter path:                 %s\n",          p->portpath);
 #else
@@ -74,7 +74,7 @@ int getCommandLine(int argc, char** argv, pList *p)
 {
     int c;
 
-    while((c = getopt(argc, argv, "?B:c:CD:g:P:SV")) != -1)
+    while((c = getopt(argc, argv, "?B:c:CD:g:P:MSTV")) != -1)
     {
         //int this_option_optind = optind ? optind : 1;
         switch(c)
@@ -106,8 +106,14 @@ int getCommandLine(int argc, char** argv, pList *p)
             case 'P':
                 strcpy(p->portpath, optarg);
                 break;
+            case 'M':
+                p->checkMagSensor = TRUE;
+                break;
             case 'S':
                 p->scanI2CBUS = TRUE;
+                break;
+            case 'T':
+                p->checkTempSensor = TRUE;
                 break;
             case 'V':
                 fprintf(stdout, "\nVersion: %s\n", p->Version);
@@ -124,7 +130,9 @@ int getCommandLine(int argc, char** argv, pList *p)
 #if(USE_POLOLU)
                 fprintf(stdout, "   -P                     :  Path to Pololu port in /dev.          [ default: /dev/ttyACM0 ]\n");
 #endif
+                fprintf(stdout, "   -M                     :  Verify Magnetometer presence and version.\n");
                 fprintf(stdout, "   -S                     :  List devices seen on i2c bus and exit.\n");
+                fprintf(stdout, "   -T                     :  Verify Temperature sensor presence and version.\n");
                 fprintf(stdout, "   -V                     :  Display software version and exit.\n");
                 fprintf(stdout, "   -h or -?               :  Display this help.\n\n");
                 return 1;
