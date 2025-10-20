@@ -263,10 +263,6 @@ void* read_sensors(void* arg)
 {
     while (!shutdown_requested)
     {
-        //pList * p = (pList *) arg;
-        // Simulate sensor reading (replace with actual sensor code)
-        //sensor_data = rand() % 100; // Random data between 0 and 99
-
         // Sleep for 1000 ms (1 second)
         usleep(1000000);
 
@@ -478,19 +474,6 @@ int readMagPOLL(pList *p)
     int     bytes_read = 0;
     char    xyzBuf[XYZ_BUFLEN] = "";
 
-    // // Tell the magnetometer what it is that we want to do.
-    // rv = i2c_pololu_write_to(p->adapter, p->magAddr, RM3100_MAG_POLL, "", 1);
-    // if(rv < 0)
-    // {
-    //     fprintf(stdout, "  Write failed: %s\n", i2c_pololu_error_string(-rv));
-    //     goto done;
-    // }
-    // // If a delay is specified after DRDY goes high, sleep it off.
-    // if(p->DRDYdelay)
-    // {
-    //     usleep(p->DRDYdelay);
-    // }
-
     // Read back XYZ_BUFLEN + 1 bytes (skip the first byte).
     rv = i2c_pololu_read_from(p->adapter, p->magAddr, RM3100_MAG_POLL, xyzBuf, (XYZ_BUFLEN));       //(XYZ_BUFLEN + 1)
     if(rv < 0)
@@ -532,117 +515,6 @@ done:
     return 0;
 }
 
-/*
-//------------------------------------------
-// readMagPOLL()
-//------------------------------------------
-int readMagPOLL(pList *p)
-{
-    int     rv = 0;
-    int     bytes_read = XYZ_BUFLEN;
-    short   pmMode = (PMMODE_ALL);
-
-    char    xyzBuf[XYZ_BUFLEN] = "";
-
-#if(__DEBUG)
-    fprintf(OUTPUT_PRINT, "    [Child]: readMagPOLL()...\n");
-    fflush(OUTPUT_PRINT);
-#endif
-
-    // Write command to  use Polled measurement Mode.
-    rv = i2c_readbuf_mag(p, RM3100_MAG_POLL, xyzBuf, XYZ_BUFLEN );
-    if(rv != XYZ_BUFLEN)
-    {
-        showErrorMsg(rv);
-#if(__DEBUG)
-        fprintf(OUTPUT_PRINT, "    [Child]: Write POLL mode < 0.\n");
-        fflush(OUTPUT_PRINT);
-#endif
-        usleep(p->DRDYdelay);
-    }
-#if(__DEBUG)
-    else
-    {
-        fprintf(OUTPUT_PRINT, "    [Child]: Write RM3100_MAG_POLL mode == %u -- OK.\n", rv);
-        fflush(OUTPUT_PRINT);
-    }
-#endif
-
-    // If a delay is specified after DRDY goes high, sleep it off.
-    if(p->DRDYdelay)
-    {
-        usleep(p->DRDYdelay);
-    }
-#if(__DEBUG)
-    fprintf(OUTPUT_PRINT, "    [Child]: Before Write to RM3100I2C_XYZ.\n");
-    fflush(OUTPUT_PRINT);
-#endif
-
-    // Tell the sensor that you want to read XYZ data. RM3100I2C_POLLXYZ
-    // rv = i2c_write_byte_data(p->pi, p->magHandle, RM3100I2C_XYZ, TRUE);
-//    rv = i2c_write_temp(p, RM3100I2C_MX, 1);
-//    rv = pololu_i2c_write_to( pololu_i2c_adapter *adapter, uint8_t address, const uint8_t *data, uint8_t 1 );
-    rv = i2c_readbuf_mag(p, RM3100I2C_XYZ, xyzBuf, XYZ_BUFLEN );
-    if(rv < 0)
-    {
-        showErrorMsg(p->magHandle);
-    }
-    else if(rv == 0)
-    {
-        // Wait for DReady Flag.
-        //rv = i2c_readbyte(p, p->magHandle);
-        rv = i2c_read_mag(p, p->magHandle);
-        rv = (rv & RM3100I2C_READMASK);
-        while((rv != RM3100I2C_READMASK))
-        {
-    //        rv = i2c_readbyte(p, p->magHandle);
-            rv = i2c_read_mag(p, p->magHandle);
-            rv = (rv & RM3100I2C_READMASK);
-        }
-
-#if(__DEBUG)
-        fprintf(OUTPUT_PRINT, "    [Child]: Before Read RM3100I2C_XYZ. rv: %u\n", rv);
-        fflush(OUTPUT_PRINT);
-#endif
-
-        // Read the data registers.
-        //rv = i2c_read_device(p->pi, p->magHandle, xyzBuf, XYZ_BUFLEN);
-        //rv = i2c_read_i2c_block_data(p->pi, p->magHandle, RM3100I2C_XYZ, (char *)xyzBuf, XYZ_BUFLEN);
-        //rv = pololu_i2c_write_to( pololu_i2c_adapter *adapter, RM3100I2C_XYZ, (char *)xyzBuf, XYZ_BUFLEN);
-        rv = i2c_readbuf_mag(p, RM3100I2C_XYZ, xyzBuf, XYZ_BUFLEN);
-        if(rv == XYZ_BUFLEN)
-        {
-            p->XYZ[0] = ((signed char)xyzBuf[0]) * 256 * 256;
-            p->XYZ[0] |= xyzBuf[1] * 256;
-            p->XYZ[0] |= xyzBuf[2];
-
-            p->XYZ[1] = ((signed char)xyzBuf[3]) * 256 * 256;
-            p->XYZ[1] |= xyzBuf[4] * 256;
-            p->XYZ[1] |= xyzBuf[5];
-
-            p->XYZ[2] = ((signed char)xyzBuf[6]) * 256 * 256;
-            p->XYZ[2] |= xyzBuf[7] * 256;
-            p->XYZ[2] |= xyzBuf[8];
-#if(__DEBUG)
-            fprintf(OUTPUT_PRINT, "\n    [Child]: readMagPOLL() -  Bytesread: %u.\n", bytes_read);
-//            fprintf(OUTPUT_PRINT, "p->XYZ[0] : %.3X, p->XYZ[1]: %.3X, p->XYZ[2]: %.3X.\n", p->XYZ[0], p->XYZ[1], p->XYZ[2]);
-            fflush(OUTPUT_PRINT);
-#endif
-        }
-        else
-        {
-            showErrorMsg(rv);
-#if(__DEBUG)
-            fprintf(OUTPUT_PRINT, "\n    [Child]: readMagPOLL() -  Bytesread: %u.\n", bytes_read);
- //           fprintf(OUTPUT_PRINT, "p->XYZ[0] : %.3X, p->XYZ[1]: %.3X, p->XYZ[2]: %.3X.\n", p->XYZ[0], p->XYZ[1], p->XYZ[2]);
-            fflush(OUTPUT_PRINT);
-#endif
-        }
-    }
-    return bytes_read;
-}
-*/
-
 //---------------------------------------------------------------
 // int initMagSensor(volatile pList *p)
 //---------------------------------------------------------------
@@ -654,7 +526,14 @@ int initMagSensor(pList *p)
     if(p->samplingMode == POLL)                                         // (p->samplingMode == POLL [default])
     {
         //if((rv = i2c_pololu_write_to(p->adapter, addr, reg, "", 1))) !=
-        if((rv = i2c_writebyte_mag(p, RM3100_MAG_POLL, "", 1)) != 1)
+        //if((rv = i2c_writebyte_mag(p, RM3100_MAG_POLL, "", 1)) != 1)
+        PMMODE_ALL
+        rv = i2c_pololu_read_from(p->adapter, p->magAddr, RM3100_MAG_POLL, xyzBuf, (XYZ_BUFLEN));       //(XYZ_BUFLEN + 1)
+        if(rv < 0)
+        {
+            fprintf(stdout, "  Read failed: %s\n", i2c_pololu_error_string(-rv));
+            goto done;
+        }
         {
             showErrorMsg(rv);
 #if(__DEBUG)
