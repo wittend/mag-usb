@@ -35,7 +35,7 @@
 char Version[32];
 int volatile killflag;
 static char outBuf[256];
-char portpath[PATH_MAX] = "/dev/ttyMAG0";          // default path for pololu i2c emulator.
+char portpath[PATH_MAX] = "/dev/ttyACM0";          // default path for pololu i2c emulator.
 
 // #ifdef USE_PIPES
 //     char fifoCtrl[] = "/home/PSWS/Sstat/magctl.fifo";
@@ -521,37 +521,16 @@ done:
 int initMagSensor(pList *p)
 {
     int rv = 0;
-
+    int command = PMMODE_ALL;
     // Setup the Mag sensor register initial state here.
     if(p->samplingMode == POLL)                                         // (p->samplingMode == POLL [default])
     {
-        //if((rv = i2c_pololu_write_to(p->adapter, addr, reg, "", 1))) !=
-        //if((rv = i2c_writebyte_mag(p, RM3100_MAG_POLL, "", 1)) != 1)
-        PMMODE_ALL
-        rv = i2c_pololu_read_from(p->adapter, p->magAddr, RM3100_MAG_POLL, xyzBuf, (XYZ_BUFLEN));       //(XYZ_BUFLEN + 1)
+        rv = i2c_pololu_write_to(p->adapter, p->magAddr, RM3100_MAG_POLL, (uint8_t *) &command, 1);       //(XYZ_BUFLEN + 1)
         if(rv < 0)
         {
-            fprintf(stdout, "  Read failed: %s\n", i2c_pololu_error_string(-rv));
-            goto done;
-        }
-        {
             showErrorMsg(rv);
-#if(__DEBUG)
-            fprintf(OUTPUT_PRINT, "    initMagSensor(POLL) FAILS.\n");
-            fflush(OUTPUT_PRINT);
-#endif
         }
-    }
-    else
-    {
-        if((rv = i2c_writebyte_mag(p, RM3100I2C_CMM, "", 1)) != 1)
-        {
-            showErrorMsg(rv);
-#if(__DEBUG)
-            fprintf(OUTPUT_PRINT, "    [Child]: initMagSensor(CMM) FAILS.\n");
-            fflush(OUTPUT_PRINT);
-#endif
-        }
+        return true;
     }
     return FALSE;
 }
