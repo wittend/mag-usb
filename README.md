@@ -42,6 +42,9 @@ Create a working directory and do:
 Then do:
 
     $ cd mag-usb 
+    $ mkdir build
+    $ cd build
+    $ cmake ..
     $ make
 
 ```
