@@ -70,7 +70,7 @@ Parameters:
    -h or -?               :  Display this help.
 
 ```
-
+ 
 ## For more info on the Pololu USB to I2C Isolated adapter boards see:
 https://www.pololu.com/product/5397
 https://www.pololu.com/product/5396
