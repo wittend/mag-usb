@@ -65,7 +65,7 @@ Parameters:
    -c <count>             :  Set cycle counts as integer.          [ default: 200 decimal]
    -D <rate>              :  Set magnetometer sample rate.         [ TMRC reg 96 hex default ].
    -g <mode>              :  Device sampling mode.                 [ POLL=0 (default), CONTINUOUS=1 ]
-   -P                     :  Path to Pololu port in /dev.          [ default: /dev/ttyACM0 ]
+   -P                     :  Full path to Pololu port in /dev.     [ default: /dev/ttyACM0 ]
    -Q                     :  Verify presence of Pololu adaptor.
    -S                     :  List devices seen on i2c bus and exit.
    -T                     :  Verify Temperature sensor presence and version.
