@@ -255,6 +255,8 @@ int i2c_pololu_write_and_read_from( i2c_pololu_adapter *adapter, uint8_t address
 }
 
 /*
+Minor functions currently not implemented.
+
 //------------------------------------------
 // i2c_pololu_set_i2c_mode()
 //------------------------------------------
