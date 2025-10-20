@@ -12,7 +12,6 @@
 //=========================================================================
 #ifndef MAGDATA_H
 #define MAGDATA_H
-//#include "main.h"
 
 struct tag_pList;
 typedef struct tag_pList pList;
@@ -20,10 +19,6 @@ typedef struct tag_pList pList;
 //------------------------------------------
 // Prototypes
 //------------------------------------------
-//int openI2CBus(pList *p);
-//void closeI2CBus(int i2c_fd);
-// int  getMagRev(pList *p);
-// int setup_mag(pList *p);
 int  runBIST(pList *p);
 int  getCMMReg(pList *p);
 void setCMMReg(pList *p);
@@ -40,11 +35,5 @@ unsigned short getMagSampleRate(pList *p);
 unsigned short getCCGainEquiv(unsigned short CCVal);
 
 void showErrorMsg(int rv);
-
-
-
-//int readTemp(pList *p);
-//int readMagCMM(pList *p, int32_t *XYZ);
-//int readMagPOLL(pList *p, int32_t *XYZ);
 
 #endif // MAGDATA_H

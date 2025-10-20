@@ -1,6 +1,12 @@
+//=========================================================================
+// i2c_pololu.c
 //
-// Created by dave on 7/17/25.
+// An interface for the RM3100 3-axis magnetometer from PNI Sensor Corp.
 //
+// Author:      David Witten, KD0EAG
+// Date:        7/17/25
+// License:     GPL 3.0
+//=========================================================================
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -9,7 +15,9 @@
 #include <termios.h>
 #include "i2c-pololu.h"
 
-// Helper function to check for response errors
+//------------------------------------------
+// check_response()
+//------------------------------------------
 static int check_response( const uint8_t *response, size_t expected_len, size_t actual_len )
 {
     if(actual_len < expected_len)
@@ -24,6 +32,9 @@ static int check_response( const uint8_t *response, size_t expected_len, size_t 
     return 0; // Success
 }
 
+//------------------------------------------
+// i2c_pololu_init()
+//------------------------------------------
 void i2c_pololu_init( i2c_pololu_adapter *adapter )
 {
     if(adapter)
@@ -32,6 +43,9 @@ void i2c_pololu_init( i2c_pololu_adapter *adapter )
     }
 }
 
+//------------------------------------------
+// i2c_pololu_connect()
+//------------------------------------------
 int i2c_pololu_connect( i2c_pololu_adapter *adapter, const char *port_name )
 {
     if(!adapter || !port_name)
@@ -83,6 +97,9 @@ int i2c_pololu_connect( i2c_pololu_adapter *adapter, const char *port_name )
     return 0;
 }
 
+//------------------------------------------
+// i2c_pololu_disconnect()
+//------------------------------------------
 void i2c_pololu_disconnect( i2c_pololu_adapter *adapter )
 {
     if(adapter && adapter->fd >= 0)
@@ -92,11 +109,17 @@ void i2c_pololu_disconnect( i2c_pololu_adapter *adapter )
     }
 }
 
+//------------------------------------------
+// i2c_pololu_is_connected()
+//------------------------------------------
 bool i2c_pololu_is_connected( const i2c_pololu_adapter *adapter )
 {
     return adapter && adapter->fd >= 0;
 }
 
+//------------------------------------------
+// i2c_pololu_write_to()
+//------------------------------------------
 int i2c_pololu_write_to( i2c_pololu_adapter *adapter, uint8_t address, uint8_t reg, const uint8_t *data, uint8_t size )
 {
     if(!i2c_pololu_is_connected(adapter))
@@ -130,6 +153,9 @@ int i2c_pololu_write_to( i2c_pololu_adapter *adapter, uint8_t address, uint8_t r
     return size;
 }
 
+//------------------------------------------
+// i2c_pololu_read_from()
+//------------------------------------------
 int i2c_pololu_read_from( i2c_pololu_adapter *adapter, uint8_t address, uint8_t reg, uint8_t *data, uint8_t size )
 {
     if(!i2c_pololu_is_connected(adapter))
@@ -184,11 +210,13 @@ int i2c_pololu_read_from( i2c_pololu_adapter *adapter, uint8_t address, uint8_t 
         fprintf(stderr, "Error reading from device: %s\n", i2c_pololu_error_string(error));
         return error;
     }
-    
     memcpy(data, &response[1], size);  // Skip error byte, copy data
     return size;
 }
 
+//------------------------------------------
+// i2c_pololu_write_and_read_from()
+//------------------------------------------
 int i2c_pololu_write_and_read_from( i2c_pololu_adapter *adapter, uint8_t address, uint8_t reg, uint8_t *data, uint8_t size )
 {
     if(!i2c_pololu_is_connected(adapter))
@@ -203,9 +231,9 @@ int i2c_pololu_write_and_read_from( i2c_pololu_adapter *adapter, uint8_t address
     uint8_t cmd[258];
     cmd[0] = CMD_I2C_WRITE_AND_READ;
     cmd[1] = address;
-    cmd[2] = 1;  // Write 1 byte (register address)
+    cmd[2] = 1;     // Write 1 byte (register address)
     cmd[3] = size;  // Read 'size' bytes
-    cmd[4] = reg;  // Register to read from
+    cmd[4] = reg;   // Register to read from
 
     if(write(adapter->fd, cmd, 5) != 5)
     {
@@ -227,49 +255,56 @@ int i2c_pololu_write_and_read_from( i2c_pololu_adapter *adapter, uint8_t address
 }
 
 /*
-// Set I²C mode
-int pololu_set_i2c_mode(int mode)
+//------------------------------------------
+// i2c_pololu_set_i2c_mode()
+//------------------------------------------
+int i2c_pololu_set_i2c_mode(int mode)
 {
    uint8_t cmd[] = { CMD_I2C_READ, address, size };
    return 0;
 }
 
-// Set I²C timeout
-int pololu_set_i2c_timeout()
+//------------------------------------------
+// i2c_pololu_set_timeout()
+//------------------------------------------
+int i2c_pololu_set_timeout()
 {
     uint8_t cmd[] = { CMD_I2C_READ, address, size };
     return 0;
 }
 
-// Set STM32 timing
-int pololu_set_STM32_timing()
+//------------------------------------------
+// i2c_pololu_set_STM32_timing()
+//------------------------------------------
+int i2c_pololu_set_STM32_timing()
 {
     uint8_t cmd[] = { CMD_I2C_READ, address, size };
     return 0;
 }
 
-// Digital read
-int pololu_digital_read()
+//------------------------------------------
+// i2c_pololu_digital_read()
+//------------------------------------------
+int i2c_pololu_digital_read()
 {
     uint8_t cmd[] = { CMD_I2C_READ, address, size };
     return 0;
 }
 
-// Enable VCC Out
-int pololu_enable_VCC_out()
+//------------------------------------------
+// i2c_pololu_enable_VCC_out()
+//------------------------------------------
+int i2c_pololu_enable_VCC_out()
 {
     uint8_t cmd[] = { CMD_I2C_READ, address, size };
     return 0;
 }
 
-// Get device info
-int pololu_get_device_info()
-{
-     uint8_t cmd[] = { CMD_I2C_READ, address, size };
-   return 0;
-}
 */
 
+//------------------------------------------
+// i2c_pololu_set_frequency()
+//------------------------------------------
 int i2c_pololu_set_frequency( i2c_pololu_adapter *adapter, unsigned int frequency_khz )
 {
     if(!i2c_pololu_is_connected(adapter))
@@ -304,6 +339,9 @@ int i2c_pololu_set_frequency( i2c_pololu_adapter *adapter, unsigned int frequenc
     return 0;
 }
 
+//------------------------------------------
+// i2c_pololu_clear_bus()
+//------------------------------------------
 int i2c_pololu_clear_bus( i2c_pololu_adapter *adapter )
 {
     if(!i2c_pololu_is_connected(adapter))
@@ -319,6 +357,9 @@ int i2c_pololu_clear_bus( i2c_pololu_adapter *adapter )
     return 0;
 }
 
+//------------------------------------------
+// i2c_pololu_get_device_info()
+//------------------------------------------
 int i2c_pololu_get_device_info( i2c_pololu_adapter *adapter, i2c_pololu_device_info *info )
 {
     if(!i2c_pololu_is_connected(adapter) || !info)
@@ -390,6 +431,9 @@ int i2c_pololu_get_device_info( i2c_pololu_adapter *adapter, i2c_pololu_device_i
     return 0;
 }
 
+//------------------------------------------
+// i2c_pololu_scan()
+//------------------------------------------
 int i2c_pololu_scan( i2c_pololu_adapter *adapter, uint8_t *found_addresses, int max_devices )
 {
     if(!i2c_pololu_is_connected(adapter) || !found_addresses || max_devices <= 0)
@@ -447,6 +491,9 @@ int i2c_pololu_scan( i2c_pololu_adapter *adapter, uint8_t *found_addresses, int 
     return found_count;
 }
 
+//------------------------------------------
+// i2c_pololu_error_string()
+//------------------------------------------
 const char *i2c_pololu_error_string( int error_code )
 {
     // Make sure we are looking at a positive error code

@@ -44,7 +44,6 @@ char portpath[PATH_MAX] = "/dev/ttyMAG0";          // default path for pololu i2
 //     int PIPEIN  = -1;
 //     int PIPEOUT = -1;
 // #endif //USE_PIPES
-
 #if((USE_LGPIO || USE_RGPIO) && USE_WAITFOREDGE)
 void cbTestFunc()
 {
@@ -64,9 +63,9 @@ int rc = 0;
 //---------------------------------------------------------------
 // Shared state between threads
 //---------------------------------------------------------------
-volatile sig_atomic_t shutdown_requested = 0; // Signal-safe flag
+volatile sig_atomic_t shutdown_requested = 0;   // Signal-safe flag
 pthread_mutex_t data_mutex = PTHREAD_MUTEX_INITIALIZER; // Protect shared data
-int sensor_data = 0; // Simulated sensor data
+int sensor_data = 0;                            // Simulated sensor data
 
 //---------------------------------------------------------------
 //  main()
@@ -75,15 +74,13 @@ int main(int argc, char** argv)
 {
     pList   ctl;
     pList   *p = &ctl;
+    int     rv = 0;
+    char    utcStr[UTCBUFLEN] = "";
+    struct  tm *utcTime;
+
 #if(USE_POLOLU)
     i2c_pololu_adapter pAdapter;
 #endif
-
-    int     rv = 0;
-//    FILE    *outfp = (FILE *)stdout;
-    char    utcStr[UTCBUFLEN] = "";
-    struct  tm *utcTime;
-//    struct  tm *utcTime = getUTC();
 
     //-----------------------------------------
     //  Setup magnetometer parameter defaults.
@@ -96,7 +93,6 @@ int main(int argc, char** argv)
 #else
     p->i2cBusNumber         = RASPI_I2C_BUS1;
 #endif
-
 
     //-----------------------------------------
     //  Load configuration from TOML file
@@ -221,31 +217,31 @@ int main(int argc, char** argv)
         //     formatOutput(p);
         //     fflush(outfp);
         // }
-        #if(USE_WAITFOREDGE)
+#if(USE_WAITFOREDGE)
         if(!(rv = wait_for_edge(p->po, (unsigned) PPS_GPIO_PIN, RISING_EDGE, PPS_TIMEOUTSECS)))
         {
             utcTime = getUTC();
             strftime(utcStr, UTCBUFLEN, "%d %b %Y %T", utcTime);                // RFC 2822: "%a, %d %b %Y %T %z"      RFC 822: "%a, %d %b %y %T %z"
-            #if(CONSOLE_OUTPUT)
+    #if(CONSOLE_OUTPUT)
             fprintf(OUTPUT_PRINT, "   [CHILD]: {ts: \"%s\", lastStatus: \"Missed PPS Timeout!\"}", utcStr);
             fflush(OUTPUT_PRINT);
-            #else
+    #else
             char outstr[MAXPATHBUFLEN] = "";
             sprintf(outstr, "   [CHILD]: {ts: \"%s\", lastStatus: \"Missed PPS Timeout!\"}", utcStr);
             write(PIPEOUT, outstr);
-            #endif
+    #endif
             // Set exit return value.
             rv = 2;
             break;
         }
-        #endif
-        #if __DEBUG
+#endif
+#if __DEBUG
         else
         {
             fputs(".", OUTPUT_PRINT);
             fflush(OUTPUT_PRINT);
         }
-        #endif
+#endif
     }
     //-----------------------------------------------------
     //  Cleanup Callback, PIGPIO, and exit.
@@ -361,25 +357,24 @@ void* signal_handler_thread(void* arg)
 char *formatOutput(pList *p)
 {
 #define FMTBUFLEN  200
-    char fmtBuf[FMTBUFLEN+1] ="";
+    char fmtBuf[FMTBUFLEN + 1] ="";
     int fmtBuf_len      = sizeof fmtBuf;
     struct tm *utcTime  = getUTC();
     char utcStr[128]    ="";
     double xyz[3];
-//    int remoteTemp      = 0;
-//    float rcLocalTemp   = 0.0;
     double rcRemoteTemp;
 
     strncpy(outBuf, "", 1);
 
     readMagPOLL(p);
-    //    xyz[0] = (((double)p->XYZ[0] / p->NOSRegValue) / p->x_gain) * 1000; // make microTeslas -> nanoTeslas
-    //    xyz[1] = (((double)p->XYZ[1] / p->NOSRegValue) / p->y_gain) * 1000; // make microTeslas -> nanoTeslas
-    //    xyz[2] = (((double)p->XYZ[2] / p->NOSRegValue) / p->z_gain) * 1000; // make microTeslas -> nanoTeslas
 
-    xyz[0] = (((double)p->XYZ[0] / p->NOSRegValue) / p->x_gain);
-    xyz[1] = (((double)p->XYZ[1] / p->NOSRegValue) / p->y_gain);
-    xyz[2] = (((double)p->XYZ[2] / p->NOSRegValue) / p->z_gain);
+    xyz[0] = (((double)p->XYZ[0] / p->NOSRegValue) / p->x_gain) * 1000; // make microTeslas -> nanoTeslas
+    xyz[1] = (((double)p->XYZ[1] / p->NOSRegValue) / p->y_gain) * 1000; // make microTeslas -> nanoTeslas
+    xyz[2] = (((double)p->XYZ[2] / p->NOSRegValue) / p->z_gain) * 1000; // make microTeslas -> nanoTeslas
+
+    // xyz[0] = (((double)p->XYZ[0] / p->NOSRegValue) / p->x_gain);
+    // xyz[1] = (((double)p->XYZ[1] / p->NOSRegValue) / p->y_gain);
+    // xyz[2] = (((double)p->XYZ[2] / p->NOSRegValue) / p->z_gain);
 
 #if(FOR_GRAPE2)
     strftime(utcStr, UTCBUFLEN, "%Y%m%e%y%M%S", utcTime);              // YYYYMMDDHHMMSS  (Gaak!)
@@ -407,7 +402,6 @@ char *formatOutput(pList *p)
         strncat(outBuf, fmtBuf, FMTBUFLEN);
     }
 
-    //strncat(outBuf, fmtBuf, FMTBUFLEN);
     snprintf(fmtBuf, fmtBuf_len, ", \"x\":%.3f", xyz[0]);
     strncat(outBuf, fmtBuf, FMTBUFLEN);
     snprintf(fmtBuf, fmtBuf_len, ", \"y\":%.3f", xyz[1]);
@@ -480,72 +474,60 @@ static double mcp9808_decode_celsius(uint8_t msb, uint8_t lsb)
 int readMagPOLL(pList *p)
 {
     int     rv = 0;
-    int     bytes_read = XYZ_BUFLEN;
-//    short   pmMode = (PMMODE_ALL);
-
+    //int     bytes_read = XYZ_BUFLEN;
+    int     bytes_read = 0;
     char    xyzBuf[XYZ_BUFLEN] = "";
 
-    // Tell the magnetometer what it is that we want to do.
-    rv = i2c_pololu_write_to(p->adapter, p->magAddr, RM3100_MAG_POLL, "", 1);
-    if(rv < 0)
-    {
-        fprintf(stdout, "  Write failed: %s\n", i2c_pololu_error_string(-rv));
-        goto done;
-    }
-    // If a delay is specified after DRDY goes high, sleep it off.
-    if(p->DRDYdelay)
-    {
-        usleep(p->DRDYdelay);
-    }
+    // // Tell the magnetometer what it is that we want to do.
+    // rv = i2c_pololu_write_to(p->adapter, p->magAddr, RM3100_MAG_POLL, "", 1);
+    // if(rv < 0)
+    // {
+    //     fprintf(stdout, "  Write failed: %s\n", i2c_pololu_error_string(-rv));
+    //     goto done;
+    // }
+    // // If a delay is specified after DRDY goes high, sleep it off.
+    // if(p->DRDYdelay)
+    // {
+    //     usleep(p->DRDYdelay);
+    // }
 
     // Read back XYZ_BUFLEN + 1 bytes (skip the first byte).
-    rv = i2c_pololu_read_from(p->adapter, p->magAddr, RM3100_MAG_POLL, xyzBuf, XYZ_BUFLEN+1);
+    rv = i2c_pololu_read_from(p->adapter, p->magAddr, RM3100_MAG_POLL, xyzBuf, (XYZ_BUFLEN));       //(XYZ_BUFLEN + 1)
     if(rv < 0)
     {
         fprintf(stdout, "  Read failed: %s\n", i2c_pololu_error_string(-rv));
         goto done;
     }
-    if(rv == 0)
+    if(rv < (XYZ_BUFLEN))
     {
         // Wait for DReady Flag.
-        // rv = i2c_read_mag(p, p->magHandle);
-        rv = i2c_pololu_read_from(p->adapter, p->magAddr, RM3100_MAG_POLL, xyzBuf, XYZ_BUFLEN+1);
+        rv = i2c_pololu_read_from(p->adapter, p->magAddr, RM3100_MAG_POLL, xyzBuf, (XYZ_BUFLEN));
         rv = (rv & RM3100I2C_READMASK);
         while((rv != RM3100I2C_READMASK))
         {
-    //        rv = i2c_readbyte(p, p->magHandle);
-    //        rv = i2c_read_mag(p, p->magHandle);
-            rv = i2c_pololu_read_from(p->adapter, p->magAddr, RM3100_MAG_POLL, xyzBuf, XYZ_BUFLEN+1);
+            rv = i2c_pololu_read_from(p->adapter, p->magAddr, RM3100_MAG_POLL, xyzBuf, (XYZ_BUFLEN));
             rv = (rv & RM3100I2C_READMASK);
         }
+    }
+    else if(rv == XYZ_BUFLEN)
+    {
+        p->XYZ[0] = ((signed char)xyzBuf[0]) * 256 * 256;
+        p->XYZ[0] |= xyzBuf[1] * 256;
+        p->XYZ[0] |= xyzBuf[2];
 
-        // Read the data registers.
-        //rv = i2c_read_device(p->pi, p->magHandle, xyzBuf, XYZ_BUFLEN);
-        //rv = i2c_read_i2c_block_data(p->pi, p->magHandle, RM3100I2C_XYZ, (char *)xyzBuf, XYZ_BUFLEN);
-        //rv = pololu_i2c_write_to( pololu_i2c_adapter *adapter, RM3100I2C_XYZ, (char *)xyzBuf, XYZ_BUFLEN);
-        //rv = i2c_readbuf_mag(p, RM3100I2C_XYZ, xyzBuf, XYZ_BUFLEN);
-        rv = i2c_pololu_read_from(p->adapter, p->magAddr, RM3100_MAG_POLL, xyzBuf, XYZ_BUFLEN+1);
-        if(rv == XYZ_BUFLEN)
-        {
-            p->XYZ[0] = ((signed char)xyzBuf[0]) * 256 * 256;
-            p->XYZ[0] |= xyzBuf[1] * 256;
-            p->XYZ[0] |= xyzBuf[2];
+        p->XYZ[1] = ((signed char)xyzBuf[3]) * 256 * 256;
+        p->XYZ[1] |= xyzBuf[4] * 256;
+        p->XYZ[1] |= xyzBuf[5];
 
-            p->XYZ[1] = ((signed char)xyzBuf[3]) * 256 * 256;
-            p->XYZ[1] |= xyzBuf[4] * 256;
-            p->XYZ[1] |= xyzBuf[5];
-
-            p->XYZ[2] = ((signed char)xyzBuf[6]) * 256 * 256;
-            p->XYZ[2] |= xyzBuf[7] * 256;
-            p->XYZ[2] |= xyzBuf[8];
-        }
-        else
-        {
-            showErrorMsg(rv);
-        }
+        p->XYZ[2] = ((signed char)xyzBuf[6]) * 256 * 256;
+        p->XYZ[2] |= xyzBuf[7] * 256;
+        p->XYZ[2] |= xyzBuf[8];
+    }
+    else
+    {
+        showErrorMsg(rv);
     }
     return bytes_read;
-
 done:
     return 0;
 }
@@ -679,7 +661,6 @@ int initMagSensor(pList *p)
             fprintf(OUTPUT_PRINT, "    initMagSensor(POLL) FAILS.\n");
             fflush(OUTPUT_PRINT);
 #endif
-//            return FALSE;
         }
     }
     else
@@ -693,7 +674,6 @@ int initMagSensor(pList *p)
 #endif
         }
     }
-//    return rv;
     return FALSE;
 }
 
@@ -790,12 +770,6 @@ void setProgramDefaults(pList *p)
     p->checkPololuAdaptor   = FALSE;
     p->checkMagSensor       = FALSE;
     p->checkTempSensor      = FALSE;
-// #if(USE_POLOLU)
-//  //   p->use_I2C_converter    = 1;
-//  //   p->adapter              = &pAdapter;
-// #else
-//     p->i2cBusNumber         = RASPI_I2C_BUS1;
-// #endif
     p->ppsHandle            = 0;
     p->magHandle            = 0;
     p->remoteTempHandle     = 0;

@@ -13,15 +13,10 @@
 #ifndef SWX3100CMDMGR_h
 #define SWX3100CMDMGR_h
 
-//#include "magdata.h"
-//#include "main.h"
 
 //------------------------------------------
 // Prototypes
 //------------------------------------------
-// long currentTimeMillis();
-// struct tm *getUTC();
-// void showCountGainRelationship();
 void showSettings(pList *p);
 int getCommandLine(int argc, char** argv, pList *p);
 

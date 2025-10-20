@@ -18,12 +18,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <time.h>
-#include <inttypes.h>
 #include <string.h>
 #include <unistd.h>
 #include <signal.h>
-#include <math.h>
-#include <sys/stat.h>
 #include <sys/time.h>
 #include "MCP9808.h"
 
@@ -54,9 +51,9 @@
 #define USE_RGPIO           FALSE
 #define USE_POLOLU          TRUE
 
-//#define USE_PIPES           FALSE
-//#undef USE_PIPES           FALSE
-#define USE_PTHREADS        TRUE
+//#define USE_PIPES            FALSE
+//#undef USE_PIPES             FALSE
+#define USE_PTHREADS         TRUE
 
 #if(USE_PIGPIO)
     #include "pigpio.h"
