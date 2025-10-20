@@ -80,9 +80,10 @@ int main(int argc, char** argv)
 #endif
 
     int     rv = 0;
-    FILE    *outfp = (FILE *)stdout;
+//    FILE    *outfp = (FILE *)stdout;
     char    utcStr[UTCBUFLEN] = "";
-    struct  tm *utcTime = getUTC();
+    struct  tm *utcTime;
+//    struct  tm *utcTime = getUTC();
 
     //-----------------------------------------
     //  Setup magnetometer parameter defaults.
@@ -170,14 +171,15 @@ int main(int argc, char** argv)
     //-----------------------------------------
     //  Initialize the Mag sensor registers.
     //-----------------------------------------
-    if(initMagSensor(p))
-    {
-        utcTime = getUTC();
-        strftime(utcStr, UTCBUFLEN, "%d %b %Y %T", utcTime);
-        fprintf(OUTPUT_ERROR, "    {ts: \"%s\", lastStatus: \"Unable to initialize the magnetometer.\"}", utcStr);
-        fflush(OUTPUT_ERROR);
-        exit(2);
-    }
+    initMagSensor(p);
+    // if(initMagSensor(p))
+    // {
+    //     utcTime = getUTC();
+    //     strftime(utcStr, UTCBUFLEN, "%d %b %Y %T", utcTime);
+    //     fprintf(OUTPUT_ERROR, "    {ts: \"%s\", lastStatus: \"Unable to initialize the magnetometer.\"}", utcStr);
+    //     fflush(OUTPUT_ERROR);
+    //     exit(2);
+    // }
 
     //-----------------------------------------------------
     //  Main program loop.
@@ -265,7 +267,7 @@ void* read_sensors(void* arg)
 {
     while (!shutdown_requested)
     {
-        pList * p = (pList *) arg;
+        //pList * p = (pList *) arg;
         // Simulate sensor reading (replace with actual sensor code)
         //sensor_data = rand() % 100; // Random data between 0 and 99
 
@@ -364,9 +366,9 @@ char *formatOutput(pList *p)
     struct tm *utcTime  = getUTC();
     char utcStr[128]    ="";
     double xyz[3];
-    int remoteTemp      = 0;
-    float rcLocalTemp   = 0.0;
-    double rcRemoteTemp = 0.0;
+//    int remoteTemp      = 0;
+//    float rcLocalTemp   = 0.0;
+    double rcRemoteTemp;
 
     strncpy(outBuf, "", 1);
 
@@ -436,9 +438,9 @@ double readTemp(pList *p)
     uint8_t temp_buf[2] = {0xFF, 0xFF};
 
     int rv = i2c_pololu_read_from(p->adapter, p->remoteTempAddr, MCP9808_REG_AMBIENT_TEMP, temp_buf, 2);
-    char usingcall[256] = "i2c_pololu_read_from";
-    if(rv < 2)
+    if (rv < 2)
     {
+        char usingcall[256] = "i2c_pololu_read_from";
         char ebuf[300] = "";
         snprintf(ebuf,sizeof(ebuf),"Read with: %s() ", usingcall);
         perror(ebuf);
@@ -479,7 +481,7 @@ int readMagPOLL(pList *p)
 {
     int     rv = 0;
     int     bytes_read = XYZ_BUFLEN;
-    short   pmMode = (PMMODE_ALL);
+//    short   pmMode = (PMMODE_ALL);
 
     char    xyzBuf[XYZ_BUFLEN] = "";
 
@@ -503,15 +505,7 @@ int readMagPOLL(pList *p)
         fprintf(stdout, "  Read failed: %s\n", i2c_pololu_error_string(-rv));
         goto done;
     }
-    // if(p->DRDYdelay)
-    // {
-    //     usleep(p->DRDYdelay);
-    // }
-    if(rv < 0)
-    {
-        showErrorMsg(p->magHandle);
-    }
-    else if(rv == 0)
+    if(rv == 0)
     {
         // Wait for DReady Flag.
         // rv = i2c_read_mag(p, p->magHandle);
@@ -703,15 +697,15 @@ int initMagSensor(pList *p)
     return FALSE;
 }
 
-//---------------------------------------------------------------
-// int initTempSensors(volatile pList *p)
-//---------------------------------------------------------------
-int initTempSensors(pList *p)
-{
-    int rv = 0;
-    // Temp sensor doesn't need any iniutialization currently.
-    return rv;
-}
+// //---------------------------------------------------------------
+// // int initTempSensors(volatile pList *p)
+// //---------------------------------------------------------------
+// int initTempSensors(pList *p)
+// {
+//     int rv = 0;
+//     // Temp sensor doesn't need any iniutialization currently.
+//     return rv;
+// }
 
 //------------------------------------------
 // getUTC()
