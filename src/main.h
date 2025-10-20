@@ -151,10 +151,6 @@ int  main(int argc, char** argv);
 // void onEdge(void);
 int  initMagSensor(pList *p);
 char *formatOutput(pList *p);
-// int  verifyPololuAdaptor(pList *p);
-// int  scanforBusDevices(pList *p);
-// int  verifyMagSensor(pList *p);
-// int  verifyTempSensor(pList *p);
 int  initTempSensors(pList *p);
 int  readLocalTemp(pList *p);
 int  readRemoteTemp(pList *p);
@@ -165,8 +161,12 @@ void* print_data(void* arg);
 void* signal_handler_thread(void* arg);
 double readTemp(pList *p);
 static double mcp9808_decode_celsius(uint8_t msb, uint8_t lsb);
-struct tm *getUTC();
 void showErrorMsg(int temp);
+void setProgramDefaults(pList *p);
+
+long currentTimeMillis();
+struct tm *getUTC();
+// int setupPipes(pList *p);
 
 #endif //SWX3100MAIN_h
 

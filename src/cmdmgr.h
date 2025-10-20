@@ -19,8 +19,8 @@
 //------------------------------------------
 // Prototypes
 //------------------------------------------
-long currentTimeMillis();
-struct tm *getUTC();
+// long currentTimeMillis();
+// struct tm *getUTC();
 // void showCountGainRelationship();
 void showSettings(pList *p);
 int getCommandLine(int argc, char** argv, pList *p);

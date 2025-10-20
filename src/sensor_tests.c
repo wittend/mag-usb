@@ -15,8 +15,6 @@ extern int RM3100_VER_EXPECTED;
 //---------------------------------------------------------------
 int scanforBusDevices(pList *p)
 {
-    fprintf(stdout,"\nChecking Pololu I2C Adapter info:\n");
-
     // Scan for I2C devices
     fprintf(stdout,"\n  Scanning for I2C devices...\n");
     uint8_t found_addresses[128];
@@ -48,6 +46,23 @@ int scanforBusDevices(pList *p)
 int verifyPololuAdaptor(pList *p)
 {
     fprintf(stdout,"\nChecking Pololu I2C Adapter info:\n");
+
+    if(i2c_pololu_is_connected(p->adapter))
+    {
+        fprintf(stdout, "  Connection to: adaptor at: %s is OK!\n", p->portpath);
+    }
+    else
+    {
+        return 0;
+    }
+    return true;
+}
+
+//---------------------------------------------------------------
+// int getAdaptorInfo(pList *p)
+//---------------------------------------------------------------
+int getAdaptorInfo(pList *p)
+{
     //-----------------------------------------------------
     // Get the Pololu i2c device info.
     //-----------------------------------------------------
@@ -65,7 +80,7 @@ int verifyPololuAdaptor(pList *p)
         fprintf(stdout, "    Failed to get device info.\n");
         return -1;
     }
-    return true;
+    return 0;
 }
 
 //---------------------------------------------------------------
@@ -75,14 +90,14 @@ int verifyTempSensor(pList *p)
 {
     fprintf(stdout, "\nVerifying Temperature Sensor Status & Version...\n");
 
-    if(i2c_pololu_is_connected(p->adapter))
-    {
-        fprintf(stdout, "  Connection to: %s is OK!\n", p->portpath);
-    }
-    else
-    {
-        return 0;
-    }
+    // if(i2c_pololu_is_connected(p->adapter))
+    // {
+    //     fprintf(stdout, "  Connection to: %s is OK!\n", p->portpath);
+    // }
+    // else
+    // {
+    //     return 0;
+    // }
 
     i2c_pololu_clear_bus(p->adapter);
 
@@ -128,15 +143,6 @@ done:
 int verifyMagSensor(pList *p)
 {
     fprintf(stdout, "\nVerifying Magnetometer Status & Version...\n");
-
-    if(i2c_pololu_is_connected(p->adapter))
-    {
-        fprintf(stdout, "  Connection to: %s is OK!\n", p->portpath);
-    }
-    else
-    {
-        return 0;
-    }
 
     i2c_pololu_clear_bus(p->adapter);
 

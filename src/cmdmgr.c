@@ -24,15 +24,15 @@
 
 //extern char Version;
 
-//------------------------------------------
-// currentTimeMillis()
-//------------------------------------------
-long currentTimeMillis()
-{
-    struct timeval time;
-    gettimeofday(&time, NULL);
-    return time.tv_sec * 1000 + time.tv_usec / 1000;
-}
+// //------------------------------------------
+// // currentTimeMillis()
+// //------------------------------------------
+// long currentTimeMillis()
+// {
+//     struct timeval time;
+//     gettimeofday(&time, NULL);
+//     return time.tv_sec * 1000 + time.tv_usec / 1000;
+// }
 
 //------------------------------------------
 // showSettings()
@@ -44,9 +44,9 @@ void showSettings(pList *p)
     fprintf(stdout, "\nVersion = %s\n", p->Version);
     fprintf(stdout, "\nCurrent Parameters:\n\n");
 //#if (USE_PIPES)
-    fprintf(stdout, "   Log output to pipes:                        %s\n",          p->usePipes ? "TRUE" : "FALSE");
-    fprintf(stdout, "   Input file path:                            %s\n",          p->pipeInPath);
-    fprintf(stdout, "   Output file path:                           %s\n",          p->pipeOutPath);
+    // fprintf(stdout, "   Log output to pipes:                        %s\n",          p->usePipes ? "TRUE" : "FALSE");
+    // fprintf(stdout, "   Input file path:                            %s\n",          p->pipeInPath);
+    // fprintf(stdout, "   Output file path:                           %s\n",          p->pipeOutPath);
 //#endif
 #if(USE_POLOLU)
     fprintf(stdout, "   I2C bus adapter path:                 %s\n",          p->portpath);
@@ -74,7 +74,7 @@ int getCommandLine(int argc, char** argv, pList *p)
 {
     int c;
 
-    while((c = getopt(argc, argv, "?B:c:CD:g:P:MSTV")) != -1)
+    while((c = getopt(argc, argv, "?B:c:CD:g:P:MSQTV")) != -1)
     {
         //int this_option_optind = optind ? optind : 1;
         switch(c)
@@ -106,6 +106,9 @@ int getCommandLine(int argc, char** argv, pList *p)
             case 'P':
                 strcpy(p->portpath, optarg);
                 break;
+            case 'Q':
+                p->checkPololuAdaptor = TRUE;
+                break;
             case 'M':
                 p->checkMagSensor = TRUE;
                 break;
@@ -129,6 +132,7 @@ int getCommandLine(int argc, char** argv, pList *p)
                 fprintf(stdout, "   -g <mode>              :  Device sampling mode.                 [ POLL=0 (default), CONTINUOUS=1 ]\n");
 #if(USE_POLOLU)
                 fprintf(stdout, "   -P                     :  Path to Pololu port in /dev.          [ default: /dev/ttyACM0 ]\n");
+                fprintf(stdout, "   -Q                     :  Verify presence of Pololu adaptor.\n");
 #endif
                 fprintf(stdout, "   -M                     :  Verify Magnetometer presence and version.\n");
                 fprintf(stdout, "   -S                     :  List devices seen on i2c bus and exit.\n");
