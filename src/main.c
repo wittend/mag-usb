@@ -14,7 +14,7 @@
 #include "main.h"
 #include "i2c.h"
 #include "cmdmgr.h"
-#include "rm3100.h"
+//#include "rm3100.h"
 #include "config.h"
 #include "sensor_tests.h"
 
@@ -36,6 +36,9 @@ char Version[32];
 int volatile killflag;
 static char outBuf[256];
 char portpath[PATH_MAX] = "/dev/ttyACM0";          // default path for pololu i2c emulator.
+extern int CC_400;
+extern int GAIN_150;
+extern int RM3100_I2C_ADDRESS;
 
 // #ifdef USE_PIPES
 //     char fifoCtrl[] = "/home/PSWS/Sstat/magctl.fifo";
@@ -105,33 +108,41 @@ int main(int argc, char** argv)
         return rv;
     }
 
-// #if(USE_PIPES)
-//    setupPipes(p);
-// #endif // USE_PIPES
-//    unsigned edge_cb_id = 0;
-    
-    i2c_init(p);
-    i2c_open(p, portpath);
+    // #if(USE_PIPES)
+    //    setupPipes(p);
+    // #endif // USE_PIPES
+    //    unsigned edge_cb_id = 0;
+
+    if(i2c_init(p))
+    {
+        fprintf(OUTPUT_ERROR, "Unable to initialize I2C Adaptor handle.\n");
+        exit(1);
+    }
+    else
+    {
+        i2c_open(p, portpath);
+    }
 
 #if(USE_POLOLU)
     if(p->checkPololuAdaptor)
     {
-        if(verifyPololuAdaptor(p) < 0)
+        if(i2c_verifyPololuAdaptor(p))
         {
-            exit(1002);
+            fprintf(OUTPUT_PRINT, "  Pololu Adapter OK.\n");
         }
         else
         {
-    //        getAdaptorInfo(p);
+            fprintf(OUTPUT_PRINT, "  Pololu Adapter NOT so OK.");
+        exit(1);
         }
-     }
+    }
 
     //-----------------------------------------------------
     // Get interface info and scan for i2c devices.
     //-----------------------------------------------------
     if(p->scanI2CBUS)
     {
-        if(scanforBusDevices(p) <= 0)
+        if(i2c_scanForBusDevices(p) <= 0)
         {
             //exit(1001);
             return -1;
@@ -143,9 +154,14 @@ int main(int argc, char** argv)
     //-----------------------------------------------------
     if(p->checkTempSensor)
     {
-        if(verifyTempSensor(p))
+        if(i2c_verifyTempSensor(p))
         {
-     //       exit(1002);
+            fprintf(OUTPUT_PRINT, "  Temp Sensor OK.\n");
+        }
+        else
+        {
+            fprintf(OUTPUT_PRINT, "  Temp Sensor NOT so OK.");
+        exit(1);
         }
     }
 
@@ -154,7 +170,7 @@ int main(int argc, char** argv)
     //-----------------------------------------
     if(p->checkMagSensor)
     {
-        if(verifyMagSensor(p))
+        if(i2c_verifyMagSensor(p))
         {
             utcTime = getUTC();
             strftime(utcStr, UTCBUFLEN, "%d %b %Y %T", utcTime);
@@ -167,7 +183,7 @@ int main(int argc, char** argv)
     //-----------------------------------------
     //  Initialize the Mag sensor registers.
     //-----------------------------------------
-    initMagSensor(p);
+    i2c_initMagSensor(p);
     // if(initMagSensor(p))
     // {
     //     utcTime = getUTC();
@@ -362,7 +378,7 @@ char *formatOutput(pList *p)
 
     strncpy(outBuf, "", 1);
 
-    readMagPOLL(p);
+    i2c_readMagPOLL(p);
 
     xyz[0] = (((double)p->XYZ[0] / p->NOSRegValue) / p->x_gain) * 1000; // make microTeslas -> nanoTeslas
     xyz[1] = (((double)p->XYZ[1] / p->NOSRegValue) / p->y_gain) * 1000; // make microTeslas -> nanoTeslas
@@ -463,87 +479,6 @@ static double mcp9808_decode_celsius(uint8_t msb, uint8_t lsb)
     }
     return c;
 }
-
-//------------------------------------------
-// readMagPOLL()
-//------------------------------------------
-int readMagPOLL(pList *p)
-{
-    int     rv = 0;
-    //int     bytes_read = XYZ_BUFLEN;
-    int     bytes_read = 0;
-    char    xyzBuf[XYZ_BUFLEN] = "";
-
-    // Read back XYZ_BUFLEN + 1 bytes (skip the first byte).
-    rv = i2c_pololu_read_from(p->adapter, p->magAddr, RM3100_MAG_POLL, xyzBuf, (XYZ_BUFLEN));       //(XYZ_BUFLEN + 1)
-    if(rv < 0)
-    {
-        fprintf(stdout, "  Read failed: %s\n", i2c_pololu_error_string(-rv));
-        goto done;
-    }
-    if(rv < (XYZ_BUFLEN))
-    {
-        // Wait for DReady Flag.
-        rv = i2c_pololu_read_from(p->adapter, p->magAddr, RM3100_MAG_POLL, xyzBuf, (XYZ_BUFLEN));
-        rv = (rv & RM3100I2C_READMASK);
-        while((rv != RM3100I2C_READMASK))
-        {
-            rv = i2c_pololu_read_from(p->adapter, p->magAddr, RM3100_MAG_POLL, xyzBuf, (XYZ_BUFLEN));
-            rv = (rv & RM3100I2C_READMASK);
-        }
-    }
-    else if(rv == XYZ_BUFLEN)
-    {
-        p->XYZ[0] = ((signed char)xyzBuf[0]) * 256 * 256;
-        p->XYZ[0] |= xyzBuf[1] * 256;
-        p->XYZ[0] |= xyzBuf[2];
-
-        p->XYZ[1] = ((signed char)xyzBuf[3]) * 256 * 256;
-        p->XYZ[1] |= xyzBuf[4] * 256;
-        p->XYZ[1] |= xyzBuf[5];
-
-        p->XYZ[2] = ((signed char)xyzBuf[6]) * 256 * 256;
-        p->XYZ[2] |= xyzBuf[7] * 256;
-        p->XYZ[2] |= xyzBuf[8];
-    }
-    else
-    {
-        showErrorMsg(rv);
-    }
-    return bytes_read;
-done:
-    return 0;
-}
-
-//---------------------------------------------------------------
-// int initMagSensor(volatile pList *p)
-//---------------------------------------------------------------
-int initMagSensor(pList *p)
-{
-    int rv = 0;
-    int command = PMMODE_ALL;
-    // Setup the Mag sensor register initial state here.
-    if(p->samplingMode == POLL)                                         // (p->samplingMode == POLL [default])
-    {
-        rv = i2c_pololu_write_to(p->adapter, p->magAddr, RM3100_MAG_POLL, (uint8_t *) &command, 1);       //(XYZ_BUFLEN + 1)
-        if(rv < 0)
-        {
-            showErrorMsg(rv);
-        }
-        return true;
-    }
-    return FALSE;
-}
-
-// //---------------------------------------------------------------
-// // int initTempSensors(volatile pList *p)
-// //---------------------------------------------------------------
-// int initTempSensors(pList *p)
-// {
-//     int rv = 0;
-//     // Temp sensor doesn't need any iniutialization currently.
-//     return rv;
-// }
 
 //------------------------------------------
 // getUTC()

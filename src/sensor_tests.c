@@ -11,9 +11,9 @@
 extern int RM3100_VER_EXPECTED;
 
 //---------------------------------------------------------------
-// scanforBusDevices(pList *p)
+// i2c_scanForBusDevices(pList *p)
 //---------------------------------------------------------------
-int scanforBusDevices(pList *p)
+int i2c_scanForBusDevices(pList *p)
 {
     // Scan for I2C devices
     fprintf(stdout,"\n  Scanning for I2C devices...\n");
@@ -41,27 +41,26 @@ int scanforBusDevices(pList *p)
 }
 
 //---------------------------------------------------------------
-// int verifyPololuAdaptor(pList *p)
+// int i2c_verifyPololuAdaptor(pList *p)
 //---------------------------------------------------------------
-int verifyPololuAdaptor(pList *p)
+int i2c_verifyPololuAdaptor(pList *p)
 {
     fprintf(stdout,"\nChecking Pololu I2C Adapter info:\n");
-
-    if(i2c_pololu_is_connected(p->adapter))
+    i2c_pololu_device_info info;
+    if(i2c_pololu_get_device_info(p->adapter, &info) == 0)
     {
-        fprintf(stdout, "  Connection to: adaptor at: %s is OK!\n", p->portpath);
+        if((info.vendor_id  == 0x1FFB) && ((info.product_id == 0x2502) || (info.product_id == 0x2503)))
+        {
+            return true;
+        }
     }
-    else
-    {
-        return 0;
-    }
-    return true;
+    return false;
 }
 
 //---------------------------------------------------------------
-// int getAdaptorInfo(pList *p)
+// int i2c_getAdaptorInfo(pList *p)
 //---------------------------------------------------------------
-int getAdaptorInfo(pList *p)
+int i2c_getAdaptorInfo(pList *p)
 {
     //-----------------------------------------------------
     // Get the Pololu i2c device info.
@@ -84,63 +83,30 @@ int getAdaptorInfo(pList *p)
 }
 
 //---------------------------------------------------------------
-// int verifyMagSensor(pList *p)
+// int i2c_verifyTempSensor(pList *p)
 //---------------------------------------------------------------
-int verifyTempSensor(pList *p)
+int i2c_verifyTempSensor(pList *p)
 {
     fprintf(stdout, "\nVerifying Temperature Sensor Status & Version...\n");
 
-    // if(i2c_pololu_is_connected(p->adapter))
-    // {
-    //     fprintf(stdout, "  Connection to: %s is OK!\n", p->portpath);
-    // }
-    // else
-    // {
-    //     return 0;
-    // }
+    if(i2c_pololu_is_connected(p->adapter))
+    {
+        fprintf(stdout, "  Connection to: %s is OK!\n", p->portpath);
+    }
+    else
+    {
+        return 0;
+    }
 
     i2c_pololu_clear_bus(p->adapter);
-
-    // uint8_t buf[2] = {0};
-    // uint8_t addr = 0x23; // example device
-    // uint8_t reg  = 0x36; // example register
-    // int rv = -1;
-    //
-    // // Write register index
-    // rv = i2c_pololu_write_to(p->adapter, addr, reg, "", 1);
-    // if (rv < 0)
-    // {
-    //     fprintf(stdout, "  Write failed: %s\n", i2c_pololu_error_string(-rv));
-    //     goto done;
-    // }
-    // // Read back 2 bytes
-    // //    uint8_t buf[2] = {0};
-    // rv = i2c_pololu_read_from(p->adapter, addr, reg, buf, 2);
-    // if (rv < 0)
-    // {
-    //     fprintf(stdout, "  Read failed: %s\n", i2c_pololu_error_string(-rv));
-    //     goto done;
-    // }
-    // //fprintf(stderr,"  Data: %02X %02X\n", buf[0], buf[1]);
-    // rv = buf[0];
-    // if(rv == (uint8_t) RM3100_VER_EXPECTED)
-    // {
-    //     fprintf(stdout, "  Version is OK!: 0x%2X\n", rv);
-    //     return 0;
-    // }
-    // else
-    // {
-    //     fprintf(stdout, "  Version does NOT match!\n");
-    //     return rv;
-    // }
 done:
     return true;
 }
 
 //---------------------------------------------------------------
-// int verifyMagSensor(pList *p)
+// int i2c_verifyMagSensor(pList *p)
 //---------------------------------------------------------------
-int verifyMagSensor(pList *p)
+int i2c_verifyMagSensor(pList *p)
 {
     fprintf(stdout, "\nVerifying Magnetometer Status & Version...\n");
 

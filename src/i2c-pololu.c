@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <termios.h>
@@ -34,13 +35,16 @@ static int check_response( const uint8_t *response, size_t expected_len, size_t 
 
 //------------------------------------------
 // i2c_pololu_init()
+// This just initialixes the dile descriptor.  not much use, really.
 //------------------------------------------
-void i2c_pololu_init( i2c_pololu_adapter *adapter )
+int i2c_pololu_init( i2c_pololu_adapter *adapter )
 {
     if(adapter)
     {
         adapter->fd = -1;
+        return 0;
     }
+    return 1;
 }
 
 //------------------------------------------
@@ -52,10 +56,12 @@ int i2c_pololu_connect( i2c_pololu_adapter *adapter, const char *port_name )
     {
         return -1;
     }
-    adapter->fd = open(port_name, O_RDWR | O_NOCTTY);
-    if(adapter->fd < 0)
+    adapter->fd = open(port_name, O_RDWR | O_NOCTTY | O_EXCL);
+    if(adapter->fd <= 0)
     {
-        perror("Error opening serial port");
+        char eBuf[1024] = "";
+        strerror_r(errno, eBuf, sizeof eBuf);
+        fprintf(stderr, "Error opening port device %s. %s", port_name, eBuf);
         return -1;
     }
     struct termios tty;
@@ -374,22 +380,26 @@ int i2c_pololu_get_device_info( i2c_pololu_adapter *adapter, i2c_pololu_device_i
         perror("Failed to request device info");
         return -1;
     }
-
     uint8_t length;
     if(read(adapter->fd, &length, 1) != 1)
     {
         perror("Failed to read device info length");
         return -1;
     }
-
-    uint8_t raw_info[length];
+    // Expect 28 bytes based on protocol (including length byte)
+    const uint8_t expected_len = 28;
+    if(length == 0 || length > expected_len)
+    {
+        fprintf(stderr, "Invalid device info length: %u (expected <= %u)\n", length, expected_len);
+        return -1;
+    }
+    uint8_t raw_info[28];
     raw_info[0] = length;
     if(read(adapter->fd, &raw_info[1], length - 1) != length - 1)
     {
         perror("Failed to read device info payload");
         return -1;
     }
-
     // Unpack the data
 #pragma pack(push, 1)
     struct device_info_raw
@@ -403,33 +413,40 @@ int i2c_pololu_get_device_info( i2c_pololu_adapter *adapter, i2c_pololu_device_i
         char serial_number[12];
     } *raw = (struct device_info_raw *) raw_info;
 #pragma pack(pop)
-
     if(raw->version != 0)
     {
         fprintf(stderr, "Unrecognized device info version: %d\n", raw->version);
         return -1;
     }
-
     info->vendor_id = raw->vendor_id;
     info->product_id = raw->product_id;
     info->firmware_version_bcd = raw->firmware_version_bcd;
-
     snprintf(info->firmware_version, sizeof(info->firmware_version), "%x.%02x", (raw->firmware_version_bcd >> 8), (raw->firmware_version_bcd & 0xFF));
-
     strncpy(info->firmware_modification, raw->firmware_modification, 8);
     info->firmware_modification[8] = '\0';
     if(strcmp(info->firmware_modification, "-") == 0)
     {
         info->firmware_modification[0] = '\0';
     }
-
     // Format the serial number
+    // Safely format: 6 groups of two bytes as hex, separated by dashes, no trailing dash
+    size_t pos = 0;
     for(int i = 0; i < 6; ++i)
     {
-        sprintf(info->serial_number + i * 5, "%02X%02X-", (uint8_t) raw->serial_number[i * 2], (uint8_t) raw->serial_number[i * 2 + 1]);
+        int written = snprintf(info->serial_number + pos, sizeof(info->serial_number) - pos,
+                               (i < 5) ? "%02X%02X-" : "%02X%02X",
+                               (uint8_t) raw->serial_number[i * 2], (uint8_t) raw->serial_number[i * 2 + 1]);
+        if(written < 0)
+        {
+            return -1; // encoding error
+        }
+        pos += (size_t)written;
+        if(pos >= sizeof(info->serial_number))
+        {
+            info->serial_number[sizeof(info->serial_number) - 1] = '\0';
+            break;
+        }
     }
-    info->serial_number[23] = '\0'; // Remove trailing dash
-
     return 0;
 }
 

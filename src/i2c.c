@@ -28,6 +28,9 @@
 //
 //      This approach scales well: add a new backend by dropping in a new
 //      i2.c and adding one library + one executable in CMake.
+//
+//  *BUT*:  I neet to go back and mak all the code use these, or eliminate
+//  them altogether.  Currently there is a NASTY mix.
 //=========================================================================
 // backends/i2c_pololu.c
 #include <stdint.h>
@@ -36,48 +39,114 @@
 #include "main.h"
 #include "i2c.h"
 #include "i2c-pololu.h" // your Pololu API headers
+#include "rm3100.h"
 
+
+//------------------------------------------
+// readMagPOLL()
+//------------------------------------------
+int i2c_readMagPOLL(pList *p)
+{
+    int     rv = 0;
+    //int     bytes_read = XYZ_BUFLEN;
+    int     bytes_read = 0;
+    char    xyzBuf[XYZ_BUFLEN] = "";
+
+    // Read back XYZ_BUFLEN + 1 bytes (skip the first byte).
+    rv = i2c_pololu_read_from(p->adapter, p->magAddr, RM3100_MAG_POLL, xyzBuf, (XYZ_BUFLEN));       //(XYZ_BUFLEN + 1)
+    if(rv < 0)
+    {
+        fprintf(stdout, "  Read failed: %s\n", i2c_pololu_error_string(-rv));
+        goto done;
+    }
+    if(rv < (XYZ_BUFLEN))
+    {
+        // Wait for DReady Flag.
+        rv = i2c_pololu_read_from(p->adapter, p->magAddr, RM3100_MAG_POLL, xyzBuf, (XYZ_BUFLEN));
+        rv = (rv & RM3100I2C_READMASK);
+        while((rv != RM3100I2C_READMASK))
+        {
+            rv = i2c_pololu_read_from(p->adapter, p->magAddr, RM3100_MAG_POLL, xyzBuf, (XYZ_BUFLEN));
+            rv = (rv & RM3100I2C_READMASK);
+        }
+    }
+    else if(rv == XYZ_BUFLEN)
+    {
+        p->XYZ[0] = ((signed char)xyzBuf[0]) * 256 * 256;
+        p->XYZ[0] |= xyzBuf[1] * 256;
+        p->XYZ[0] |= xyzBuf[2];
+
+        p->XYZ[1] = ((signed char)xyzBuf[3]) * 256 * 256;
+        p->XYZ[1] |= xyzBuf[4] * 256;
+        p->XYZ[1] |= xyzBuf[5];
+
+        p->XYZ[2] = ((signed char)xyzBuf[6]) * 256 * 256;
+        p->XYZ[2] |= xyzBuf[7] * 256;
+        p->XYZ[2] |= xyzBuf[8];
+    }
+    else
+    {
+        showErrorMsg(rv);
+    }
+    return bytes_read;
+    done:
+        return 0;
+}
+
+
+//---------------------------------------------------------------
+// i2c_init(pList *p)
+// This is almost as pointless as i2c_pololu_init() which it calls.
+//---------------------------------------------------------------
+int i2c_init(pList *p)
+{
+    return i2c_pololu_init(p->adapter);
+}
+
+//---------------------------------------------------------------
+// i2c_open(pList *p, const char *portpath)
+//---------------------------------------------------------------
 int i2c_open(pList *p, const char *portpath)
 {
     // Map to Pololu open/init sequence
     struct stat sb;
     if(!stat(p->portpath, &sb))
     {
-       i2c_pololu_adapter *pAdapt = p->adapter;
-       return i2c_pololu_connect(pAdapt, p->portpath);
+        return i2c_pololu_connect(p->adapter, p->portpath);
     }
     else
     {
-        char errstr[1024]= "";
-        sprintf(errstr, "Failed to open port %s. Exiting.", p->portpath);
+        char errstr[1024] = "";
+        sprintf(errstr, "Device %s does not exist or is in use. Exiting...", p->portpath);
         perror(errstr);
-        exit(EXIT_FAILURE);
+        // exit(EXIT_FAILURE);
+        return -1;
     }
 }
 
-//void i2c_init(pList *p, int adaptor)
-void i2c_init(pList *p)
-{
-//    pololu_i2c_adapter adapter;
-    i2c_pololu_init(p->adapter);
-}
-
+//---------------------------------------------------------------
+// i2c_setAddress()
+//---------------------------------------------------------------
 void i2c_setAddress(pList *p, int devAddr)
 {
 //    p->adapter.fd; (void)devAddr;
 }
 
+//---------------------------------------------------------------
+// i2c_setBitRate()
+//---------------------------------------------------------------
 void i2c_setBitRate(pList *p, int devspeed)
 {
 //    p->adapter.fd; (void)devspeed;
 }
 
-#if(USE_POLOLU)
-
 //-----------------------------------------------------------------------------
 // Calls for the Temperature sensor.
 //-----------------------------------------------------------------------------
 
+//---------------------------------------------------------------
+// i2c_write_temp()
+//---------------------------------------------------------------
 int i2c_write_temp(pList *p, uint8_t reg, uint8_t value)
 {
     int rv;
@@ -85,6 +154,9 @@ int i2c_write_temp(pList *p, uint8_t reg, uint8_t value)
     return rv;
 }
 
+//---------------------------------------------------------------
+// i2c_read_temp()
+//---------------------------------------------------------------
 uint8_t i2c_read_temp(pList *p, uint8_t reg)
 {
     uint8_t  rv;
@@ -92,30 +164,56 @@ uint8_t i2c_read_temp(pList *p, uint8_t reg)
     return rv;
 }
 
+//---------------------------------------------------------------
+// i2c_writebyte_temp()
+//---------------------------------------------------------------
 int i2c_writebyte_temp(pList *p, uint8_t reg, char* buffer, short int length)
 {
     return i2c_pololu_write_to(p->adapter, (uint8_t) p->remoteTempAddr, (uint8_t) reg, (uint8_t *) buffer, (uint8_t) 1);
 }
 
+//---------------------------------------------------------------
+// i2c_reabyte_temp()
+//---------------------------------------------------------------
 int i2c_reabyte_temp(pList *p, uint8_t reg, uint8_t* buf, short int length)
 {
     return i2c_pololu_read_from(p->adapter, (uint8_t) p->remoteTempAddr, (uint8_t) reg, (uint8_t *) buf, (uint8_t) 1);
 }
 
+//---------------------------------------------------------------
+// i2c_writebuf_temp()
+//---------------------------------------------------------------
 int i2c_writebuf_temp(pList *p, uint8_t reg, char* buf, short int length)
 {
     return i2c_pololu_write_to(p->adapter,(uint8_t) p->remoteTempAddr, (uint8_t) reg, buf, (uint8_t) length);
 }
 
+//---------------------------------------------------------------
+// i2c_readbuf_temp()
+//---------------------------------------------------------------
 int i2c_readbuf_temp(pList *p, uint8_t reg, uint8_t *buf, uint8_t length)
 {
     return i2c_pololu_read_from(p->adapter, p->remoteTempAddr, (uint8_t) reg, (uint8_t *) buf, (uint8_t) length );
 }
 
+// //---------------------------------------------------------------
+// // int initTempSensors(volatile pList *p)
+// //---------------------------------------------------------------
+// int initTempSensors(pList *p)
+// {
+//     int rv = 0;
+//     // Temp sensor doesn't need any iniutialization currently.
+//     return rv;
+// }
+
+
 //-----------------------------------------------------------------------------
 // Calls for the Magnetometer
 //-----------------------------------------------------------------------------
 
+//---------------------------------------------------------------
+// i2c_write_mag()
+//---------------------------------------------------------------
 int i2c_write_mag(pList *p, uint8_t reg, uint8_t value)
 {
     int rv = 0;
@@ -123,6 +221,9 @@ int i2c_write_mag(pList *p, uint8_t reg, uint8_t value)
     return rv;
 }
 
+//---------------------------------------------------------------
+// i2c_read_mag()
+//---------------------------------------------------------------
 uint8_t i2c_read_mag(pList *p, uint8_t reg)
 {
     uint8_t  rv;
@@ -130,29 +231,65 @@ uint8_t i2c_read_mag(pList *p, uint8_t reg)
     return rv;
 }
 
+//---------------------------------------------------------------
+// i2c_writebyte_mag()
+//---------------------------------------------------------------
 int i2c_writebyte_mag(pList *p, uint8_t reg, char* buffer, short int length)
 {
     return i2c_pololu_write_to(p->adapter, (uint8_t) p->magAddr, (uint8_t) reg, (uint8_t *) buffer, (uint8_t) 1);
 }
 
+//---------------------------------------------------------------
+// i2c_reabyte_mag()
+//---------------------------------------------------------------
 int i2c_reabyte_mag(pList *p, uint8_t reg, uint8_t* buf, short int length)
 {
     return i2c_pololu_read_from(p->adapter, (uint8_t) p->magAddr, (uint8_t) reg, (uint8_t *) buf, (uint8_t) 1);
 }
 
+//---------------------------------------------------------------
+// i2c_writebuf_mag()
+//---------------------------------------------------------------
 int i2c_writebuf_mag(pList *p, uint8_t reg, char* buf, short int length)
 {
     return i2c_pololu_write_to(p->adapter,(uint8_t) p->magAddr, (uint8_t) reg, buf, (uint8_t) length);
 }
 
+//---------------------------------------------------------------
+// i2c_readbuf_mag()
+//---------------------------------------------------------------
 int i2c_readbuf_mag(pList *p, uint8_t reg, uint8_t *buf, uint8_t length)
 {
     return i2c_pololu_read_from(p->adapter, p->magAddr, (uint8_t) reg, (uint8_t *) buf, (uint8_t) length );
 }
 
+//---------------------------------------------------------------
+// int initMagSensor(volatile pList *p)
+//---------------------------------------------------------------
+int i2c_initMagSensor(pList *p)
+{
+    int rv = 0;
+    int command = PMMODE_ALL;
+    // Setup the Mag sensor register initial state here.
+    if(p->samplingMode == POLL)                                         // (p->samplingMode == POLL [default])
+    {
+        rv = i2c_pololu_write_to(p->adapter, p->magAddr, RM3100_MAG_POLL, (uint8_t *) &command, 1);       //(XYZ_BUFLEN + 1)
+        if(rv < 0)
+        {
+            showErrorMsg(rv);
+        }
+        return true;
+    }
+    return FALSE;
+}
+
+#if(USE_POLOLU)
 #else
 #endif
 
+//---------------------------------------------------------------
+// i2c_close()
+//---------------------------------------------------------------
 void i2c_close(pList *p)
 {
     i2c_pololu_disconnect(p->adapter);

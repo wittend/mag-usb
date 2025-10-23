@@ -12,10 +12,10 @@
 
 #include "main.h"
 
-int  verifyPololuAdaptor(pList *p);
-int  getAdaptorInfo(pList *p);
-int  scanforBusDevices(pList *p);
-int  verifyMagSensor(pList *p);
-int  verifyTempSensor(pList *p);
+int  i2c_verifyPololuAdaptor(pList *p);
+int  i2c_getAdaptorInfo(pList *p);
+int  i2c_scanForBusDevices(pList *p);
+int  i2c_verifyMagSensor(pList *p);
+int  i2c_verifyTempSensor(pList *p);
 
 #endif // MAG_USB_SENSOR_TESTS_H

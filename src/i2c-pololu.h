@@ -57,7 +57,9 @@ typedef struct
     char firmware_version[16];
     uint16_t firmware_version_bcd;
     char firmware_modification[9];
-    char serial_number[25];
+    // 6 groups of 2 bytes formatted as "%02X%02X-" (5 chars per group)
+    // results in 6*5 = 30 characters including trailing dash; we'll null-terminate after replacing the last dash.
+    char serial_number[30];
 } i2c_pololu_device_info;
 
 // Function Prototypes
@@ -66,7 +68,7 @@ typedef struct
  * @brief Initializes the adapter structure.
  * @param adapter A pointer to the i2c_pololu_adapter struct.
  */
-void i2c_pololu_init( i2c_pololu_adapter *adapter );
+int i2c_pololu_init( i2c_pololu_adapter *adapter );
 
 /**
  * @brief Connects the adapter to the specified serial port.
@@ -98,7 +100,6 @@ bool i2c_pololu_is_connected( const i2c_pololu_adapter *adapter );
  * @param size The number of bytes to write.
  * @return The number of bytes written, or a negative error code on failure.
  */
-//int i2c_pololu_write_to( i2c_pololu_adapter *adapter, uint8_t address, const uint8_t *data, uint8_t size );
 int i2c_pololu_write_to( i2c_pololu_adapter *adapter, uint8_t address, uint8_t reg, const uint8_t *data, uint8_t size );
 
 /**
@@ -109,7 +110,6 @@ int i2c_pololu_write_to( i2c_pololu_adapter *adapter, uint8_t address, uint8_t r
  * @param size The number of bytes to read.
  * @return The number of bytes read, or a negative error code on failure.
  */
-//int i2c_pololu_read_from( i2c_pololu_adapter *adapter, uint8_t address, uint8_t *data, uint8_t size );
 int i2c_pololu_read_from( i2c_pololu_adapter *adapter, uint8_t address, uint8_t reg, uint8_t *data, uint8_t size );
 
 /**

@@ -17,15 +17,16 @@
 // Prototypes
 //------------------------------------------
 int i2c_open(pList *p, const char *portname);
-void i2c_init(pList *p);
+int i2c_init(pList *p);
 void i2c_setAddress(pList *p, int devAddr);
 void i2c_setBitRate(pList *p, int devspeed);
-// int i2c_write(pList *p,  uint8_t address, uint8_t reg, uint8_t value);
-// uint8_t i2c_read(pList *p, uint8_t address, uint8_t reg);
-// int i2c_writebyte(pList *p, uint8_t address, uint8_t reg, char* buffer, short int length);
-// int i2c_reabyte(pList *p, uint8_t address, uint8_t reg, uint8_t* buf, short int length);
-// int i2c_writebuf(pList *p,uint8_t address,  uint8_t reg, char* buffer, short int length);
-// int i2c_readbuf(pList *p, uint8_t address,  uint8_t reg, uint8_t *buf, uint8_t length);
+
+int i2c_initMagSensor(pList *p);
+
+int  i2c_readRemoteTemp(pList *p);
+//int  readMagCMM(volatile pList *p);
+int  i2c_readMagPOLL(pList *p);
+
 int i2c_write_mag(pList *p,     uint8_t reg, uint8_t value);
 uint8_t i2c_read_mag(pList *p,  uint8_t reg);
 int i2c_writebyte_mag(pList *p, uint8_t reg, char* buffer, short int length);
@@ -33,6 +34,7 @@ int i2c_reabyte_mag(pList *p,   uint8_t reg, uint8_t* buf, short int length);
 int i2c_writebuf_mag(pList *p,  uint8_t reg, char* buffer, short int length);
 int i2c_readbuf_mag(pList *p,   uint8_t reg, uint8_t *buf, uint8_t length);
 
+// int initTempSensors(pList *p)
 int i2c_write_temp(pList *p,     uint8_t reg, uint8_t value);
 uint8_t i2c_read_temp(pList *p,  uint8_t reg);
 int i2c_writebyte_temp(pList *p, uint8_t reg, char* buffer, short int length);

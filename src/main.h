@@ -146,13 +146,11 @@ typedef struct tag_pList
 //------------------------------------------
 int  main(int argc, char** argv);
 // void onEdge(void);
-int  initMagSensor(pList *p);
 char *formatOutput(pList *p);
-int  initTempSensors(pList *p);
-int  readLocalTemp(pList *p);
-int  readRemoteTemp(pList *p);
-//int  readMagCMM(volatile pList *p);
-int  readMagPOLL(pList *p);
+// int  readLocalTemp(pList *p);
+// int  readRemoteTemp(pList *p);
+// //int  readMagCMM(volatile pList *p);
+// int  readMagPOLL(pList *p);
 void* read_sensors(void* arg);
 void* print_data(void* arg);
 void* signal_handler_thread(void* arg);
