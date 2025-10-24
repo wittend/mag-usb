@@ -49,6 +49,26 @@ typedef struct
     int fd; // File descriptor for the serial port
 } i2c_pololu_adapter;
 
+/**
+ * @brief Check that a device node exists and is not exclusively held by another process.
+ *        Intended for Linux /dev ttyACM/ttyUSB style devices prior to opening.
+ *
+ * This function will:
+ *  - Poll for the existence of the path until timeout_ms expires.
+ *  - Verify the path is a character device.
+ *  - Attempt a non-blocking open(O_RDWR|O_NOCTTY|O_NONBLOCK). If it succeeds, the
+ *    descriptor is closed immediately and the device is considered available.
+ *    If the driver has exclusive-use set (e.g., via TIOCEXCL by another process),
+ *    the open will typically fail with EBUSY.
+ *
+ * @param path       Device node path under /dev (e.g., "/dev/ttyACM0").
+ * @param timeout_ms How long to wait for the device to appear/become free. Use 0 for a single check.
+ * @return 0 if available.
+ *         Negative errno-style value on failure: -ENOENT, -ENOTTY/-ENODEV if not character device,
+ *         -EBUSY if in use, or -EACCES/-EPERM on permission error, etc.
+ */
+int i2c_pololu_check_device_available(const char* path, int timeout_ms);
+
 // Structure to hold device information
 typedef struct
 {

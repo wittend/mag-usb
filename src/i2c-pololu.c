@@ -14,7 +14,88 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <termios.h>
+#include <sys/stat.h>
+#include <time.h>
+#include <stdbool.h>
+#include <sys/types.h>
 #include "i2c-pololu.h"
+
+//------------------------------------------
+// i2c_pololu_check_device_available()
+//------------------------------------------
+int i2c_pololu_check_device_available(const char* path, int timeout_ms)
+{
+    if(path == NULL || *path == '\0')
+    {
+        return -EINVAL;
+    }
+
+    struct timespec start_ts = {0}, now = {0};
+    clock_gettime(CLOCK_MONOTONIC, &start_ts);
+
+    const int sleep_ms = 50;
+    struct timespec req;
+    req.tv_sec = 0;
+    req.tv_nsec = sleep_ms * 1000000L;
+
+    for(;;)
+    {
+        struct stat sb;
+        if(stat(path, &sb) == 0)
+        {
+            if(!S_ISCHR(sb.st_mode))
+            {
+                return -ENOTTY; // not a character device
+            }
+            // Try a non-blocking open to check availability
+            int fd = open(path, O_RDWR | O_NOCTTY | O_NONBLOCK | O_EXCL);
+            if(fd >= 0)
+            {
+                close(fd);
+                return 0; // available
+            }
+            else
+            {
+                if(errno == EBUSY || errno == EACCES || errno == EPERM)
+                {
+                    // May be in-use or permission not yet ready (udev rules), allow retries until timeout
+                }
+                else
+                {
+                    return -errno; // other errors: pass through
+                }
+            }
+        }
+        else
+        {
+            if(errno != ENOENT)
+            {
+                return -errno; // unexpected stat error
+            }
+            // if ENOENT, allow retry until timeout
+        }
+
+        // Check timeout
+        if(timeout_ms <= 0)
+        {
+            return -ENOENT; // single-shot or zero timeout
+        }
+        clock_gettime(CLOCK_MONOTONIC, &now);
+        long elapsed_ms = (long)((now.tv_sec - start_ts.tv_sec) * 1000L + (now.tv_nsec - start_ts.tv_nsec) / 1000000L);
+        if(elapsed_ms >= timeout_ms)
+        {
+            // If last stat said exists but open failed with EBUSY, report busy; otherwise ENOENT
+            // Try a final stat to decide
+            if(stat(path, &sb) == 0)
+            {
+                return -EBUSY; // treat as in-use
+            }
+            return -ENOENT;
+        }
+        // Sleep a bit before retry
+        nanosleep(&req, NULL);
+    }
+}
 
 //------------------------------------------
 // check_response()
@@ -56,12 +137,21 @@ int i2c_pololu_connect( i2c_pololu_adapter *adapter, const char *port_name )
     {
         return -1;
     }
+    // Pre-flight availability check (wait up to 500 ms)
+    int avail = i2c_pololu_check_device_available(port_name, 500);
+    if(avail != 0)
+    {
+        char eBuf[1024] = "";
+        strerror_r(-avail, eBuf, sizeof eBuf);
+        fprintf(stderr, "Error opening port device may not exist or may be in use: %s. %s\n", port_name, eBuf);
+        return -1;
+    }
     adapter->fd = open(port_name, O_RDWR | O_NOCTTY | O_EXCL);
-    if(adapter->fd <= 0)
+    if(adapter->fd < 0)
     {
         char eBuf[1024] = "";
         strerror_r(errno, eBuf, sizeof eBuf);
-        fprintf(stderr, "Error opening port device %s. %s", port_name, eBuf);
+        fprintf(stderr, "Error opening port device %s. %s\n", port_name, eBuf);
         return -1;
     }
     struct termios tty;
@@ -377,13 +467,15 @@ int i2c_pololu_get_device_info( i2c_pololu_adapter *adapter, i2c_pololu_device_i
     uint8_t cmd = CMD_GET_DEVICE_INFO;
     if(write(adapter->fd, &cmd, 1) != 1)
     {
-        perror("Failed to request device info");
+        fprintf(stderr, "Failed to request device info\n");
+//        perror("Failed to request device info\n");
         return -1;
     }
     uint8_t length;
     if(read(adapter->fd, &length, 1) != 1)
     {
-        perror("Failed to read device info length");
+        fprintf(stderr, "Failed to read Pololu device info length.\n");
+//        perror("Failed to read Pololu device info length.\n");
         return -1;
     }
     // Expect 28 bytes based on protocol (including length byte)
@@ -397,7 +489,8 @@ int i2c_pololu_get_device_info( i2c_pololu_adapter *adapter, i2c_pololu_device_i
     raw_info[0] = length;
     if(read(adapter->fd, &raw_info[1], length - 1) != length - 1)
     {
-        perror("Failed to read device info payload");
+        fprintf(stderr, "Failed to read device info payload\n");
+//        perror("Failed to read device info payload\n");
         return -1;
     }
     // Unpack the data
@@ -545,12 +638,15 @@ const char *i2c_pololu_error_string( int error_code )
         case ERROR_RX_TIMEOUT:
             // This error code indicates that a timeout happened while receiving a data byte during an I²C read.
             return "Timeout while receiving";
+        case ERROR_NACK:
+            // Generic NACK received during I²C transaction.
+            return "Received NACK";
         case ERROR_ADDRESS_NACK:
             // This error code indicates that the adapter received a NACK (Not Acknowledge) while transmitting the
             // address byte to the I²C bus. This error can happen if the target device is not powered, if the target
             // device is not properly connected to the I²C bus, or—for adapters that do not provide power to the bus—if
             // the adapter’s VCC (IN) pin is not powered.
-            return "Target device did not respond";
+            return "Address NACK: target device did not respond";
         case ERROR_TX_DATA_NACK:
             // This error code indicates that the adapter received a NACK while transmitting a byte of data to the
             // target I²C device.

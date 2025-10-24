@@ -35,7 +35,7 @@
 char Version[32];
 int volatile killflag;
 static char outBuf[256];
-char portpath[PATH_MAX] = "/dev/ttyACM0";          // default path for pololu i2c emulator.
+char portpath[PATH_MAX] = "/dev/ttyMAG0";          // default path for pololu i2c emulator.
 extern int CC_400;
 extern int GAIN_150;
 extern int RM3100_I2C_ADDRESS;
@@ -116,11 +116,16 @@ int main(int argc, char** argv)
     if(i2c_init(p))
     {
         fprintf(OUTPUT_ERROR, "Unable to initialize I2C Adaptor handle.\n");
-        exit(1);
+        return -1;
+        // exit(1);
     }
     else
     {
-        i2c_open(p, portpath);
+        if (i2c_open(p, portpath) != 0)
+        {
+            fprintf(OUTPUT_ERROR, "Failed to open I2C port '%s'. Exiting...\n", portpath);
+            return 1;
+        }
     }
 
 #if(USE_POLOLU)
@@ -132,8 +137,9 @@ int main(int argc, char** argv)
         }
         else
         {
-            fprintf(OUTPUT_PRINT, "  Pololu Adapter NOT so OK.");
-        exit(1);
+            fprintf(OUTPUT_PRINT, "  Pololu Adapter NOT so OK.\n");
+            return -1;
+            // exit(1);
         }
     }
 
@@ -160,8 +166,9 @@ int main(int argc, char** argv)
         }
         else
         {
-            fprintf(OUTPUT_PRINT, "  Temp Sensor NOT so OK.");
-        exit(1);
+            fprintf(OUTPUT_PRINT, "  Temp Sensor NOT so OK.\n");
+            return 1;
+//        exit(1);
         }
     }
 

@@ -47,50 +47,68 @@
 //------------------------------------------
 int i2c_readMagPOLL(pList *p)
 {
-    int     rv = 0;
-    //int     bytes_read = XYZ_BUFLEN;
-    int     bytes_read = 0;
-    char    xyzBuf[XYZ_BUFLEN] = "";
+    int rv = 0;
+    int bytes_read = 0;
+    uint8_t xyzBuf[XYZ_BUFLEN] = {0};
 
-    // Read back XYZ_BUFLEN + 1 bytes (skip the first byte).
-    rv = i2c_pololu_read_from(p->adapter, p->magAddr, RM3100_MAG_POLL, xyzBuf, (XYZ_BUFLEN));       //(XYZ_BUFLEN + 1)
-    if(rv < 0)
+    // 1) Trigger a single XYZ measurement by writing to POLL register
+    uint8_t poll_cmd = RM3100I2C_POLLXYZ;
+    rv = i2c_pololu_write_to(p->adapter, (uint8_t)p->magAddr, (uint8_t)RM3100_MAG_POLL, &poll_cmd, 1);
+    if (rv < 0)
     {
-        fprintf(stdout, "  Read failed: %s\n", i2c_pololu_error_string(-rv));
-        goto done;
+        fprintf(stdout, "  POLL write failed: %s\n", i2c_pololu_error_string(-rv));
+        return rv;
     }
-    if(rv < (XYZ_BUFLEN))
+
+    // 2) Wait for DRDY in STATUS register with a timeout
+    const int max_tries = 1000; // safety cap
+    int tries = 0;
+    uint8_t status = 0;
+    do
     {
-        // Wait for DReady Flag.
-        rv = i2c_pololu_read_from(p->adapter, p->magAddr, RM3100_MAG_POLL, xyzBuf, (XYZ_BUFLEN));
-        rv = (rv & RM3100I2C_READMASK);
-        while((rv != RM3100I2C_READMASK))
+        rv = i2c_pololu_read_from(p->adapter, (uint8_t)p->magAddr, (uint8_t)RM3100I2C_STATUS, &status, 1);
+        if (rv < 0)
         {
-            rv = i2c_pololu_read_from(p->adapter, p->magAddr, RM3100_MAG_POLL, xyzBuf, (XYZ_BUFLEN));
-            rv = (rv & RM3100I2C_READMASK);
+            fprintf(stdout, "  STATUS read failed: %s\n", i2c_pololu_error_string(-rv));
+            return rv;
         }
-    }
-    else if(rv == XYZ_BUFLEN)
+        if ((status & RM3100I2C_READMASK) == RM3100I2C_READMASK)
+            break;
+        if (p->DRDYdelay > 0)
+            usleep((useconds_t)(p->DRDYdelay * 1000)); // DRDYdelay in ms
+        ++tries;
+    } while (tries < max_tries);
+
+    if (tries >= max_tries)
     {
-        p->XYZ[0] = ((signed char)xyzBuf[0]) * 256 * 256;
-        p->XYZ[0] |= xyzBuf[1] * 256;
-        p->XYZ[0] |= xyzBuf[2];
-
-        p->XYZ[1] = ((signed char)xyzBuf[3]) * 256 * 256;
-        p->XYZ[1] |= xyzBuf[4] * 256;
-        p->XYZ[1] |= xyzBuf[5];
-
-        p->XYZ[2] = ((signed char)xyzBuf[6]) * 256 * 256;
-        p->XYZ[2] |= xyzBuf[7] * 256;
-        p->XYZ[2] |= xyzBuf[8];
+        fprintf(stdout, "  Timeout waiting for DRDY (status=0x%02X)\n", status);
+        return -1;
     }
-    else
+
+    // 3) Read the 9 data bytes starting at MX register (0x24)
+    rv = i2c_pololu_read_from(p->adapter, (uint8_t)p->magAddr, (uint8_t)RM3100I2C_XYZ, xyzBuf, (uint8_t)XYZ_BUFLEN);
+    if (rv < 0)
+    {
+        fprintf(stdout, "  Data read failed: %s\n", i2c_pololu_error_string(-rv));
+        return rv;
+    }
+    if (rv != XYZ_BUFLEN)
     {
         showErrorMsg(rv);
+        return rv;
     }
+
+    // 4) Assemble 24-bit big-endian signed values with sign extension
+    int32_t x = ((int32_t)(int8_t)xyzBuf[0] << 16) | ((int32_t)xyzBuf[1] << 8) | (int32_t)xyzBuf[2];
+    int32_t y = ((int32_t)(int8_t)xyzBuf[3] << 16) | ((int32_t)xyzBuf[4] << 8) | (int32_t)xyzBuf[5];
+    int32_t z = ((int32_t)(int8_t)xyzBuf[6] << 16) | ((int32_t)xyzBuf[7] << 8) | (int32_t)xyzBuf[8];
+
+    p->XYZ[0] = x;
+    p->XYZ[1] = y;
+    p->XYZ[2] = z;
+
+    bytes_read = XYZ_BUFLEN;
     return bytes_read;
-    done:
-        return 0;
 }
 
 
@@ -119,7 +137,7 @@ int i2c_open(pList *p, const char *portpath)
         char errstr[1024] = "";
         sprintf(errstr, "Device %s does not exist or is in use. Exiting...", p->portpath);
         perror(errstr);
-        // exit(EXIT_FAILURE);
+        //exit(EXIT_FAILURE);
         return -1;
     }
 }
