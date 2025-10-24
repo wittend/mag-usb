@@ -194,9 +194,6 @@ void readCycleCountRegs(pList *p)
     (void)p;
     uint8_t regCC[7]= { 0, 0, 0, 0, 0, 0, 0 };
 
-//    i2c_setAddress(p->pi, p->magnetometerAddr);
-    //  Read register settings
-//    i2c_readbuf(p->pi, RM3100I2C_CCX_1, regCC, 7);
     fprintf(stdout, "regCC[%i]: 0x%X\n",    0, (uint8_t)regCC[0]);
     fprintf(stdout, "regCC[%i]: 0x%X\n",    1, (uint8_t)regCC[1]);
     fprintf(stdout, "regCC[%i]: 0x%X\n",    2, (uint8_t)regCC[2]);

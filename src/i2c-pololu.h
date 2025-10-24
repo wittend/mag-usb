@@ -1,7 +1,12 @@
+//=========================================================================
+// i2c_pololu.c
 //
-// Created by dave on 7/17/25.
+// An interface for the RM3100 3-axis magnetometer from PNI Sensor Corp.
 //
-
+// Author:      David Witten, KD0EAG
+// Date:        7/17/25
+// License:     GPL 3.0
+//=========================================================================
 #ifndef POLOLU_I2C_H
 #define POLOLU_I2C_H
 

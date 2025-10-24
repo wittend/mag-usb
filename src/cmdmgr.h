@@ -6,9 +6,6 @@
 // Author:      David Witten, KD0EAG
 // Date:        December 18, 2023
 // License:     GPL 3.0
-// Note:        replaces i2c.c (using file system calls to read(), write(), etc.
-//              with calls to pigpio. 
-//              Also adding callbacks on GPIO27 for PPS rising edge.
 //=========================================================================
 #ifndef SWX3100CMDMGR_h
 #define SWX3100CMDMGR_h

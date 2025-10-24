@@ -8,14 +8,6 @@
 // Updates:     Sept. 9, 2025
 //
 // License:     GPL 3.0
-// Notes:       USE_PIGPIO version replaces i2c.c (using file system calls
-//              to read(), write(), etc.) with calls to pigpio.
-//
-//              USE_WAITFOREDGE waits for an edge interrupt on PI GPIO27
-//              for PPS rising edge.
-//
-//              FOR_GRAPE2 uses pigpio daemon and pipes to communicate with
-//              with a parent GRAPE2 Personal Space Weather Station setup.
 //=========================================================================
 #include <stdio.h>
 #include "main.h"

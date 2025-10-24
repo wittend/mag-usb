@@ -32,7 +32,6 @@
 //  *BUT*:  I neet to go back and mak all the code use these, or eliminate
 //  them altogether.  Currently there is a NASTY mix.
 //=========================================================================
-// backends/i2c_pololu.c
 #include <stdint.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -138,7 +137,6 @@ int i2c_open(pList *p, const char *portpath)
         char errstr[1024] = "";
         sprintf(errstr, "Device %s does not exist or is in use. Exiting...", p->portpath);
         perror(errstr);
-        //exit(EXIT_FAILURE);
         return -1;
     }
 }

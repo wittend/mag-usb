@@ -6,15 +6,11 @@
 // Author:      David Witten, KD0EAG
 // Date:        December 18, 2023
 // License:     GPL 3.0
-// Note:        replaces i2c.c (using file system calls to read(), write(), etc.
-//              with calls to pigpio. 
-//              Also adding callbacks on GPIO27 for PPS rising edge.
 //=========================================================================
 #include <linux/limits.h>
 #include "main.h"
 #include "i2c.h"
 #include "cmdmgr.h"
-//#include "rm3100.h"
 #include "config.h"
 #include "sensor_tests.h"
 
@@ -22,12 +18,6 @@
 #include <signal.h>
 #include <unistd.h>
 #include <time.h>
-
-//------------------------------------------
-// Macros
-//------------------------------------------
-#define PPS_GPIO_PIN    27
-#define PPS_TIMEOUTSECS 2.0
 
 //------------------------------------------
 // Static and Global variables
@@ -48,6 +38,8 @@ extern int RM3100_I2C_ADDRESS;
 //     int PIPEOUT = -1;
 // #endif //USE_PIPES
 #if((USE_LGPIO || USE_RGPIO) && USE_WAITFOREDGE)
+#define PPS_GPIO_PIN    27
+#define PPS_TIMEOUTSECS 2.0
 void cbTestFunc()
 {
     printf("Got Callback!/n");
@@ -168,7 +160,6 @@ int main(int argc, char** argv)
         {
             fprintf(OUTPUT_PRINT, "  Temp Sensor NOT so OK.\n");
             return 1;
-//        exit(1);
         }
     }
 
