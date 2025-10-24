@@ -17,11 +17,11 @@ Various pieces of software have been used to develop, test, and run these boards
 
 * The **mag-usb** utility is written as a Linux command line program and currently takes all configuration parameters from its commandline.
 
-* This software **MIGHT** build and run there.
-
 * This version is not tested for use with a Raspberry Pi-like device (but it might work there). 
 
 * This software is **_not_** currently written to run on Windows. 
+
+* It is conceiveable that this code **_might_** build and run on an Apple Mac, but that has not been tested. 
 
 * This version of the code does NOT use libraries like pigpio that speak directly to Pi 3/4 hardware. 
 
@@ -35,7 +35,7 @@ The current pre-release code is 0.0.3
 
 ## To build (with CLion profiles or plain CMake):
 
-Using CLion (recommended):
+Using CLion (recommended - I happen to use the CLion IDE. I believe that there is a free version of CLion for Linux and Mac):
 - Open the project; CLion will generate the Debug and Release profiles under cmake-build-debug and cmake-build-release.
 - Build the target "mag-usb" from the chosen profile.
 
