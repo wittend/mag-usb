@@ -160,7 +160,7 @@ int main(int argc, char** argv)
     //-----------------------------------------------------
     if(p->checkTempSensor)
     {
-        if(i2c_verifyTempSensor(p))
+        if(!i2c_verifyTempSensor(p))
         {
             fprintf(OUTPUT_PRINT, "  Temp Sensor OK.\n");
         }
@@ -279,11 +279,15 @@ int main(int argc, char** argv)
     return 0;
 }
 
+// Forward declaration for local helper used below
+static double mcp9808_decode_celsius(uint8_t msb, uint8_t lsb);
+
 //---------------------------------------------------------------
 // Function to simulate reading sensor data
 //---------------------------------------------------------------
 void* read_sensors(void* arg)
 {
+    (void)arg;
     while (!shutdown_requested)
     {
         // Sleep for 1000 ms (1 second)
@@ -332,6 +336,7 @@ void* print_data(void* arg)
 //---------------------------------------------------------------
 void* signal_handler_thread(void* arg)
 {
+    (void)arg;
     sigset_t sigset;
     int signum;
 

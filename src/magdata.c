@@ -21,7 +21,7 @@ extern char *Version;
 //------------------------------------------
 unsigned short setMagSampleRate(pList *p, unsigned short sample_rate)
 {
-    int i;
+    size_t i;
     const unsigned short int supported_rates[][2] = 
     {
         /* [Hz], register value */
@@ -34,13 +34,15 @@ unsigned short setMagSampleRate(pList *p, unsigned short sample_rate)
         { 125,  0x04},   // up to 125Hz
         { 220,  0x03}    // up to 250Hz
     };
-    for(i = 0; i < sizeof(supported_rates)/(sizeof(unsigned short int) * 2) - 1; i++)
+    const size_t count = sizeof(supported_rates) / sizeof(supported_rates[0]);
+    for(i = 0; i + 1 < count; i++)
     {
         if(sample_rate <= supported_rates[i][0])
         {
             break;
         }
     }
+    if (i >= count) { i = count - 1; }
     p->CMMSampleRate = supported_rates[i][0];
     // i2c_write(p->pi, RM3100I2C_TMRC, p->CMMSampleRate);
     return p->CMMSampleRate;
@@ -77,6 +79,7 @@ void termGPIO(pList *p)
 //---------------------------------------------------------------
 void showErrorMsg(int rv)
 {
+    (void)rv; // may be unused depending on build flags
     char    utcStr[UTCBUFLEN] = "";
     struct  tm *utcTime = getUTC();
     strftime(utcStr, UTCBUFLEN, "%d %b %Y %T", utcTime);
@@ -102,6 +105,7 @@ void showErrorMsg(int rv)
 //------------------------------------------
 int setNOSReg(pList *p)
 {
+    (void)p;
     int rv = 0;
     //#if __DEBUG
     //    fprintf(OUTPUT_PRINT, "    [Child]: In setNOSReg():: Setting undocumented NOS register to value: %2X\n", p->NOSRegValue);
@@ -115,6 +119,7 @@ int setNOSReg(pList *p)
 //------------------------------------------
 int runBIST(pList *p)
 {
+    (void)p;
     return 0;
     //return i2c_read(p->pi, RM3100I2C_TMRC);
 }
@@ -125,6 +130,7 @@ int runBIST(pList *p)
 //------------------------------------------
 int startCMM(pList *p)
 {
+    (void)p;
     int rv = 0;
 //    short cmmMode = (CMMMODE_ALL);   // 71 d
 //    rv = i2c_write(p->pi, RM3100I2C_CMM, cmmMode);
@@ -185,6 +191,7 @@ void setCycleCountRegs(pList *p)
 //------------------------------------------
 void readCycleCountRegs(pList *p)
 {
+    (void)p;
     uint8_t regCC[7]= { 0, 0, 0, 0, 0, 0, 0 };
 
 //    i2c_setAddress(p->pi, p->magnetometerAddr);

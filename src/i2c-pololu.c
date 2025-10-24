@@ -222,10 +222,7 @@ int i2c_pololu_write_to( i2c_pololu_adapter *adapter, uint8_t address, uint8_t r
     {
         return -1;
     }
-    if(size > 255)
-    {
-        return -1;
-    }
+    // size is uint8_t, so it cannot exceed 255; no range check needed here.
 
     uint8_t cmd[258];
     cmd[0] = CMD_I2C_WRITE;
@@ -255,10 +252,6 @@ int i2c_pololu_write_to( i2c_pololu_adapter *adapter, uint8_t address, uint8_t r
 int i2c_pololu_read_from( i2c_pololu_adapter *adapter, uint8_t address, uint8_t reg, uint8_t *data, uint8_t size )
 {
     if(!i2c_pololu_is_connected(adapter))
-    {
-        return -1;
-    }
-    if(size > 255)
     {
         return -1;
     }
@@ -316,10 +309,6 @@ int i2c_pololu_read_from( i2c_pololu_adapter *adapter, uint8_t address, uint8_t 
 int i2c_pololu_write_and_read_from( i2c_pololu_adapter *adapter, uint8_t address, uint8_t reg, uint8_t *data, uint8_t size )
 {
     if(!i2c_pololu_is_connected(adapter))
-    {
-        return -1;
-    }
-    if(size > 255)
     {
         return -1;
     }

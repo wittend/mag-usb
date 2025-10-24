@@ -42,5 +42,6 @@
 //-----------------------------------
 #define MCP9808_MANID_EXPECTED          0x0054
 #define MCP9808_DEVREV_EXPECTED         0x0400
+#define MCP9804_DEVREV_EXPECTED         0x0201
 
 #endif //MCP9808_H

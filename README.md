@@ -33,28 +33,38 @@ Various pieces of software have been used to develop, test, and run these boards
  
 The current pre-release code is 0.0.2
 
-## To build:
+## To build (with CLion profiles or plain CMake):
 
-Create a working directory and do:
+Using CLion (recommended):
+- Open the project; CLion will generate the Debug and Release profiles under cmake-build-debug and cmake-build-release.
+- Build the target "mag-usb" from the chosen profile.
 
-    git clone https://github.com/wittend/mag-usb.git
+From command line (plain CMake):
 
-Then do:
+    cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+    cmake --build build --target mag-usb
 
-    $ cd mag-usb 
-    $ mkdir build
-    $ cd build
-    $ cmake ..
-    $ make
+Run:
 
-```
-dave@big_server: ~/projects/mag-usb $ ./mag-usb -P /dev/ttyACM0
-```
+    ./build/mag-usb -P /dev/ttyACM0
+
+## Running tests (CTest)
+
+The i2c-pololu unit tests are integrated with CTest.
+
+Enable/Build/Run:
+
+    cmake -S . -B build -DBUILD_TESTING=ON
+    cmake --build build --target i2c-pololu-tests
+    (cd build && ctest --output-on-failure)
+
+To run the test executable directly:
+
+    ./build/i2c-pololu-tests
 
 ## For usage info type:
-```
-dave@big_server: ./mag-usb -h
-```
+
+    ./mag-usb -h
 
 You **MAY** see something like this:
 ```
