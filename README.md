@@ -1,8 +1,8 @@
 # mag-usb
 ## Work in progress!
-## DO NOT USE YET: to be updated further!
+## Warning: This project is just approaching beta!
 
-## Version 0.0.2
+## Version 0.0.3
 
 The utility **mag-usb** is a program intended to assist in testing the PNI RM3100 geomagnetic sensor.  
 It is written in simple, portable C.
@@ -31,7 +31,7 @@ Various pieces of software have been used to develop, test, and run these boards
 
 * For use with magnetometer boards currently sold by [TAPR](https://tapr.org/product/tangerine-sdr-magnetometer/). For this use, they may require the [Pololu Isolated USB-to-I²C Adapter with Isolated Power](https://www.pololu.com/product/5397) that can supply 5v to the board.
  
-The current pre-release code is 0.0.2
+The current pre-release code is 0.0.3
 
 ## To build (with CLion profiles or plain CMake):
 
@@ -61,6 +61,14 @@ Enable/Build/Run:
 To run the test executable directly:
 
     ./build/i2c-pololu-tests
+
+## Documentation
+
+- Getting Started: docs/Getting-Started.md
+- Hardware Setup (wiring, udev rules): docs/Hardware-Setup.md
+- Troubleshooting: docs/Troubleshooting.md
+- Development guide: docs/Development.md
+- Contribution guidelines: CONTRIBUTING.md
 
 ## For usage info type:
 

@@ -367,7 +367,7 @@ void* signal_handler_thread(void* arg)
 }
 
 //---------------------------------------------------------------
-// void formatOutput(volatile pList *p, char *outBuf)
+// formatOutput(volatile pList *p)
 //---------------------------------------------------------------
 char *formatOutput(pList *p)
 {
