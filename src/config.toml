@@ -1,5 +1,31 @@
 # mag-usb Configuration File
 # Lines starting with # are comments
+[node_information]
+maintainer = "Dave Witten, KD0EAG"
+maintainer_email = "wittend@wwrinc.com"
+
+[node_location]
+# Tools:
+#   lat/long: Google Maps or GNSS device.
+#   Altitude: Optional, or Use GNSS device, or find yourself in Google Earth and look at the status bar at the bottom.
+#   Grid square conversion: https://www.giangrandi.org/electronics/radio/qthloccalc.shtml or similar.
+latitude = "38.92263" # Use decimal format!
+longitude = "-92.29831" # Use decimal format!
+elevation = "230 M"
+grid_square = "EM38uw"
+
+[output]
+# Use named pipes for IPC
+write_logs = false
+# Pipe paths (if use_pipes is true)
+log_output_path = "./logs"
+create_log_path_if_empty = true
+
+# Use named pipes for IPC
+use_pipes = false
+# Pipe paths (if use_pipes is true)
+pipe_in_path = "/home/PSWS/magctl.fifo"
+pipe_out_path = "/home/PSWS/magdata.fifo"
 
 [i2c]
 # Use external USB to I2C device
@@ -49,14 +75,6 @@ readback_cc_regs = false
 [temperature]
 # Remote temperature sensor I2C address
 remote_temp_address = 0x1F
-
-[output]
-# Use named pipes for IPC
-use_pipes = false
-
-# Pipe paths (if use_pipes is true)
-pipe_in_path = "/home/pi/PSWS/Sstat/magctl.fifo"
-pipe_out_path = "/home/pi/PSWS/Sstat/magdata.fifo"
 
 
 

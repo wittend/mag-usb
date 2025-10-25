@@ -75,7 +75,7 @@
 #define OUTPUT_ERROR        stderr
 #define PPS_TIMEOUTSECS     2.0
 
-#define MAGDATA_VERSION     "0.2.0"
+#define MAGDATA_VERSION     "0.0.3"
 #define UTCBUFLEN           64
 #define MAXPATHBUFLEN       PATH_MAX
 #define XYZ_BUFLEN          9
@@ -124,22 +124,28 @@ typedef struct tag_pList
 
     int  TMRCRate;
     int  CMMSampleRate;
-
     int  samplingMode;
-
     int  NOSRegValue;
-
     int  DRDYdelay;
-
     int  readBackCCRegs;
     uint8_t magRevId;
 
     int  tsMilliseconds;
-    char *Version;
     int  usePipes;
+    int  write_logs;
+    int  create_log_path_if_empty;
+
+    char *maintainer;
+    char *maintainer_email;
+    char *Version;
     char *pipeInPath;
     char *pipeOutPath;
-} pList;
+    char *log_output_path;
+    char *latitude;
+    char *longitude;
+    char *elevation;
+    char *grid_square;
+ } pList;
 
 //------------------------------------------
 // Prototypes

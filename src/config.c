@@ -133,12 +133,11 @@ static int parse_key_value(const char *line, char *key, char *value)
     {
         key_len = MAX_KEY_LENGTH - 1;
     }
-    strncpy(key, line, key_len);
+    memcpy(key, line, key_len);
     key[key_len] = '\0';
 
     // Extract value
-    strncpy(value, equals + 1, MAX_VALUE_LENGTH - 1);
-    value[MAX_VALUE_LENGTH - 1] = '\0';
+    snprintf(value, MAX_VALUE_LENGTH, "%s", equals + 1);
 
     // Trim both
     char *trimmed_key = trim_whitespace(key);
@@ -165,16 +164,46 @@ static int parse_key_value(const char *line, char *key, char *value)
 //---------------------------------------------------------------
 static void process_config_value(pList *p, const char *section, const char *key, const char *value)
 {
+    // [node_information] section
+    if(strcmp(section, "node_information") == 0)
+    {
+        if(strcmp(key, "maintainer") == 0)
+        {
+            p->maintainer = strdup(value);
+        }
+        else if(strcmp(key, "maintainer_email") == 0)
+        {
+            p->maintainer_email = strdup(value);
+        }
+    }
+    // [node_location] section
+    else if(strcmp(section, "node_location") == 0)
+    {
+        if(strcmp(key, "latitude") == 0)
+        {
+            p->latitude = strdup(value);
+        }
+        else if(strcmp(key, "longitude") == 0)
+        {
+            p->longitude = strdup(value);
+        }
+        else if(strcmp(key, "elevation") == 0)
+        {
+            p->elevation = strdup(value);
+        }
+        else if(strcmp(key, "grid_square") == 0)
+        {
+            p->grid_square = strdup(value);
+        }
+    }
     // [i2c] section
-    if(strcmp(section, "i2c") == 0)
+    else if(strcmp(section, "i2c") == 0)
     {
         if(strcmp(key, "portpath") == 0)
         {
             if(p->portpath != NULL)
             {
-                strncpy(p->portpath, value, PATH_MAX - 1);
-                p->portpath[PATH_MAX - 1] = '\0';
- //               fprintf(stderr, "DEBUG: Set portpath to '%s'\n", p->portpath);
+                snprintf(p->portpath, PATH_MAX, "%s", value);
             }
             else
             {
@@ -188,6 +217,10 @@ static void process_config_value(pList *p, const char *section, const char *key,
         else if(strcmp(key, "scan_bus") == 0)
         {
             p->scanI2CBUS = parse_bool(value);
+        }
+        else if(strcmp(key, "use_I2C_converter") == 0)
+        {
+            p->use_I2C_converter = parse_bool(value);
         }
     }
     // [magnetometer] section
@@ -264,24 +297,30 @@ static void process_config_value(pList *p, const char *section, const char *key,
     // [output] section
     else if(strcmp(section, "output") == 0)
     {
-// #ifdef USE_PIPES
-//         if(strcmp(key, "use_pipes") == 0)
-//         {
-//             p->usePipes = parse_bool(value);
-//         }
-//         else if(strcmp(key, "pipe_in_path") == 0)
-//         {
-//             strncpy((char*)fifoCtrl, value, PATH_MAX - 1);
-//             fifoCtrl[PATH_MAX - 1] = '\0';
-//             p->pipeInPath = fifoCtrl;
-//         }
-//         else if(strcmp(key, "pipe_out_path") == 0)
-//         {
-//             strncpy((char*)fifoData, value, PATH_MAX - 1);
-//             fifoData[PATH_MAX - 1] = '\0';
-//             p->pipeOutPath = fifoData;
-//         }
-// #endif
+        if(strcmp(key, "write_logs") == 0)
+        {
+            p->write_logs = parse_bool(value);
+        }
+        else if(strcmp(key, "log_output_path") == 0)
+        {
+            p->log_output_path = strdup(value);
+        }
+        else if(strcmp(key, "create_log_path_if_empty") == 0)
+        {
+            p->create_log_path_if_empty = parse_bool(value);
+        }
+        else if(strcmp(key, "use_pipes") == 0)
+        {
+            p->usePipes = parse_bool(value);
+        }
+        else if(strcmp(key, "pipe_in_path") == 0)
+        {
+            p->pipeInPath = strdup(value);
+        }
+        else if(strcmp(key, "pipe_out_path") == 0)
+        {
+            p->pipeOutPath = strdup(value);
+        }
     }
 }
 
@@ -374,4 +413,64 @@ int load_config(const char *config_path, pList *p)
 //    fprintf(OUTPUT_PRINT, "Successfully loaded configuration\n");
 #endif
     return 0;
+}
+
+//===============================================================
+// Cleanup: free any heap-allocated string fields inside pList
+//===============================================================
+void free_config_strings(pList *p)
+{
+    if(p == NULL)
+    {
+        return;
+    }
+    // Only free strings we allocated via strdup in the config loader.
+    // Do NOT free: p->portpath (points to static buffer owned by main.c)
+    // Do NOT free: p->Version   (points to static static array)
+
+    if(p->maintainer)
+    {
+        free(p->maintainer);
+        p->maintainer = NULL;
+    }
+    if(p->maintainer_email)
+    {
+        free(p->maintainer_email);
+        p->maintainer_email = NULL;
+    }
+    if(p->latitude)
+    {
+        free(p->latitude);
+        p->latitude = NULL;
+    }
+    if(p->longitude)
+    {
+        free(p->longitude);
+        p->longitude = NULL;
+    }
+    if(p->elevation)
+    {
+        free(p->elevation);
+        p->elevation = NULL;
+    }
+    if(p->grid_square)
+    {
+        free(p->grid_square);
+        p->grid_square = NULL;
+    }
+    if(p->log_output_path)
+    {
+        free(p->log_output_path);
+        p->log_output_path = NULL;
+    }
+    if(p->pipeInPath)
+    {
+        free(p->pipeInPath);
+        p->pipeInPath = NULL;
+    }
+    if(p->pipeOutPath)
+    {
+        free(p->pipeOutPath);
+        p->pipeOutPath = NULL;
+    }
 }

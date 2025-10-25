@@ -142,7 +142,13 @@ int i2c_pololu_connect( i2c_pololu_adapter *adapter, const char *port_name )
     if(avail != 0)
     {
         char eBuf[1024] = "";
-        strerror_r(-avail, eBuf, sizeof eBuf);
+        #if defined(__GLIBC__) && defined(_GNU_SOURCE)
+            char *errmsg = strerror_r(-avail, eBuf, sizeof eBuf);
+            snprintf(eBuf, sizeof eBuf, "%s", errmsg);
+        #else
+            int _ignored = strerror_r(-avail, eBuf, sizeof eBuf);
+            (void)_ignored;
+        #endif
         fprintf(stderr, "Error opening port device may not exist or may be in use: %s. %s\n", port_name, eBuf);
         return -1;
     }
@@ -150,7 +156,13 @@ int i2c_pololu_connect( i2c_pololu_adapter *adapter, const char *port_name )
     if(adapter->fd < 0)
     {
         char eBuf[1024] = "";
-        strerror_r(errno, eBuf, sizeof eBuf);
+        #if defined(__GLIBC__) && defined(_GNU_SOURCE)
+            char *errmsg = strerror_r(errno, eBuf, sizeof eBuf);
+            snprintf(eBuf, sizeof eBuf, "%s", errmsg);
+        #else
+            int _ignored2 = strerror_r(errno, eBuf, sizeof eBuf);
+            (void)_ignored2;
+        #endif
         fprintf(stderr, "Error opening port device %s. %s\n", port_name, eBuf);
         return -1;
     }
@@ -504,7 +516,7 @@ int i2c_pololu_get_device_info( i2c_pololu_adapter *adapter, i2c_pololu_device_i
     info->product_id = raw->product_id;
     info->firmware_version_bcd = raw->firmware_version_bcd;
     snprintf(info->firmware_version, sizeof(info->firmware_version), "%x.%02x", (raw->firmware_version_bcd >> 8), (raw->firmware_version_bcd & 0xFF));
-    strncpy(info->firmware_modification, raw->firmware_modification, 8);
+    memcpy(info->firmware_modification, raw->firmware_modification, 8);
     info->firmware_modification[8] = '\0';
     if(strcmp(info->firmware_modification, "-") == 0)
     {

@@ -266,6 +266,8 @@ int main(int argc, char** argv)
         rv = event_callback_cancel(p->edge_cb_id);
     #endif
 #endif // USE_PTHREADS
+    // Free any allocated config strings before exit
+    free_config_strings(p);
     printf("Program terminated.\n");
     return 0;
 }
@@ -379,7 +381,7 @@ char *formatOutput(pList *p)
     double xyz[3];
     double rcRemoteTemp;
 
-    strncpy(outBuf, "", 1);
+    outBuf[0] = '\0';
 
     i2c_readMagPOLL(p);
 
@@ -404,28 +406,49 @@ char *formatOutput(pList *p)
     utcTime = getUTC();
     strftime(utcStr, UTCBUFLEN, "%d %b %Y %T", utcTime);                // RFC 2822: "%a, %d %b %Y %T %z"
     snprintf(fmtBuf, fmtBuf_len, "{ \"ts\":\"%s\"", utcStr);
-    strncat(outBuf, fmtBuf, FMTBUFLEN);
+    {
+        size_t used = strlen(outBuf);
+        snprintf(outBuf + used, sizeof(outBuf) - used, "%s", fmtBuf);
+    }
 
     if(rcRemoteTemp < -100.0)
     {
         snprintf(fmtBuf, fmtBuf_len, ", \"rt\":0.0");
-        strncat(outBuf, fmtBuf, FMTBUFLEN);
+        {
+            size_t used = strlen(outBuf);
+            snprintf(outBuf + used, sizeof(outBuf) - used, "%s", fmtBuf);
+        }
     }
     else
     {
         snprintf(fmtBuf, fmtBuf_len, ", \"rt\":%.2f",  rcRemoteTemp);
-        strncat(outBuf, fmtBuf, FMTBUFLEN);
+        {
+            size_t used = strlen(outBuf);
+            snprintf(outBuf + used, sizeof(outBuf) - used, "%s", fmtBuf);
+        }
     }
 
     snprintf(fmtBuf, fmtBuf_len, ", \"x\":%.3f", xyz[0]);
-    strncat(outBuf, fmtBuf, FMTBUFLEN);
+    {
+        size_t used = strlen(outBuf);
+        snprintf(outBuf + used, sizeof(outBuf) - used, "%s", fmtBuf);
+    }
     snprintf(fmtBuf, fmtBuf_len, ", \"y\":%.3f", xyz[1]);
-    strncat(outBuf, fmtBuf, FMTBUFLEN);
+    {
+        size_t used = strlen(outBuf);
+        snprintf(outBuf + used, sizeof(outBuf) - used, "%s", fmtBuf);
+    }
     snprintf(fmtBuf, fmtBuf_len, ", \"z\":%.3f", xyz[2]);
-    strncat(outBuf, fmtBuf, FMTBUFLEN);
+    {
+        size_t used = strlen(outBuf);
+        snprintf(outBuf + used, sizeof(outBuf) - used, "%s", fmtBuf);
+    }
 
     snprintf(fmtBuf, fmtBuf_len, " }\n");
-    strncat(outBuf, fmtBuf, FMTBUFLEN);
+    {
+        size_t used = strlen(outBuf);
+        snprintf(outBuf + used, sizeof(outBuf) - used, "%s", fmtBuf);
+    }
 
 #if(CONSOLE_OUTPUT)
     fprintf(OUTPUT_PRINT, " %s", outBuf);
