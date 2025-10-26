@@ -696,9 +696,9 @@ void setProgramDefaults(pList *p)
     p->DRDYdelay            = 10;
     p->magRevId             = 0x0;
     p->remoteTempAddr       = 0x1F;
-    p->mag_translate_x         = 0;
-    p->mag_translate_y         = 0;
-    p->mag_translate_z         = 0;
+    p->mag_translate_x      = 0;
+    p->mag_translate_y      = 0;
+    p->mag_translate_z      = 0;
     p->magAddr              = RM3100_I2C_ADDRESS;
     p->usePipes             = FALSE;
     p->pipeInPath           = NULL;
