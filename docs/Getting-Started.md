@@ -33,11 +33,17 @@ cmake --build build --target mag-usb
 
 ## Quick run
 ```
-./build/mag-usb -P /dev/ttyACM0 -Q
+./build/mag-usb -O /dev/ttyACM0 -Q
 ```
 Flags:
-- -P specifies the Pololu device path.
+- -O sets the Pololu device path.
 - -Q checks adapter presence/availability.
+
+Print current settings (and exit):
+```
+./build/mag-usb -P
+```
+If `config.toml` is present in the working directory, its values are shown; otherwise defaults are used.
 
 Run with help:
 ```
@@ -53,5 +59,5 @@ cmake --build build --target i2c-pololu-tests
 ```
 
 ## Next steps
-- Review docs/Usage.md (or README help output) for available runtime flags.
+- Review README.md (command-line help section) and docs/Configuration.md for available flags and configuration keys.
 - If you use the adapter regularly, consider installing the provided udev rule (install/99-PololuI2C.rules) to get stable permissions and device naming.

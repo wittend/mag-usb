@@ -168,6 +168,8 @@ void setProgramDefaults(pList *p);
 long currentTimeMillis();
 struct tm *getUTC();
 // int setupPipes(pList *p);
+static void apply_orientation(const pList *p, double *x, double *y, double *z);
+static int norm_angle(int a);
 
 #endif //SWX3100MAIN_h
 

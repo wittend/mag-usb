@@ -64,3 +64,14 @@ Commit some of Dave Larsen's formatting changes. Fix or mess up averaging -
 Added function i2c_setBitRate() to i2c.c - allow code to specify the I2C
 Bus speed at runtime.
 Attempting to fix abend due to closing log file when none is in use.
+
+# Date: 2025-10-26  doc overhaul + orientation settings
+#--------------------------------------------------------------------------
+Documentation refresh across README and docs/:
+- New docs: Configuration.md, Orientation-and-Axes.md, Data-Format.md, Limitations.md
+- Updated: README.md, Getting-Started.md, Hardware-Setup.md (links), Troubleshooting.md
+- Described JSON output schema, units, timestamps, and examples
+- Documented [mag_orientation] settings (mag_translate_x/y/z) with allowed values {-180,-90,0,90,180}
+- Clarified that 90°-increment rotations are applied to output X/Y/Z per right-hand rule
+- Noted config.toml search path (current working directory)
+

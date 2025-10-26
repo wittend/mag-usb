@@ -1,80 +1,104 @@
 # mag-usb
-## Work in progress!
-## Warning: This project is just approaching beta!
 
-## Version 0.0.3
+Version: 0.0.3 (pre-release)
 
-The utility **mag-usb** is a program intended to assist in testing the PNI RM3100 geomagnetic sensor.  
-It is written in simple, portable C.
+mag-usb is a Linux command‑line utility for reading a PNI RM3100 3‑axis magnetometer via a USB‑to‑I²C adapter (Pololu 5396/5397). It outputs time‑stamped magnetic field vectors and supports optional configuration via a simple TOML file.
 
-The rm3100 support boards were developed for use with the HamSCI project's Personal Space Weather Station [(PSWS)](https://hamsci.org/) TangerineSDR and Grape Space Weather monitors.  
+The RM3100 boards were developed for the HamSCI Personal Space Weather Station (PSWS) TangerineSDR and Grape monitors, but mag-usb can be used as a standalone low‑cost geomagnetic field logger.
 
-These board pairs report magnetic field strength as three independent vectors, from which total field strength may be derived.  They also report the temperature in the immediate environment of the remotely placed sensor as a fraction of a degree C. 
+Key points:
+- Portable C (no heavyweight dependencies).
+- Designed to use the Pololu Isolated USB‑to‑I²C Adapter family.
+- Works on typical Linux hosts with USB 2.0. Raspberry Pi‑class devices may work but are not the current target.
+- Windows is not supported. macOS may work but is untested.
 
-They may also be used without other PSWS components for those interested in making magnetic field measurements for many purposes.  
+## Features
+- Reads RM3100 magnetometer X/Y/Z and prints JSON lines including an RFC‑2822 timestamp.
+- Configurable cycle counts, gains, and sampling parameters.
+- Optional orientation translations in 90° increments about X/Y/Z, set in config.toml.
+- Convenience flag to print current settings (`-P`).
+- Optional diagnostics: verify devices, scan I²C bus, etc.
 
-Various pieces of software have been used to develop, test, and run these boards as part of the hardware suite or as standalone low-cost monitors of the Earth's magnetic field.
+## Build (using CLion profiles or plain CMake)
 
-* The **mag-usb** utility is written as a Linux command line program and currently takes all configuration parameters from its commandline.
+CLion (recommended):
+- Open the project; CLion generates Debug and Release profiles under cmake-build-debug and cmake-build-release.
+- Build the target `mag-usb` from the chosen profile.
 
-* This version is not tested for use with a Raspberry Pi-like device (but it might work there). 
+Plain CMake:
+```
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build --target mag-usb
+```
 
-* This software is **_not_** currently written to run on Windows. 
+## Quick start
+- Connect the Pololu USB‑to‑I²C adapter and your RM3100 board.
+- Run with your adapter device path (default is `/dev/ttyACM0`):
+```
+./build/mag-usb -O /dev/ttyACM0 -Q
+```
+Flags shown here:
+- `-O` sets the adapter device path.
+- `-Q` verifies adapter presence.
 
-* It is conceiveable that this code **_might_** build and run on an Apple Mac, but that has not been tested. 
+To print current settings (and exit):
+```
+./build/mag-usb -P
+```
+If a `config.toml` file is present in the working directory, its values will be shown/used; otherwise reasonable defaults are used.
 
-* This version of the code does NOT use libraries like pigpio that speak directly to Pi 3/4 hardware. 
+## Configuration
+A simple TOML configuration file is supported. By default the program looks for `config.toml` in the current working directory. See:
+- docs/Configuration.md — all keys, defaults, and examples.
+- docs/Orientation-and-Axes.md — how the 90° orientation translations work.
 
-* The code is written to use the [Pololu Isolated USB-to-I²C Adapter with Isolated Power](https://www.pololu.com/product/5397) and [Pololu Isolated USB-to-I²C Adapter](https://www.pololu.com/product/5396) boards.
+Example orientation section:
+```
+[mag_orientation]
+mag_translate_x = 90
+mag_translate_y = 0
+mag_translate_z = -90
+```
+Allowed values: `-180, -90, 0, 90, 180` (±180 are equivalent). Invalid/missing values default to 0.
 
-* These should work with any host device that supports a USB 2 bus. 
-
-* For use with magnetometer boards currently sold by [TAPR](https://tapr.org/product/tangerine-sdr-magnetometer/). For this use, they may require the [Pololu Isolated USB-to-I²C Adapter with Isolated Power](https://www.pololu.com/product/5397) that can supply 5v to the board.
- 
-The current pre-release code is 0.0.3
-
-## To build (with CLion profiles or plain CMake):
-
-Using CLion (recommended - I happen to use the CLion IDE. I believe that there is a free version of CLion for Linux and Mac):
-- Open the project; CLion will generate the Debug and Release profiles under cmake-build-debug and cmake-build-release.
-- Build the target "mag-usb" from the chosen profile.
-
-From command line (plain CMake):
-
-    cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
-    cmake --build build --target mag-usb
-
-Run:
-
-    ./build/mag-usb -O /dev/ttyACM0
+## Output format
+Each line is JSON with at least:
+```
+{ "ts": "DD Mon YYYY HH:MM:SS", "x": NNN.NNN, "y": NNN.NNN, "z": NNN.NNN }
+```
+- Units: nanoTesla (nT)
+- Orientation translations are applied before printing.
+See docs/Data-Format.md for more detail.
 
 ## Running tests (CTest)
-
-The i2c-pololu unit tests are integrated with CTest.
+The `i2c-pololu` unit tests are integrated with CTest.
 
 Enable/Build/Run:
-
-    cmake -S . -B build -DBUILD_TESTING=ON
-    cmake --build build --target i2c-pololu-tests
-    (cd build && ctest --output-on-failure)
-
-To run the test executable directly:
-
-    ./build/i2c-pololu-tests
+```
+cmake -S . -B build -DBUILD_TESTING=ON
+cmake --build build --target i2c-pololu-tests
+(cd build && ctest --output-on-failure)
+```
+Run the test executable directly:
+```
+./build/i2c-pololu-tests
+```
 
 ## Documentation
-
 - Getting Started: docs/Getting-Started.md
+- Configuration reference: docs/Configuration.md
+- Orientation and axes: docs/Orientation-and-Axes.md
+- Data format: docs/Data-Format.md
 - Hardware Setup (wiring, udev rules): docs/Hardware-Setup.md
 - Troubleshooting: docs/Troubleshooting.md
 - Development guide: docs/Development.md
 - Contribution guidelines: CONTRIBUTING.md
 
-## For usage info type:
-
-    ./mag-usb -h
-
-You **MAY** see something like this:
+## Command‑line help
+```
+./mag-usb -h
+```
+You should see something similar to:
 ```
 Parameters:
 
@@ -83,18 +107,17 @@ Parameters:
    -c <count>             :  Set cycle counts as integer.          [ default: 200 decimal]
    -D <rate>              :  Set magnetometer sample rate.         [ TMRC reg 96 hex default ].
    -g <mode>              :  Device sampling mode.                 [ POLL=0 (default), CONTINUOUS=1 ]
-   -O                     :  Full path to Pololu port in /dev.     [ default: /dev/ttyACM0 ]
+   -O                     :  Path to Pololu port in /dev.          [ default: /dev/ttyACM0 ]
    -P                     :  Show all current settings and exit.
    -Q                     :  Verify presence of Pololu adaptor.
    -S                     :  List devices seen on i2c bus and exit.
    -T                     :  Verify Temperature sensor presence and version.
    -V                     :  Display software version and exit.
    -h or -?               :  Display this help.
-
 ```
- 
-## For more info on the Pololu USB to I2C Isolated adapter boards see:
-https://www.pololu.com/product/5397
-https://www.pololu.com/product/5396
+
+## Pololu adapter links
+- https://www.pololu.com/product/5397
+- https://www.pololu.com/product/5396
 
 

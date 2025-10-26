@@ -388,6 +388,9 @@ static int norm_angle(int a)
     return 0;
 }
 
+//---------------------------------------------------------------
+// formatOutput(volatile pList *p)
+//---------------------------------------------------------------
 static void apply_orientation(const pList *p, double *x, double *y, double *z)
 {
     double X = *x, Y = *y, Z = *z;
