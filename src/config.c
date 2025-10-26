@@ -286,6 +286,24 @@ static void process_config_value(pList *p, const char *section, const char *key,
             p->readBackCCRegs = parse_bool(value);
         }
     }
+    // [mag_orientation] section
+    else if(strcmp(section, "mag_orientation") == 0)
+    {
+        // Only allow -180, -90, 0, 90, 180. Default to 0 if invalid.
+        int v = parse_int(value);
+        if(strcmp(key, "mag_translate_x") == 0)
+        {
+            p->mag_translate_x = (v == -180 || v == -90 || v == 0 || v == 90 || v == 180) ? v : 0;
+        }
+        else if(strcmp(key, "mag_translate_y") == 0)
+        {
+            p->mag_translate_y = (v == -180 || v == -90 || v == 0 || v == 90 || v == 180) ? v : 0;
+        }
+        else if(strcmp(key, "mag_translate_z") == 0)
+        {
+            p->mag_translate_z = (v == -180 || v == -90 || v == 0 || v == 90 || v == 180) ? v : 0;
+        }
+    }
     // [temperature] section
     else if(strcmp(section, "temperature") == 0)
     {

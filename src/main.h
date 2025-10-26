@@ -106,9 +106,13 @@ typedef struct tag_pList
     unsigned edge_cb_id;
     
     unsigned magHandle;
-    unsigned remoteTempHandle;
-
     int  magAddr;
+    uint8_t magRevId;
+    int mag_translate_x;
+    int mag_translate_y;
+    int mag_translate_z;
+
+    unsigned remoteTempHandle;
     int  remoteTempAddr;
 
     int  doBistMask;
@@ -129,7 +133,6 @@ typedef struct tag_pList
     int  NOSRegValue;
     int  DRDYdelay;
     int  readBackCCRegs;
-    uint8_t magRevId;
 
     int  tsMilliseconds;
     int  usePipes;

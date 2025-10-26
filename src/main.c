@@ -381,6 +381,77 @@ void* signal_handler_thread(void* arg)
 //---------------------------------------------------------------
 // formatOutput(volatile pList *p)
 //---------------------------------------------------------------
+static int norm_angle(int a)
+{
+    if(a == 180 || a == -180) return 180;
+    if(a == 90 || a == -90 || a == 0) return a;
+    return 0;
+}
+
+static void apply_orientation(const pList *p, double *x, double *y, double *z)
+{
+    double X = *x, Y = *y, Z = *z;
+    int ax = norm_angle(p->mag_translate_x);
+    int ay = norm_angle(p->mag_translate_y);
+    int az = norm_angle(p->mag_translate_z);
+
+    // Rotate around X axis (affects Y,Z)
+    if(ax == 90)
+    {
+        double newY = -Z;
+        double newZ =  Y;
+        Y = newY; Z = newZ;
+    }
+    else if(ax == -90)
+    {
+        double newY =  Z;
+        double newZ = -Y;
+        Y = newY; Z = newZ;
+    }
+    else if(ax == 180)
+    {
+        Y = -Y; Z = -Z;
+    }
+
+    // Rotate around Y axis (affects X,Z)
+    if(ay == 90)
+    {
+        double newX =  Z;
+        double newZ = -X;
+        X = newX; Z = newZ;
+    }
+    else if(ay == -90)
+    {
+        double newX = -Z;
+        double newZ =  X;
+        X = newX; Z = newZ;
+    }
+    else if(ay == 180)
+    {
+        X = -X; Z = -Z;
+    }
+
+    // Rotate around Z axis (affects X,Y)
+    if(az == 90)
+    {
+        double newX = -Y;
+        double newY =  X;
+        X = newX; Y = newY;
+    }
+    else if(az == -90)
+    {
+        double newX =  Y;
+        double newY = -X;
+        X = newX; Y = newY;
+    }
+    else if(az == 180)
+    {
+        X = -X; Y = -Y;
+    }
+
+    *x = X; *y = Y; *z = Z;
+}
+
 char *formatOutput(pList *p)
 {
 #define FMTBUFLEN  200
@@ -398,6 +469,9 @@ char *formatOutput(pList *p)
     xyz[0] = (((double)p->XYZ[0] / p->NOSRegValue) / p->x_gain) * 1000; // make microTeslas -> nanoTeslas
     xyz[1] = (((double)p->XYZ[1] / p->NOSRegValue) / p->y_gain) * 1000; // make microTeslas -> nanoTeslas
     xyz[2] = (((double)p->XYZ[2] / p->NOSRegValue) / p->z_gain) * 1000; // make microTeslas -> nanoTeslas
+
+    // Apply orientation translations (rotations) from config
+    apply_orientation(p, &xyz[0], &xyz[1], &xyz[2]);
 
     // xyz[0] = (((double)p->XYZ[0] / p->NOSRegValue) / p->x_gain);
     // xyz[1] = (((double)p->XYZ[1] / p->NOSRegValue) / p->y_gain);
@@ -622,10 +696,13 @@ void setProgramDefaults(pList *p)
     p->DRDYdelay            = 10;
     p->magRevId             = 0x0;
     p->remoteTempAddr       = 0x1F;
+    p->mag_translate_x         = 0;
+    p->mag_translate_y         = 0;
+    p->mag_translate_z         = 0;
     p->magAddr              = RM3100_I2C_ADDRESS;
-    //    p->usePipes             = USE_PIPES;
-    //    p->pipeInPath           = fifoCtrl;
-    //    p->pipeOutPath          = fifoData;
+    p->usePipes             = FALSE;
+    p->pipeInPath           = NULL;
+    p->pipeOutPath          = NULL;
     p->readBackCCRegs       = FALSE;
     p->showSettingsOnly     = FALSE;
 }

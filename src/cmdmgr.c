@@ -61,6 +61,7 @@ void showSettings(pList *p)
     fprintf(stdout, "   Sampling mode:                        %s\n",  (p->samplingMode == CMM) ? "CMM" : "POLL");
     fprintf(stdout, "   CMM sample rate (Hz):                 %d\n",  p->CMMSampleRate);
     fprintf(stdout, "   Read back CC registers:               %s\n",  p->readBackCCRegs ? "TRUE" : "FALSE");
+    fprintf(stdout, "   Orientation translate (deg XYZ):      %d, %d, %d\n",  p->mag_translate_x, p->mag_translate_y, p->mag_translate_z);
 
     // Temperature
     fprintf(stdout, "   Remote temperature I2C address:       0x%02X (hex)\n",  (unsigned)(p->remoteTempAddr & 0xFF));
