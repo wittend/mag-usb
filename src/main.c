@@ -595,7 +595,7 @@ void setProgramDefaults(pList *p)
 //     i2c_pololu_adapter pAdapter;
 // #endif
     // Initialize program version string so it is available for -V and -O outputs
-    snprintf(Version, sizeof(Version), "%s", MAGDATA_VERSION);
+    snprintf(Version, sizeof(Version), "%s", MAG_USB_VERSION);
 
     p->portpath             = portpath;
     p->scanI2CBUS           = FALSE;
