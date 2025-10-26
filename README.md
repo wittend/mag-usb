@@ -46,7 +46,7 @@ From command line (plain CMake):
 
 Run:
 
-    ./build/mag-usb -P /dev/ttyACM0
+    ./build/mag-usb -O /dev/ttyACM0
 
 ## Running tests (CTest)
 
@@ -83,7 +83,8 @@ Parameters:
    -c <count>             :  Set cycle counts as integer.          [ default: 200 decimal]
    -D <rate>              :  Set magnetometer sample rate.         [ TMRC reg 96 hex default ].
    -g <mode>              :  Device sampling mode.                 [ POLL=0 (default), CONTINUOUS=1 ]
-   -P                     :  Full path to Pololu port in /dev.     [ default: /dev/ttyACM0 ]
+   -O                     :  Full path to Pololu port in /dev.     [ default: /dev/ttyACM0 ]
+   -P                     :  Show all current settings and exit.
    -Q                     :  Verify presence of Pololu adaptor.
    -S                     :  List devices seen on i2c bus and exit.
    -T                     :  Verify Temperature sensor presence and version.

@@ -1,5 +1,6 @@
 # mag-usb Configuration File
 # Lines starting with # are comments
+# Inline comments (Data followed by hashmark) not allowed.
 [node_information]
 maintainer = "Dave Witten, KD0EAG"
 maintainer_email = "wittend@wwrinc.com"
@@ -9,8 +10,8 @@ maintainer_email = "wittend@wwrinc.com"
 #   lat/long: Google Maps or GNSS device.
 #   Altitude: Optional, or Use GNSS device, or find yourself in Google Earth and look at the status bar at the bottom.
 #   Grid square conversion: https://www.giangrandi.org/electronics/radio/qthloccalc.shtml or similar.
-latitude = "38.92263" # Use decimal format!
-longitude = "-92.29831" # Use decimal format!
+latitude = "38.92263"
+longitude = "-92.29831"
 elevation = "230 M"
 grid_square = "EM38uw"
 

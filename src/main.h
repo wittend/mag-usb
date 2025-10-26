@@ -22,6 +22,7 @@
 #include <unistd.h>
 #include <signal.h>
 #include <sys/time.h>
+#include <limits.h>
 #include "MCP9808.h"
 
 #ifndef TRUE
@@ -145,6 +146,8 @@ typedef struct tag_pList
     char *longitude;
     char *elevation;
     char *grid_square;
+
+    int  showSettingsOnly; // if set by -O, print settings and exit
  } pList;
 
 //------------------------------------------

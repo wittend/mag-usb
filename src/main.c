@@ -37,6 +37,7 @@ extern int RM3100_I2C_ADDRESS;
 //     int PIPEIN  = -1;
 //     int PIPEOUT = -1;
 // #endif //USE_PIPES
+
 #if((USE_LGPIO || USE_RGPIO) && USE_WAITFOREDGE)
 #define PPS_GPIO_PIN    27
 #define PPS_TIMEOUTSECS 2.0
@@ -98,6 +99,15 @@ int main(int argc, char** argv)
     if((rv = getCommandLine(argc, argv, p)) != 0)
     {
         return rv;
+    }
+
+    // If user requested to only show settings, print and exit before hardware init
+    if(p->showSettingsOnly)
+    {
+        showSettings(p);
+        free_config_strings(p);
+        printf("Program terminated.\n");
+        return 0;
     }
 
     // #if(USE_PIPES)
@@ -584,6 +594,9 @@ void setProgramDefaults(pList *p)
 // #if(USE_POLOLU)
 //     i2c_pololu_adapter pAdapter;
 // #endif
+    // Initialize program version string so it is available for -V and -O outputs
+    snprintf(Version, sizeof(Version), "%s", MAGDATA_VERSION);
+
     p->portpath             = portpath;
     p->scanI2CBUS           = FALSE;
     p->checkPololuAdaptor   = FALSE;
@@ -614,6 +627,7 @@ void setProgramDefaults(pList *p)
     //    p->pipeInPath           = fifoCtrl;
     //    p->pipeOutPath          = fifoData;
     p->readBackCCRegs       = FALSE;
+    p->showSettingsOnly     = FALSE;
 }
 
 #if(USE_RGPIO | USE_LGPIO | USE_PIGPIO)

@@ -19,32 +19,53 @@
 //------------------------------------------
 void showSettings(pList *p)
 {
-//    char pathStr[p->portpath] = "";
-
-    fprintf(stdout, "\nVersion = %s\n", p->Version);
+    fprintf(stdout, "\nVersion = %s\n", p->Version ? p->Version : "");
     fprintf(stdout, "\nCurrent Parameters:\n\n");
-//#if (USE_PIPES)
-    // fprintf(stdout, "   Log output to pipes:                        %s\n",          p->usePipes ? "TRUE" : "FALSE");
-    // fprintf(stdout, "   Input file path:                            %s\n",          p->pipeInPath);
-    // fprintf(stdout, "   Output file path:                           %s\n",          p->pipeOutPath);
-//#endif
+
 #if(USE_POLOLU)
-    fprintf(stdout, "   I2C bus adapter path:                 %s\n",          p->portpath);
+    fprintf(stdout, "   Use external USB->I2C (Pololu):       %s\n",  p->use_I2C_converter ? "TRUE" : "FALSE");
+    fprintf(stdout, "   I2C adapter device path:              %s\n",  p->portpath ? p->portpath : "(null)");
 #else
-    snprintf(pathStr, sizeof(pathStr), "/dev/i2c-%i", p->i2cBusNumber);
-    fprintf(stdout, "         I2C bus:                              %s (dec)\n",    pathstr);
+    fprintf(stdout, "   Linux I2C bus number:                 %d\n",  p->i2cBusNumber);
 #endif
-    fprintf(stdout, "   Built in self test (BIST) value:      %02X (hex)\n",  p->doBistMask);
-    fprintf(stdout, "   Device sampling mode:                 %s\n",          p->samplingMode     ? "CONTINUOUS" : "POLL");
-    fprintf(stdout, "   Data ready delay value:               %i (dec)\n",    p->DRDYdelay);
-    fprintf(stdout, "   Cycle counts by vector:               X: %3i (dec), Y: %3i (dec), Z: %3i (dec)\n", p->cc_x, p->cc_y, p->cc_z);
-    fprintf(stdout, "   Gain by vector:                       X: %3i (dec), Y: %3i (dec), Z: %3i (dec)\n", p->x_gain, p->y_gain, p->z_gain);
-    fprintf(stdout, "   Read back CC Regs after set:          %s\n",          p->readBackCCRegs   ? "TRUE" : "FALSE");
-//    fprintf(stdout, "   CMM sample rate:                          %2X (hex)\n",   p->CMMSampleRate);
-    fprintf(stdout, "   TMRC reg value:                       %2X (hex)\n",   p->TMRCRate);
-    fprintf(stdout, "   Remote temperature address:           %02X (hex)\n",  p->remoteTempAddr);
-    fprintf(stdout, "   Magnetometer address:                 %02X {hex)\n",  p->magAddr);
-    fprintf(stdout, "\n\n");
+    fprintf(stdout, "   Scan I2C bus on startup:              %s\n",  p->scanI2CBUS ? "TRUE" : "FALSE");
+    fprintf(stdout, "   Verify Pololu adaptor:                %s\n",  p->checkPololuAdaptor ? "TRUE" : "FALSE");
+    fprintf(stdout, "   Verify Temp sensor:                   %s\n",  p->checkTempSensor ? "TRUE" : "FALSE");
+    fprintf(stdout, "   Verify Mag sensor:                    %s\n",  p->checkMagSensor ? "TRUE" : "FALSE");
+
+    // Output/logging
+    fprintf(stdout, "   Write logs:                           %s\n",  p->write_logs ? "TRUE" : "FALSE");
+    fprintf(stdout, "   Log output path:                      %s\n",  p->log_output_path ? p->log_output_path : "(null)");
+    fprintf(stdout, "   Create log path if empty:             %s\n",  p->create_log_path_if_empty ? "TRUE" : "FALSE");
+    fprintf(stdout, "   Use named pipes:                      %s\n",  p->usePipes ? "TRUE" : "FALSE");
+    fprintf(stdout, "   Pipe IN path:                         %s\n",  p->pipeInPath ? p->pipeInPath : "(null)");
+    fprintf(stdout, "   Pipe OUT path:                        %s\n",  p->pipeOutPath ? p->pipeOutPath : "(null)");
+
+    // Node info
+    fprintf(stdout, "   Maintainer:                           %s\n",  p->maintainer ? p->maintainer : "(null)");
+    fprintf(stdout, "   Maintainer email:                     %s\n",  p->maintainer_email ? p->maintainer_email : "(null)");
+
+    // Location
+    fprintf(stdout, "   Latitude:                             %s\n",  p->latitude ? p->latitude : "(null)");
+    fprintf(stdout, "   Longitude:                            %s\n",  p->longitude ? p->longitude : "(null)");
+    fprintf(stdout, "   Elevation:                            %s\n",  p->elevation ? p->elevation : "(null)");
+    fprintf(stdout, "   Grid square:                          %s\n",  p->grid_square ? p->grid_square : "(null)");
+
+    // Magnetometer
+    fprintf(stdout, "   Magnetometer I2C address:             0x%02X (hex)\n",  (unsigned)(p->magAddr & 0xFF));
+    fprintf(stdout, "   Cycle counts (X,Y,Z):                 %d, %d, %d\n",  p->cc_x, p->cc_y, p->cc_z);
+    fprintf(stdout, "   Gains (X,Y,Z):                        %d, %d, %d\n",  p->x_gain, p->y_gain, p->z_gain);
+    fprintf(stdout, "   TMRC register value:                  0x%02X (hex)\n",  (unsigned)(p->TMRCRate & 0xFF));
+    fprintf(stdout, "   NOS register value:                   %d\n",  p->NOSRegValue);
+    fprintf(stdout, "   DRDY delay (us):                      %d\n",  p->DRDYdelay);
+    fprintf(stdout, "   Sampling mode:                        %s\n",  (p->samplingMode == CMM) ? "CMM" : "POLL");
+    fprintf(stdout, "   CMM sample rate (Hz):                 %d\n",  p->CMMSampleRate);
+    fprintf(stdout, "   Read back CC registers:               %s\n",  p->readBackCCRegs ? "TRUE" : "FALSE");
+
+    // Temperature
+    fprintf(stdout, "   Remote temperature I2C address:       0x%02X (hex)\n",  (unsigned)(p->remoteTempAddr & 0xFF));
+
+    fprintf(stdout, "\n");
 }
 
 //------------------------------------------
@@ -54,7 +75,7 @@ int getCommandLine(int argc, char** argv, pList *p)
 {
     int c;
 
-    while((c = getopt(argc, argv, "?B:c:CD:g:P:MSQTV")) != -1)
+    while((c = getopt(argc, argv, "?B:c:CD:g:PMSQTVO:")) != -1)
     {
         //int this_option_optind = optind ? optind : 1;
         switch(c)
@@ -66,7 +87,6 @@ int getCommandLine(int argc, char** argv, pList *p)
                 p->readBackCCRegs = TRUE;
                 break;
             case 'c':
-                //p->cc_x = p->cc_y = p->cc_z = atoi(optarg);
                 p->cc_x = p->cc_y = p->cc_z = (int) strtol(optarg, NULL, 10);
                 if(p->cc_x > 0x320 || p->cc_x <= 0)
                 {
@@ -76,15 +96,19 @@ int getCommandLine(int argc, char** argv, pList *p)
                 p->x_gain = p->y_gain = p->z_gain = getCCGainEquiv(p->cc_x);
                 break;
             case 'D':
-                //p->CMMSampleRate = atoi(optarg);
                 p->CMMSampleRate = (int) strtol(optarg, NULL, 10);
                 break;
             case 'g':
-                //p->samplingMode = atoi(optarg);
                 p->samplingMode = (int) strtol(optarg, NULL, 10);
                 break;
+            case 'O':
+                if(p->portpath)
+                {
+                    snprintf(p->portpath, MAXPATHBUFLEN, "%s", optarg);
+                }
+                break;
             case 'P':
-                strcpy(p->portpath, optarg);
+                p->showSettingsOnly = TRUE;
                 break;
             case 'Q':
                 p->checkPololuAdaptor = TRUE;
@@ -111,7 +135,8 @@ int getCommandLine(int argc, char** argv, pList *p)
                 fprintf(stdout, "   -D <rate>              :  Set magnetometer sample rate.         [ TMRC reg 96 hex default ].\n");
                 fprintf(stdout, "   -g <mode>              :  Device sampling mode.                 [ POLL=0 (default), CONTINUOUS=1 ]\n");
 #if(USE_POLOLU)
-                fprintf(stdout, "   -P                     :  Path to Pololu port in /dev.          [ default: /dev/ttyACM0 ]\n");
+                fprintf(stdout, "   -P                     :  Show all current settings and exit.\n");
+                fprintf(stdout, "   -O                     :  Path to Pololu port in /dev.          [ default: /dev/ttyACM0 ]\n");
                 fprintf(stdout, "   -Q                     :  Verify presence of Pololu adaptor.\n");
 #endif
                 fprintf(stdout, "   -M                     :  Verify Magnetometer presence and version.\n");
