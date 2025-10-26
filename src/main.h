@@ -76,7 +76,7 @@
 #define OUTPUT_ERROR        stderr
 #define PPS_TIMEOUTSECS     2.0
 
-#define MAG_USB_VERSION     "0.0.3"
+#define MAG_USB_VERSION     "0.0.4"
 #define UTCBUFLEN           64
 #define MAXPATHBUFLEN       PATH_MAX
 #define XYZ_BUFLEN          9
@@ -168,8 +168,6 @@ void setProgramDefaults(pList *p);
 long currentTimeMillis();
 struct tm *getUTC();
 // int setupPipes(pList *p);
-static void apply_orientation(const pList *p, double *x, double *y, double *z);
-static int norm_angle(int a);
 
 #endif //SWX3100MAIN_h
 

@@ -76,7 +76,7 @@ int getCommandLine(int argc, char** argv, pList *p)
 {
     int c;
 
-    while((c = getopt(argc, argv, "?B:c:CD:g:PMSQTVO:")) != -1)
+    while((c = getopt(argc, argv, "h?B:c:CD:g:PMSQTVO:")) != -1)
     {
         //int this_option_optind = optind ? optind : 1;
         switch(c)
@@ -126,7 +126,6 @@ int getCommandLine(int argc, char** argv, pList *p)
             case 'V':
                 fprintf(stdout, "\nVersion: %s\n", p->Version);
                 exit(0);
-                break;
             case 'h':
             case '?':
                 fprintf(stdout, "\nParameters:\n\n");
@@ -145,7 +144,7 @@ int getCommandLine(int argc, char** argv, pList *p)
                 fprintf(stdout, "   -T                     :  Verify Temperature sensor presence and version.\n");
                 fprintf(stdout, "   -V                     :  Display software version and exit.\n");
                 fprintf(stdout, "   -h or -?               :  Display this help.\n\n");
-                return 1;
+                exit(0);
                 break;
             default:
                 fprintf(stdout, "\n?? getopt returned character code 0x%2X ??\n", c);
