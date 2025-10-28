@@ -17,7 +17,7 @@ extern int RM3100_VER_EXPECTED;
 int i2c_scanForBusDevices(pList *p)
 {
     // Scan for I2C devices
-    fprintf(stdout,"\n  Scanning for I2C devices...\n");
+    fprintf(OUTPUT_PRINT,"\n  Scanning for I2C devices...\n");
     uint8_t found_addresses[128];
     int device_count = i2c_pololu_scan(p->adapter, found_addresses, 128);
     if (device_count > 0)
@@ -25,18 +25,18 @@ int i2c_scanForBusDevices(pList *p)
         printf("    Found %d device(s):\n", device_count);
         for (int i = 0; i < device_count; ++i)
         {
-            fprintf(stdout,"      Address: 0x%02X\n", found_addresses[i]);
+            fprintf(OUTPUT_PRINT,"      Address: 0x%02X\n", found_addresses[i]);
         }
         return device_count;
     }
     else if (device_count == 0)
     {
-        fprintf(stderr,"      No I2C devices found.\n");
+        fprintf(OUTPUT_ERROR,"      No I2C devices found.\n");
         return -1;
     }
     else
     {
-        fprintf(stderr, "    An error occurred during the I2C scan: %s\n", i2c_pololu_error_string(device_count));
+        fprintf(OUTPUT_ERROR, "    An error occurred during the I2C scan: %s\n", i2c_pololu_error_string(device_count));
         return -1;
     }
 }
@@ -46,7 +46,7 @@ int i2c_scanForBusDevices(pList *p)
 //---------------------------------------------------------------
 int i2c_verifyPololuAdaptor(pList *p)
 {
-    fprintf(stdout,"\nChecking Pololu I2C Adapter info:\n");
+    fprintf(OUTPUT_PRINT,"\nChecking Pololu I2C Adapter info:\n");
     i2c_pololu_device_info info;
     if(i2c_pololu_get_device_info(p->adapter, &info) == 0)
     {
@@ -69,15 +69,15 @@ int i2c_getAdaptorInfo(pList *p)
     i2c_pololu_device_info info;
     if(i2c_pololu_get_device_info(p->adapter, &info) == 0)
     {
-        fprintf(stdout,"  Device Info:\n");
-        fprintf(stdout,"     Vendor ID:        0x%04X\n", info.vendor_id);
-        fprintf(stdout,"     Product ID:       0x%04X\n", info.product_id);
-        fprintf(stdout,"     Firmware Version: %s\n", info.firmware_version);
-        fprintf(stdout,"     Serial Number:    %s\n", info.serial_number);
+        fprintf(OUTPUT_PRINT,"  Device Info:\n");
+        fprintf(OUTPUT_PRINT,"     Vendor ID:        0x%04X\n", info.vendor_id);
+        fprintf(OUTPUT_PRINT,"     Product ID:       0x%04X\n", info.product_id);
+        fprintf(OUTPUT_PRINT,"     Firmware Version: %s\n", info.firmware_version);
+        fprintf(OUTPUT_PRINT,"     Serial Number:    %s\n", info.serial_number);
     }
     else
     {
-        fprintf(stdout, "    Failed to get device info.\n");
+        fprintf(OUTPUT_PRINT, "    Failed to get device info.\n");
         return -1;
     }
     return 0;
@@ -88,11 +88,11 @@ int i2c_getAdaptorInfo(pList *p)
 //---------------------------------------------------------------
 int i2c_verifyTempSensor(pList *p)
 {
-    fprintf(stdout, "\nVerifying Temperature Sensor Status & Version...\n");
+    fprintf(OUTPUT_PRINT, "\nVerifying Temperature Sensor Status & Version...\n");
 
     if(!i2c_pololu_is_connected(p->adapter))
     {
-        fprintf(stderr, "  Adapter not connected.\n");
+        fprintf(OUTPUT_ERROR, "  Adapter not connected.\n");
         return 1; // non-zero on failure per requirement
     }
     // Clear the bus before transactions
@@ -105,17 +105,17 @@ int i2c_verifyTempSensor(pList *p)
     rc = i2c_pololu_read_from(p->adapter, (uint8_t)p->remoteTempAddr, MCP9808_REG_MANUF_ID, buf, 2);
     if(rc < 0)
     {
-        fprintf(stderr, "  Failed to read MCP9808_MANUF_ID: %s\n", i2c_pololu_error_string(-rc));
+        fprintf(OUTPUT_ERROR, "  Failed to read MCP9808_MANUF_ID: %s\n", i2c_pololu_error_string(-rc));
         return 1;
     }
     uint16_t manuf = (uint16_t)((buf[0] << 8) | buf[1]);
-    fprintf(stdout, "  MCP9808 MANUF_ID: 0x%04X (expected 0x%04X)\n", manuf, MCP9808_MANID_EXPECTED);
+    fprintf(OUTPUT_PRINT, "  MCP9808 MANUF_ID: 0x%04X (expected 0x%04X)\n", manuf, MCP9808_MANID_EXPECTED);
 
     // Read Device ID/Revision (0x07), 2 bytes MSB first
     rc = i2c_pololu_read_from(p->adapter, (uint8_t)p->remoteTempAddr, MCP9808_REG_DEVICE_ID, buf, 2);
     if(rc < 0)
     {
-        fprintf(stderr, "  Failed to read MCP9808_DEVICE_ID: %s\n", i2c_pololu_error_string(-rc));
+        fprintf(OUTPUT_ERROR, "  Failed to read MCP9808_DEVICE_ID: %s\n", i2c_pololu_error_string(-rc));
         return 1;
     }
     uint16_t devid = (uint16_t)((buf[0] << 8) | buf[1]);
@@ -124,7 +124,7 @@ int i2c_verifyTempSensor(pList *p)
     uint16_t devid_masked = (uint16_t)(devid & ~REV_MASK);
     uint16_t expected_9808_masked = (uint16_t)(MCP9808_DEVREV_EXPECTED & ~REV_MASK);
     uint16_t expected_9804_masked = (uint16_t)(MCP9804_DEVREV_EXPECTED & ~REV_MASK);
-    fprintf(stdout, "  Temp SENSOR DEVICE_ID: 0x%04X (accept 0x%04X or 0x%04X, ignoring rev 0x%02X)\n",
+    fprintf(OUTPUT_PRINT, "  Temp SENSOR DEVICE_ID: 0x%04X (accept 0x%04X or 0x%04X, ignoring rev 0x%02X)\n",
             devid,
             expected_9808_masked,
             expected_9804_masked,
@@ -142,13 +142,13 @@ int i2c_verifyTempSensor(pList *p)
 
     if(err == 0)
     {
-        fprintf(stdout, "  Temperature sensor identification OK (MCP9808/MCP9804).\n");
+        fprintf(OUTPUT_PRINT, "  Temperature sensor identification OK (MCP9808/MCP9804).\n");
         return 0; // success
     }
 
     // Non-zero error code; provide detail
-    if(err & 0x01) fprintf(stderr, "  ERROR: Manufacturer ID mismatch.\n");
-    if(err & 0x02) fprintf(stderr, "  ERROR: Device ID mismatch (not 9808/9804) or invalid.\n");
+    if(err & 0x01) fprintf(OUTPUT_ERROR, "  ERROR: Manufacturer ID mismatch.\n");
+    if(err & 0x02) fprintf(OUTPUT_ERROR, "  ERROR: Device ID mismatch (not 9808/9804) or invalid.\n");
     return err;
 }
 
@@ -157,7 +157,7 @@ int i2c_verifyTempSensor(pList *p)
 //---------------------------------------------------------------
 int i2c_verifyMagSensor(pList *p)
 {
-    fprintf(stdout, "\nVerifying Magnetometer Status & Version...\n");
+    fprintf(OUTPUT_PRINT, "\nVerifying Magnetometer Status & Version...\n");
 
     i2c_pololu_clear_bus(p->adapter);
 
@@ -170,7 +170,7 @@ int i2c_verifyMagSensor(pList *p)
     rv = i2c_pololu_write_to(p->adapter, addr, reg, NULL, 0);
     if (rv < 0)
     {
-        fprintf(stdout, "  Write failed: %s\n", i2c_pololu_error_string(-rv));
+        fprintf(OUTPUT_PRINT, "  Write failed: %s\n", i2c_pololu_error_string(-rv));
         goto done;
     }
     // Read back 2 bytes
@@ -178,19 +178,19 @@ int i2c_verifyMagSensor(pList *p)
     rv = i2c_pololu_read_from(p->adapter, addr, reg, buf, 2);
     if (rv < 0)
     {
-        fprintf(stdout, "  Read failed: %s\n", i2c_pololu_error_string(-rv));
+        fprintf(OUTPUT_PRINT, "  Read failed: %s\n", i2c_pololu_error_string(-rv));
         goto done;
     }
-    //fprintf(stderr,"  Data: %02X %02X\n", buf[0], buf[1]);
+    //fprintf(OUTPUT_ERROR,"  Data: %02X %02X\n", buf[0], buf[1]);
     rv = buf[0];
     if(rv == (uint8_t) RM3100_VER_EXPECTED)
     {
-        fprintf(stdout, "  Version is OK!: 0x%2X\n", rv);
+        fprintf(OUTPUT_PRINT, "  Version is OK!: 0x%2X\n", rv);
         return 0;
     }
     else
     {
-        fprintf(stdout, "  Version does NOT match!\n");
+        fprintf(OUTPUT_PRINT, "  Version does NOT match!\n");
         return rv;
     }
 done:

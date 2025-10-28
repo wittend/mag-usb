@@ -104,7 +104,7 @@ static int check_response( const uint8_t *response, size_t expected_len, size_t 
 {
     if(actual_len < expected_len)
     {
-        fprintf(stderr, "Timeout while reading response from adapter (received %zu bytes).\n", actual_len);
+        fprintf(OUTPUT_ERROR, "Timeout while reading response from adapter (received %zu bytes).\n", actual_len);
         return -ERROR_TIMEOUT;
     }
     if(response[0] != ERROR_NONE)
@@ -149,7 +149,7 @@ int i2c_pololu_connect( i2c_pololu_adapter *adapter, const char *port_name )
             int _ignored = strerror_r(-avail, eBuf, sizeof eBuf);
             (void)_ignored;
         #endif
-        fprintf(stderr, "Error opening port device may not exist or may be in use: %s. %s\n", port_name, eBuf);
+        fprintf(OUTPUT_ERROR, "Error opening port device may not exist or may be in use: %s. %s\n", port_name, eBuf);
         return -1;
     }
     adapter->fd = open(port_name, O_RDWR | O_NOCTTY | O_EXCL);
@@ -163,7 +163,7 @@ int i2c_pololu_connect( i2c_pololu_adapter *adapter, const char *port_name )
             int _ignored2 = strerror_r(errno, eBuf, sizeof eBuf);
             (void)_ignored2;
         #endif
-        fprintf(stderr, "Error opening port device %s. %s\n", port_name, eBuf);
+        fprintf(OUTPUT_ERROR, "Error opening port device %s. %s\n", port_name, eBuf);
         return -1;
     }
     struct termios tty;
@@ -287,7 +287,7 @@ int i2c_pololu_read_from( i2c_pololu_adapter *adapter, uint8_t address, uint8_t 
     int error = check_response(write_response, 1, len);
     if(error)
     {
-        fprintf(stderr, "Error writing register address: %s\n", i2c_pololu_error_string(error));
+        fprintf(OUTPUT_ERROR, "Error writing register address: %s\n", i2c_pololu_error_string(error));
         return error;
     }
     
@@ -308,7 +308,7 @@ int i2c_pololu_read_from( i2c_pololu_adapter *adapter, uint8_t address, uint8_t 
     error = check_response(response, 1 + size, len);
     if(error)
     {
-        fprintf(stderr, "Error reading from device: %s\n", i2c_pololu_error_string(error));
+        fprintf(OUTPUT_ERROR, "Error reading from device: %s\n", i2c_pololu_error_string(error));
         return error;
     }
     memcpy(data, &response[1], size);  // Skip error byte, copy data
@@ -343,7 +343,7 @@ int i2c_pololu_write_and_read_from( i2c_pololu_adapter *adapter, uint8_t address
     int error = check_response(response, 1 + size, len);
     if(error)
     {
-        fprintf(stderr, "Error in write-and-read: %s\n", i2c_pololu_error_string(error));
+        fprintf(OUTPUT_ERROR, "Error in write-and-read: %s\n", i2c_pololu_error_string(error));
         return error;
     }
     
@@ -468,14 +468,14 @@ int i2c_pololu_get_device_info( i2c_pololu_adapter *adapter, i2c_pololu_device_i
     uint8_t cmd = CMD_GET_DEVICE_INFO;
     if(write(adapter->fd, &cmd, 1) != 1)
     {
-        fprintf(stderr, "Failed to request device info\n");
+        fprintf(OUTPUT_ERROR, "Failed to request device info\n");
 //        perror("Failed to request device info\n");
         return -1;
     }
     uint8_t length;
     if(read(adapter->fd, &length, 1) != 1)
     {
-        fprintf(stderr, "Failed to read Pololu device info length.\n");
+        fprintf(OUTPUT_ERROR, "Failed to read Pololu device info length.\n");
 //        perror("Failed to read Pololu device info length.\n");
         return -1;
     }
@@ -483,14 +483,14 @@ int i2c_pololu_get_device_info( i2c_pololu_adapter *adapter, i2c_pololu_device_i
     const uint8_t expected_len = 28;
     if(length == 0 || length > expected_len)
     {
-        fprintf(stderr, "Invalid device info length: %u (expected <= %u)\n", length, expected_len);
+        fprintf(OUTPUT_ERROR, "Invalid device info length: %u (expected <= %u)\n", length, expected_len);
         return -1;
     }
     uint8_t raw_info[28];
     raw_info[0] = length;
     if(read(adapter->fd, &raw_info[1], length - 1) != length - 1)
     {
-        fprintf(stderr, "Failed to read device info payload\n");
+        fprintf(OUTPUT_ERROR, "Failed to read device info payload\n");
 //        perror("Failed to read device info payload\n");
         return -1;
     }
@@ -509,7 +509,7 @@ int i2c_pololu_get_device_info( i2c_pololu_adapter *adapter, i2c_pololu_device_i
 #pragma pack(pop)
     if(raw->version != 0)
     {
-        fprintf(stderr, "Unrecognized device info version: %d\n", raw->version);
+        fprintf(OUTPUT_ERROR, "Unrecognized device info version: %d\n", raw->version);
         return -1;
     }
     info->vendor_id = raw->vendor_id;
@@ -598,7 +598,7 @@ int i2c_pololu_scan( i2c_pololu_adapter *adapter, uint8_t *found_addresses, int 
         }
         else if(responses[i] != ERROR_ADDRESS_NACK)
         {
-            fprintf(stderr, "Unexpected error when scanning address %d: error code %d.\n", i, responses[i]);
+            fprintf(OUTPUT_ERROR, "Unexpected error when scanning address %d: error code %d.\n", i, responses[i]);
         }
     }
     return found_count;
@@ -665,4 +665,49 @@ const char *i2c_pololu_error_string( int error_code )
         default:
             return "Unknown error";
     }
+}
+
+// ------------------------------------------
+// i2c_pololu_is_device_valid()
+// ------------------------------------------
+int i2c_pololu_is_device_valid(const char* path)
+{
+    if(path == NULL || *path == '\0')
+    {
+        return -EINVAL;
+    }
+
+    // First, ensure the device node is present/available
+    int rc = i2c_pololu_check_device_available(path, 500);
+    if(rc != 0)
+    {
+        return rc; // propagate errno-style code
+    }
+
+    i2c_pololu_adapter tmp = { .fd = -1 };
+    if(i2c_pololu_connect(&tmp, path) != 0)
+    {
+        return -EIO;
+    }
+
+    i2c_pololu_device_info info;
+    rc = i2c_pololu_get_device_info(&tmp, &info);
+    i2c_pololu_disconnect(&tmp);
+    if(rc != 0)
+    {
+        return -EIO;
+    }
+
+    // Validate vendor/product IDs against known Pololu IDs
+    // Pololu USB Vendor ID: 0x1FFB; Product IDs known: 0x2502, 0x2503
+    if(info.vendor_id != 0x1FFB)
+    {
+        return -ENODEV;
+    }
+    if(!(info.product_id == 0x2502 || info.product_id == 0x2503))
+    {
+        return -ENODEV;
+    }
+
+    return 0;
 }

@@ -180,10 +180,10 @@ void setCycleCountRegs(pList *p)
     // Write NOSRegValue to  register 0A
 //    i2c_write(p->pi, RM3100I2C_NOS,   (uint8_t)(p->NOSRegValue));
 
-//        fprintf(stderr, "\nIn setCycleCountRegs():: Setting NOS register to value: %2X\n", p->NOSRegValue);
-//        fprintf(stderr, "CycleCounts  - X: %u, Y: %u, Z: %u.\n", p->cc_x, p->cc_y, p->cc_x);
-//        fprintf(stderr, "Gains        - X: %u, Y: %u, Z: %u.\n", p->x_gain, p->y_gain, p->z_gain);
-//        fprintf(stderr, "NOS Register - %2X.\n", p->NOSRegValue);
+//        fprintf(OUTPUT_ERROR, "\nIn setCycleCountRegs():: Setting NOS register to value: %2X\n", p->NOSRegValue);
+//        fprintf(OUTPUT_ERROR, "CycleCounts  - X: %u, Y: %u, Z: %u.\n", p->cc_x, p->cc_y, p->cc_x);
+//        fprintf(OUTPUT_ERROR, "Gains        - X: %u, Y: %u, Z: %u.\n", p->x_gain, p->y_gain, p->z_gain);
+//        fprintf(OUTPUT_ERROR, "NOS Register - %2X.\n", p->NOSRegValue);
 }
 
 //------------------------------------------
@@ -194,12 +194,12 @@ void readCycleCountRegs(pList *p)
     (void)p;
     uint8_t regCC[7]= { 0, 0, 0, 0, 0, 0, 0 };
 
-    fprintf(stdout, "regCC[%i]: 0x%X\n",    0, (uint8_t)regCC[0]);
-    fprintf(stdout, "regCC[%i]: 0x%X\n",    1, (uint8_t)regCC[1]);
-    fprintf(stdout, "regCC[%i]: 0x%X\n",    2, (uint8_t)regCC[2]);
-    fprintf(stdout, "regCC[%i]: 0x%X\n",    3, (uint8_t)regCC[3]);
-    fprintf(stdout, "regCC[%i]: 0x%X\n",    4, (uint8_t)regCC[4]);
-    fprintf(stdout, "regCC[%i]: 0x%X\n",    5, (uint8_t)regCC[5]);
-    fprintf(stdout, "regCC[%i]: 0x%X\n\n",  6, (uint8_t)regCC[6]);
+    fprintf(OUTPUT_PRINT, "regCC[%i]: 0x%X\n",    0, (uint8_t)regCC[0]);
+    fprintf(OUTPUT_PRINT, "regCC[%i]: 0x%X\n",    1, (uint8_t)regCC[1]);
+    fprintf(OUTPUT_PRINT, "regCC[%i]: 0x%X\n",    2, (uint8_t)regCC[2]);
+    fprintf(OUTPUT_PRINT, "regCC[%i]: 0x%X\n",    3, (uint8_t)regCC[3]);
+    fprintf(OUTPUT_PRINT, "regCC[%i]: 0x%X\n",    4, (uint8_t)regCC[4]);
+    fprintf(OUTPUT_PRINT, "regCC[%i]: 0x%X\n",    5, (uint8_t)regCC[5]);
+    fprintf(OUTPUT_PRINT, "regCC[%i]: 0x%X\n\n",  6, (uint8_t)regCC[6]);
 }
 

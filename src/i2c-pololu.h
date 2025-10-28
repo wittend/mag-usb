@@ -48,6 +48,9 @@
 #define I2C_FAST_MODE_PLUS 2
 #define I2C_10_KHZ 3
 
+#define OUTPUT_PRINT        stdout
+#define OUTPUT_ERROR        stderr
+
 // Represents a connection to a Pololu Isolated USB-to-I2C Adapter.
 typedef struct
 {
@@ -219,5 +222,13 @@ int i2c_pololu_enable_VCC_out();
  * @return A constant string describing the error.
  */
 const char *i2c_pololu_error_string( int error_code );
+
+/**
+ * @brief Validate that the device at the given path is a supported Pololu I2C adapter.
+ *        Connects, reads device info, and checks vendor/product IDs.
+ * @param path Device node path under /dev (e.g., "/dev/ttyACM0").
+ * @return 0 if valid; negative errno-style code on error or mismatch (e.g., -ENODEV).
+ */
+int i2c_pololu_is_device_valid(const char* path);
 
 #endif // POLOLU_I2C_H

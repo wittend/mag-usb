@@ -206,7 +206,7 @@ static int tests_failed = 0;
     {                                                                                                                  \
         if (!(cond))                                                                                                   \
         {                                                                                                              \
-            fprintf(stderr, "ASSERT FAILED: %s\n", msg);                                                               \
+            fprintf(OUTPUT_ERROR, "ASSERT FAILED: %s\n", msg);                                                               \
             tests_failed++;                                                                                            \
         }                                                                                                              \
     }                                                                                                                  \
@@ -216,7 +216,7 @@ static int tests_failed = 0;
     {                                                                                                                  \
         if ((a) != (b))                                                                                                \
         {                                                                                                              \
-            fprintf(stderr, "ASSERT FAILED: %s (got %d expected %d)\n", msg, (int)(a), (int)(b));                      \
+            fprintf(OUTPUT_ERROR, "ASSERT FAILED: %s (got %d expected %d)\n", msg, (int)(a), (int)(b));                      \
             tests_failed++;                                                                                            \
         }                                                                                                              \
     }                                                                                                                  \
@@ -226,7 +226,7 @@ static int tests_failed = 0;
     {                                                                                                                  \
         if (memcmp((a), (b), (n)) != 0)                                                                                \
         {                                                                                                              \
-            fprintf(stderr, "ASSERT FAILED: %s (memory compare failed)\n", msg);                                       \
+            fprintf(OUTPUT_ERROR, "ASSERT FAILED: %s (memory compare failed)\n", msg);                                       \
             tests_failed++;                                                                                            \
         }                                                                                                              \
     }                                                                                                                  \
@@ -375,7 +375,7 @@ int main(void)
 
     if (tests_failed)
     {
-        fprintf(stderr, "\nTESTS FAILED: %d\n", tests_failed);
+        fprintf(OUTPUT_ERROR, "\nTESTS FAILED: %d\n", tests_failed);
         return 1;
     }
     printf("All tests passed.\n");

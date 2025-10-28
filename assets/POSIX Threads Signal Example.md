@@ -50,7 +50,7 @@ void* print_data(void* arg)
         int local_data = sensor_data;
         pthread_mutex_unlock(&data_mutex);
 
-        // Print data to stdout
+        // Print data to OUTPUT_PRINT
         printf("Sensor Data: %d\n", local_data);
 
         // Sleep for 1000 ms or until interrupted by signal

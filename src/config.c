@@ -207,7 +207,7 @@ static void process_config_value(pList *p, const char *section, const char *key,
             }
             else
             {
-                fprintf(stderr, "ERROR: p->portpath is NULL!\n");
+                fprintf(OUTPUT_ERROR, "ERROR: p->portpath is NULL!\n");
             }
         }
         else if(strcmp(key, "bus_number") == 0)

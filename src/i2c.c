@@ -55,7 +55,7 @@ int i2c_readMagPOLL(pList *p)
     rv = i2c_pololu_write_to(p->adapter, (uint8_t)p->magAddr, (uint8_t)RM3100_MAG_POLL, &poll_cmd, 1);
     if (rv < 0)
     {
-        fprintf(stdout, "  POLL write failed: %s\n", i2c_pololu_error_string(-rv));
+        fprintf(OUTPUT_ERROR, "  POLL write failed: %s\n", i2c_pololu_error_string(-rv));
         return rv;
     }
 
@@ -68,7 +68,7 @@ int i2c_readMagPOLL(pList *p)
         rv = i2c_pololu_read_from(p->adapter, (uint8_t)p->magAddr, (uint8_t)RM3100I2C_STATUS, &status, 1);
         if (rv < 0)
         {
-            fprintf(stdout, "  STATUS read failed: %s\n", i2c_pololu_error_string(-rv));
+            fprintf(OUTPUT_ERROR, "  STATUS read failed: %s\n", i2c_pololu_error_string(-rv));
             return rv;
         }
         if ((status & RM3100I2C_READMASK) == RM3100I2C_READMASK)
@@ -80,7 +80,7 @@ int i2c_readMagPOLL(pList *p)
 
     if (tries >= max_tries)
     {
-        fprintf(stdout, "  Timeout waiting for DRDY (status=0x%02X)\n", status);
+        fprintf(OUTPUT_ERROR, "  Timeout waiting for DRDY (status=0x%02X)\n", status);
         return -1;
     }
 
@@ -88,7 +88,7 @@ int i2c_readMagPOLL(pList *p)
     rv = i2c_pololu_read_from(p->adapter, (uint8_t)p->magAddr, (uint8_t)RM3100I2C_XYZ, xyzBuf, (uint8_t)XYZ_BUFLEN);
     if (rv < 0)
     {
-        fprintf(stdout, "  Data read failed: %s\n", i2c_pololu_error_string(-rv));
+        fprintf(OUTPUT_ERROR, "  Data read failed: %s\n", i2c_pololu_error_string(-rv));
         return rv;
     }
     if (rv != XYZ_BUFLEN)
@@ -123,14 +123,15 @@ int i2c_init(pList *p)
 //---------------------------------------------------------------
 // i2c_open(pList *p, const char *portpath)
 //---------------------------------------------------------------
-int i2c_open(pList *p, const char *portpath)
+//int i2c_open(pList *p, const char *portpath)
+int i2c_open(pList *p)
 {
-    (void)portpath; // Unused: using p->portpath instead
-    // Map to Pololu open/init sequence
+     // Map to Pololu open/init sequence
     struct stat sb;
     if(!stat(p->portpath, &sb))
     {
-        return i2c_pololu_connect(p->adapter, p->portpath);
+        int rv = i2c_pololu_connect(p->adapter, p->portpath);
+        return rv;
     }
     else
     {

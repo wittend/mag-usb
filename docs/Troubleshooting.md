@@ -46,7 +46,7 @@ Common issues and how to resolve them.
   - `-T` to verify the temperature sensor.
 
 ## Interleaved JSON and logs
-- If you require a clean JSON stream, redirect stderr (`2>/dev/null`) or filter lines that do not start with `{`.
+- If you require a clean JSON stream, redirect  (`2>/dev/null`) or filter lines that do not start with `{`.
 
 ## Getting more help
 - Open an issue with logs:

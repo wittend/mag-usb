@@ -51,7 +51,7 @@ void timer_handler(int sig, siginfo_t *si, void *uc)
     {
         timer_expired++;
         // Use write() instead of printf() (async-signal-safe)
-        write(STDOUT_FILENO, "Timer expired!\n", 15);
+        write(OUTPUT_PRINT_FILENO, "Timer expired!\n", 15);
     }
 }
 

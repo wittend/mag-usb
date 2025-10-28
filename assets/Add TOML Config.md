@@ -227,7 +227,7 @@ static int config_read(const char *filename, Config *cfg) {
     if (!fp) {
         if (errno == ENOENT) {
             // File doesn't exist, use defaults
-            fprintf(stderr, "Config file '%s' not found, using defaults\n", filename);
+            fprintf(OUTPUT_ERROR, "Config file '%s' not found, using defaults\n", filename);
             return 0;
         }
         perror("Error opening config file");
@@ -381,7 +381,7 @@ int load_configuration(pList *p, const char *config_file) {
     
     // Read from file (if it exists)
     if (config_read(config_file, &cfg) < 0) {
-        fprintf(stderr, "Warning: Could not read config file, using defaults\n");
+        fprintf(OUTPUT_ERROR, "Warning: Could not read config file, using defaults\n");
     }
     
     // Apply to pList (command line args will override later)

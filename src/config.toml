@@ -65,8 +65,8 @@ readback_cc_regs = false
 
 # Magnetometer Orientation in degrees relative to default (See hardware setup docs).
 # Plus and minus 180 are equivalent. Plus and minus 90 are different!
-# Allowed values: -180, -90, 0, 90, 180
 [mag_orientation]
+# Allowed values: -180, -90, 0, 90, 180
 mag_translate_x = 0
 mag_translate_y = 0
 mag_translate_z = 0

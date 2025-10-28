@@ -34,7 +34,7 @@ This document summarizes the expected limitations of mag-usb in its current form
 - File logging and named pipes are optional features; ensure correct permissions and paths. When disabled, related paths are ignored.
 
 ## Error handling
-- Some runtime errors print messages interleaved with JSON lines. If you require a clean data stream, redirect stderr and/or prefilter non‑JSON lines.
+- Some runtime errors print messages interleaved with JSON lines. If you require a clean data stream, redirect  and/or prefilter non‑JSON lines.
 
 ## Backward compatibility
 - Command‑line flags may evolve; use `-h` to discover current support. Configuration keys not recognized are ignored.

@@ -13,6 +13,7 @@
 #include "cmdmgr.h"
 #include "config.h"
 #include "sensor_tests.h"
+#include "i2c-pololu.h"
 
 #include <pthread.h>
 #include <signal.h>
@@ -71,8 +72,6 @@ int main(int argc, char** argv)
     pList   ctl;
     pList   *p = &ctl;
     int     rv = 0;
-    char    utcStr[UTCBUFLEN] = "";
-    struct  tm *utcTime;
 
 #if(USE_POLOLU)
     i2c_pololu_adapter pAdapter;
@@ -107,7 +106,7 @@ int main(int argc, char** argv)
         showSettings(p);
         free_config_strings(p);
         printf("Program terminated.\n");
-        return 0;
+        exit(0);
     }
 
     // #if(USE_PIPES)
@@ -118,16 +117,28 @@ int main(int argc, char** argv)
     if(i2c_init(p))
     {
         fprintf(OUTPUT_ERROR, "Unable to initialize I2C Adaptor handle.\n");
-        return -1;
-        // exit(1);
+        exit(1);
+    }
+    rv = i2c_pololu_check_device_available(p->portpath, 1000);
+    if(rv == 0)
+    {
+        // Validate the device is the expected Pololu adapter
+        int rv = i2c_pololu_is_device_valid(p->portpath);
+        if(rv != 0)
+        {
+            fprintf(OUTPUT_ERROR, "Unsupported or invalid Pololu adapter at %s (error %d). Exiting...\n", p->portpath, rv);
+            exit(1);
+        }
+        if((rv = i2c_open(p)) < 0)
+        {
+            fprintf(OUTPUT_ERROR, "Failed to open I2C port '%s'. Exiting...\n", portpath);
+            exit(1);
+        }
     }
     else
     {
-        if (i2c_open(p, portpath) != 0)
-        {
-            fprintf(OUTPUT_ERROR, "Failed to open I2C port '%s'. Exiting...\n", portpath);
-            return 1;
-        }
+        fprintf(OUTPUT_ERROR, "I2C adapter device '%s' not available (error %d). Exiting...\n", p->portpath, rv);
+        exit(1);
     }
 
 #if(USE_POLOLU)
@@ -140,10 +151,11 @@ int main(int argc, char** argv)
         else
         {
             fprintf(OUTPUT_PRINT, "  Pololu Adapter NOT so OK.\n");
-            return -1;
-            // exit(1);
+            // return -1;
+            exit(1);
         }
-    }
+        exit(0);
+}
 
     //-----------------------------------------------------
     // Get interface info and scan for i2c devices.
@@ -152,11 +164,13 @@ int main(int argc, char** argv)
     {
         if(i2c_scanForBusDevices(p) <= 0)
         {
-            //exit(1001);
-            return -1;
+            exit(1);
+            //return -1;
         }
+        exit(0);
     }
 #endif
+
     //-----------------------------------------------------
     // Verify the Temp sensor presence and Version.
     //-----------------------------------------------------
@@ -165,12 +179,13 @@ int main(int argc, char** argv)
         if(!i2c_verifyTempSensor(p))
         {
             fprintf(OUTPUT_PRINT, "  Temp Sensor OK.\n");
-        }
+         }
         else
         {
             fprintf(OUTPUT_PRINT, "  Temp Sensor NOT so OK.\n");
             return 1;
         }
+        exit(0);
     }
 
     //-----------------------------------------
@@ -180,26 +195,16 @@ int main(int argc, char** argv)
     {
         if(i2c_verifyMagSensor(p))
         {
-            utcTime = getUTC();
-            strftime(utcStr, UTCBUFLEN, "%d %b %Y %T", utcTime);
-            fprintf(OUTPUT_ERROR, "    {ts: \"%s\", lastStatus: \"Unable to Verify the magnetometer.\"}", utcStr);
-            fflush(OUTPUT_ERROR);
-            exit(2);
+            fprintf(OUTPUT_ERROR, "Unable to Verify the magnetometer.\n");
+            exit(1);
         }
+        exit(0);
     }
 
     //-----------------------------------------
     //  Initialize the Mag sensor registers.
     //-----------------------------------------
     i2c_initMagSensor(p);
-    // if(initMagSensor(p))
-    // {
-    //     utcTime = getUTC();
-    //     strftime(utcStr, UTCBUFLEN, "%d %b %Y %T", utcTime);
-    //     fprintf(OUTPUT_ERROR, "    {ts: \"%s\", lastStatus: \"Unable to initialize the magnetometer.\"}", utcStr);
-    //     fflush(OUTPUT_ERROR);
-    //     exit(2);
-    // }
 
     //-----------------------------------------------------
     //  Main program loop.
@@ -323,7 +328,7 @@ void* print_data(void* arg)
         // int local_data = sensor_data;
         // pthread_mutex_unlock(&data_mutex);
         //
-        // // Print data to stdout
+        // // Print data to OUTPUT_PRINT
         // printf("Sensor Data: %d\n", local_data);
         formatOutput(p);
 

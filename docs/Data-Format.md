@@ -1,6 +1,6 @@
 # Data Format
 
-mag-usb prints one JSON object per line to stdout. Each line represents a single sample of the magnetometer vector (and optionally other values in the future).
+mag-usb prints one JSON object per line to OUTPUT_PRINT. Each line represents a single sample of the magnetometer vector (and optionally other values in the future).
 
 ## Baseline schema
 ```
@@ -29,7 +29,7 @@ If configured, 90° increment rotations are applied to `(x,y,z)` before printing
 - In CMM mode (continuous), the sample rate is controlled by `cmm_sample_rate`; see `docs/Configuration.md`.
 
 ## Errors and diagnostics output
-- Informational and error messages (e.g., adapter checks) are printed to stdout/stderr around the JSON lines. If you need a clean stream of JSON only, redirect stderr and/or prefilter lines not starting with `{`.
+- Informational and error messages (e.g., adapter checks) are printed to OUTPUT_PRINT/ around the JSON lines. If you need a clean stream of JSON only, redirect  and/or prefilter lines not starting with `{`.
 
 ## Logging and pipes
 - If you enable logging or named pipes in the configuration, the same JSON lines can be written to files or pipes. See `docs/Configuration.md` (output section).
