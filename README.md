@@ -19,17 +19,17 @@ Key points:
 - Convenience flag to print current settings (`-P`).
 - Optional diagnostics: verify devices, scan I²C bus, etc.
 
-## Build (using CLion profiles or plain CMake)
-
-CLion (recommended):
-- Open the project; CLion generates Debug and Release profiles under cmake-build-debug and cmake-build-release.
-- Build the target `mag-usb` from the chosen profile.
+## Build (using CMake or CLion IDE is convenieny)
 
 Plain CMake:
 ```
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build --target mag-usb
 ```
+
+CLion (recommended):
+- Open the project; CLion generates Debug and Release profiles under cmake-build-debug and cmake-build-release.
+- Build the target `mag-usb` from the chosen profile.
 
 ## Quick start
 - Connect the Pololu USB‑to‑I²C adapter and your RM3100 board.
