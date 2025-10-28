@@ -1,0 +1,49 @@
+site_name: mag-usb
+site_description: "USB-connected magnetometer interface and tools"
+# If this project is hosted publicly (e.g., GitHub/GitLab), set repo_url below, e.g.:
+# repo_url: https://github.com/<org>/<repo>
+# edit_uri: edit/main/
+
+theme:
+  name: material
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.path
+    - content.code.copy
+    - toc.integrate
+
+nav:
+  - Home: index.md
+  - Getting Started: Getting-Started.md
+  - Hardware Setup: Hardware-Setup.md
+  - Configuration: Configuration.md
+  - Data Format: Data-Format.md
+  - Orientation and Axes: Orientation-and-Axes.md
+  - Troubleshooting: Troubleshooting.md
+  - Limitations: Limitations.md
+  - Development: Development.md
+
+docs_dir: docs
+site_dir: site
+
+plugins:
+  - search
+
+markdown_extensions:
+  - toc:
+      permalink: true
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - tables
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight
+  - pymdownx.inlinehilite
+  - pymdownx.magiclink
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
