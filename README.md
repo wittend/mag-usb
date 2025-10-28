@@ -1,6 +1,6 @@
 # mag-usb
 
-Version: 0.0.4
+Version: 0.0.5
 
 mag-usb is a Linux command‑line utility for reading a PNI RM3100 3‑axis magnetometer via a USB‑to‑I²C adapter (Pololu 5396/5397). It outputs time‑stamped magnetic field vectors and supports optional configuration via a simple TOML file.
 
