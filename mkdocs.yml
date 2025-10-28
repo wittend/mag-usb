@@ -1,8 +1,8 @@
 site_name: mag-usb
 site_description: "USB-connected magnetometer interface and tools"
 # If this project is hosted publicly (e.g., GitHub/GitLab), set repo_url below, e.g.:
-# repo_url: https://github.com/<org>/<repo>
-# edit_uri: edit/main/
+repo_url: https://github.com/wittend/mag-usb
+edit_uri: edit/main/
 
 theme:
   name: material
