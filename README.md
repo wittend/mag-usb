@@ -21,7 +21,7 @@ Key points:
 - Convenience flag to print current settings (`-P`).
 - Optional diagnostics: verify devices, scan I²C bus, etc.
 
-## Build (using CMake or CLion IDE is convenieny)
+## Build (using CMake)
 
 Plain CMake:
 ```
@@ -29,7 +29,7 @@ cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build --target mag-usb
 ```
 
-CLion (recommended):
+CLion IDE (convenient if you happen to have it):
 - Open the project; CLion generates Debug and Release profiles under cmake-build-debug and cmake-build-release.
 - Build the target `mag-usb` from the chosen profile.
 
