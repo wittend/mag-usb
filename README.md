@@ -1,6 +1,8 @@
 # mag-usb
 
-Version: 0.0.4
+Version: 0.0.5
+
+Official documentation -- https://mag-usb.readthedocs.io/
 
 mag-usb is a Linux command‑line utility for reading a PNI RM3100 3‑axis magnetometer via a USB‑to‑I²C adapter (Pololu 5396/5397). It outputs time‑stamped magnetic field vectors and supports optional configuration via a simple TOML file.
 
@@ -19,17 +21,17 @@ Key points:
 - Convenience flag to print current settings (`-P`).
 - Optional diagnostics: verify devices, scan I²C bus, etc.
 
-## Build (using CLion profiles or plain CMake)
-
-CLion (recommended):
-- Open the project; CLion generates Debug and Release profiles under cmake-build-debug and cmake-build-release.
-- Build the target `mag-usb` from the chosen profile.
+## Build (using CMake)
 
 Plain CMake:
 ```
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build --target mag-usb
 ```
+
+CLion IDE (convenient if you happen to have it):
+- Open the project; CLion generates Debug and Release profiles under cmake-build-debug and cmake-build-release.
+- Build the target `mag-usb` from the chosen profile.
 
 ## Quick start
 - Connect the Pololu USB‑to‑I²C adapter and your RM3100 board.
