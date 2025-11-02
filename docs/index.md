@@ -4,15 +4,21 @@ Welcome to the mag-usb documentation site. This project provides a USB-connected
 
 Use the navigation to the left or the links below to explore the documentation.
 
-## Quick links
+## Contents
 
-- Getting started: see [Getting Started](Getting-Started.md)
-- Hardware setup: see [Hardware Setup](Hardware-Setup.md)
-- Configuring the software: see [Configuration](Configuration.md)
-- Data format reference: see [Data Format](Data-Format.md)
-- Orientation and axes: see [Orientation and Axes](Orientation-and-Axes.md)
-- Troubleshooting: see [Troubleshooting](Troubleshooting.md)
-- Development notes: see [Development](Development.md)
+```{toctree}
+:caption: Contents
+:maxdepth: 2
+
+Getting-Started.md
+Hardware-Setup.md
+Configuration.md
+Data-Format.md
+Orientation-and-Axes.md
+Troubleshooting.md
+Limitations.md
+Development.md
+```
 
 ## Local preview
 
