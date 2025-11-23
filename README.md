@@ -1,3 +1,8 @@
+# Warning: Upcoming breaking change! 
+- I have inadvertantly failed to include the sensor temperature in the output produced by this program. 
+- I expect to fix this right away (2025-11-23).
+- This change may impact the mag-dash project as well.
+
 # mag-usb
 
 Version: 0.0.5
