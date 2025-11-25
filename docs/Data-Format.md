@@ -4,14 +4,15 @@ mag-usb prints one JSON object per line to OUTPUT_PRINT. Each line represents a 
 
 ## Baseline schema
 ```
-{ "ts": "DD Mon YYYY HH:MM:SS", "x": <float>, "y": <float>, "z": <float> }
+{ "ts": "DD Mon YYYY HH:MM:SS", "rt": <float>, "x": <float>, "y": <float>, "z": <float> }
 ```
 - `ts` (string): UTC timestamp formatted like `25 Oct 2025 14:02:33` (RFC‑2822‑like time portion without timezone offset).
+- `rt` (number): Value of temperature measured in degree C of the sensor at its 'remote' location. 
 - `x`, `y`, `z` (number): Field components in nanoTesla (nT), with 3 decimal places printed.
 
 Example:
 ```
-{ "ts":"26 Oct 2025 14:20:00", "x":12345.678, "y":-234.500, "z":987.001 }
+{ "ts":"26 Oct 2025 14:20:00", "rt":23.125, "x":12345.678, "y":-234.500, "z":987.001 }
 ```
 
 ## Units and scaling
@@ -33,3 +34,4 @@ If configured, 90° increment rotations are applied to `(x,y,z)` before printing
 
 ## Logging and pipes
 - If you enable logging or named pipes in the configuration, the same JSON lines can be written to files or pipes. See `docs/Configuration.md` (output section).
+- In the case that data is published to an MQTT broker, the same JSON lines will be used (for now). See `docs/Configuration.md` (output section).

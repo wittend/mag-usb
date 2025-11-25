@@ -67,6 +67,8 @@ Rules:
 - `use_pipes` (bool) — Use named pipes for IPC. Default: false.
 - `pipe_in_path` (string) — Path to control pipe (writer side). Default: none.
 - `pipe_out_path` (string) — Path to data pipe (reader side). Default: none.
+- `publish MQTT` (bool) — Publish output lines to an MQTT broker. Default: false.
+- `MQTT_broker_URL` (string) URL for MQTT broker. Default: none. 
 
 Note: When `use_pipes=false`, pipe paths are ignored.  [Actually, pipe communication is turned off in this version].
 
