@@ -26,7 +26,8 @@
 char Version[32];
 int volatile killflag;
 static char outBuf[256];
-char portpath[PATH_MAX] = "/dev/ttyMAG0";          // default path for pololu i2c emulator.
+// char portpath[PATH_MAX] = "/dev/ttyMAG0";          // default path for pololu i2c emulator.
+char portpath[PATH_MAX] = "/dev/ttyACM0";          // default path for pololu i2c emulator.
 extern int CC_400;
 extern int GAIN_150;
 extern int RM3100_I2C_ADDRESS;
