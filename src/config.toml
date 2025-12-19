@@ -24,10 +24,10 @@ log_output_path = "./logs"
 create_log_path_if_empty = true
 
 # Use named pipes for IPC.
-use_pipes = false
+use_pipes = true
 # Pipe paths (if use_pipes is true).
-pipe_in_path = "/home/PSWS/magctl.fifo"
-pipe_out_path = "/home/PSWS/magdata.fifo"
+pipe_in_path = "/var/run/magctl.fifo"
+pipe_out_path = "/var/run/magdata.fifo"
 
 [i2c]
 # Use external USB to I2C device.
@@ -74,6 +74,3 @@ mag_translate_z = 0
 [temperature]
 # Remote temperature sensor I2C address
 remote_temp_address = 0x1F
-
-
-
