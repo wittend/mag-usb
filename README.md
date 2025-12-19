@@ -1,6 +1,6 @@
 # mag-usb
-
-Version: 0.0.5
+ 
+Version: 0.0.6
 
 Official documentation -- https://mag-usb.readthedocs.io/
 

@@ -1,7 +1,7 @@
 # Development Guide
 
 This page is for developers working on mag-usb.
-
+ 
 ## Repository layout
 - src/: C sources and headers
 - tests/: Unit tests (CTest)

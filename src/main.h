@@ -76,7 +76,7 @@
 #define OUTPUT_ERROR        stderr
 #define PPS_TIMEOUTSECS     2.0
 
-#define MAG_USB_VERSION     "0.0.5"
+#define MAG_USB_VERSION     "0.0.6"
 #define UTCBUFLEN           64
 #define MAXPATHBUFLEN       PATH_MAX
 #define XYZ_BUFLEN          9

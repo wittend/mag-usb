@@ -4,7 +4,7 @@
 // A command line interface for the RM3100 3-axis magnetometer from PNI Sensor Corp.
 //
 // Author:      David Witten, KD0EAG
-// Date:        December 18, 2023
+// Date:        December 18, 2025
 // License:     GPL 3.0
 //=========================================================================
 #include <fcntl.h>

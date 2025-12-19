@@ -11,7 +11,7 @@ Tip: Run `./mag-usb -P` to print the active settings and exit.
 ## File format
 - Syntax: TOML (key = value). Lines beginning with `#` are comments.
 - Sections use `[section_name]` headers.
-
+ 
 ## Sections and keys
 Below is the complete reference of supported sections/keys, their types, defaults, and notes.
 

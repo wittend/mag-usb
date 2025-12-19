@@ -6,7 +6,7 @@ This document explains how mag-usb handles magnetometer orientation and how to c
 - The RM3100 outputs three orthogonal components X, Y, Z.
 - mag-usb treats these axes as a right‑handed coordinate system.
 - Positive rotations follow the right‑hand rule (thumb points along the axis of rotation; curl of fingers is direction of positive rotation).
-
+ 
 ## Why orientation adjustments?
 Depending on how the sensor PCB is mounted in your enclosure, its axes may not align with your desired reference frame. mag-usb can rotate the measured vector by multiples of 90° around the X, Y, and Z axes to align with your installation.
 
