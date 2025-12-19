@@ -98,7 +98,14 @@ int main(int argc, char** argv)
     //  Load configuration from TOML file
     //  (command line args will override these)
     //-----------------------------------------
-    load_config("config.toml", p);
+    const char *etc_config = "/etc/mag-usb/config.toml";
+    const char *local_config = "config.toml";
+
+    if (load_config(etc_config, p) != 0)
+    {
+        // If /etc config failed or didn't exist, try local directory
+        load_config(local_config, p);
+    }
 
     if((rv = getCommandLine(argc, argv, p)) != 0)
     {
@@ -120,11 +127,6 @@ int main(int argc, char** argv)
         printf("Program terminated.\n");
         exit(0);
     }
-
-    // #if(USE_PIPES)
-    //    setupPipes(p);
-    // #endif // USE_PIPES
-    //    unsigned edge_cb_id = 0;
 
     if(i2c_init(p))
     {
@@ -408,7 +410,7 @@ static int norm_angle(int a)
 }
 
 //---------------------------------------------------------------
-// formatOutput(volatile pList *p)
+// apply_orientation(volatile pList *p)
 //---------------------------------------------------------------
 static void apply_orientation(const pList *p, double *x, double *y, double *z)
 {
@@ -474,6 +476,9 @@ static void apply_orientation(const pList *p, double *x, double *y, double *z)
     *x = X; *y = Y; *z = Z;
 }
 
+//---------------------------------------------------------------
+// formatOutput(volatile pList *p)
+//---------------------------------------------------------------
 char *formatOutput(pList *p)
 {
 #define FMTBUFLEN  200

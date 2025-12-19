@@ -33,5 +33,7 @@ If configured, 90° increment rotations are applied to `(x,y,z)` before printing
 - Informational and error messages (e.g., adapter checks) are printed to OUTPUT_PRINT/ around the JSON lines. If you need a clean stream of JSON only, redirect  and/or prefilter lines not starting with `{`.
 
 ## Logging and pipes
-- If you enable logging or named pipes in the configuration, the same JSON lines can be written to files or pipes. See `docs/Configuration.md` (output section).
-- In the case that data is published to an MQTT broker, the same JSON lines will be used (for now). See `docs/Configuration.md` (output section).
+- If you enable logging or named pipes in the configuration, the same JSON lines are written to files or pipes. 
+- Named pipes (FIFOs) allow real-time IPC with local monitor/dashboard programs.
+- Default pipe paths are `/var/run/mag-usb-ctl.fifo` (input) and `/var/run/magd-usb-data.fifo` (output).
+- See `docs/Configuration.md` (output section) for details.

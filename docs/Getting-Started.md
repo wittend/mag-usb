@@ -43,7 +43,14 @@ Print current settings (and exit):
 ```
 ./build/mag-usb -P
 ```
-If `config.toml` is present in the working directory, its values are shown; otherwise defaults are used.
+The program searches for `config.toml` in `/etc/mag-usb/` first, then in the local directory. If neither is found, internal defaults are used.
+
+## Named Pipes (Optional)
+To enable named pipe output for local monitoring:
+```
+./build/mag-usb -u
+```
+You can specify custom pipe paths with `-i` and `-o`. Defaults are in `/var/run/`.
 
 Run with help:
 ```

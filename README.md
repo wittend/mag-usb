@@ -48,10 +48,14 @@ To print current settings (and exit):
 ```
 ./build/mag-usb -P
 ```
-If a `config.toml` file is present in the working directory, its values will be shown/used; otherwise reasonable defaults are used.
+The program follows Linux filesystem conventions and looks for its configuration file in the following order:
+1. `/etc/mag-usb/config.toml`
+2. `config.toml` in the current working directory.
+
+If neither is found, reasonable default values are used. Command-line arguments always overrule both default values and those found in any configuration file.
 
 ## Configuration
-A simple TOML configuration file is supported. By default the program looks for `config.toml` in the current working directory. See:
+A simple TOML configuration file is supported. The program searches for it in `/etc/mag-usb/config.toml` first, then in the local directory. See:
 - docs/Configuration.md — all keys, defaults, and examples.
 - docs/Orientation-and-Axes.md — how the 90° orientation translations work.
 
@@ -115,6 +119,9 @@ Parameters:
    -Q                     :  Verify presence of Pololu adaptor.
    -S                     :  List devices seen on i2c bus and exit.
    -T                     :  Verify Temperature sensor presence and version.
+   -u                     :  Use named pipes for output.
+   -i <path>              :  Path for input named pipe.
+   -o <path>              :  Path for output named pipe.
    -V                     :  Display software version and exit.
    -h or -?               :  Display this help.
 ```

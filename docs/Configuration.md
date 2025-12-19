@@ -1,6 +1,10 @@
 # Configuration
 
-mag-usb reads an optional `config.toml` from the current working directory at startup. If the file is missing, defaults are used. Invalid values are ignored or reduced to defaults.
+mag-usb reads an optional `config.toml` at startup. It searches for the configuration file in the following order:
+1. `/etc/mag-usb/config.toml`
+2. `config.toml` in the current working directory.
+
+If neither file is found, defaults are used. Invalid values are ignored or reduced to defaults. Command-line arguments always override both default values and those found in any configuration file.
 
 Tip: Run `./mag-usb -P` to print the active settings and exit.
 
@@ -65,12 +69,12 @@ Rules:
 - `log_output_path` (string) — Path for log files. Default: `./logs` (when logging enabled).
 - `create_log_path_if_empty` (bool) — Create `log_output_path` if missing. Default: true.
 - `use_pipes` (bool) — Use named pipes for IPC. Default: false.
-- `pipe_in_path` (string) — Path to control pipe (writer side). Default: none.
-- `pipe_out_path` (string) — Path to data pipe (reader side). Default: none.
+- `pipe_in_path` (string) — Path to control pipe (writer side). Default: `/var/run/mag-usb-ctl.fifo`.
+- `pipe_out_path` (string) — Path to data pipe (reader side). Default: `/var/run/magd-usb-data.fifo`.
 - `publish MQTT` (bool) — Publish output lines to an MQTT broker. Default: false.
 - `MQTT_broker_URL` (string) URL for MQTT broker. Default: none. 
 
-Note: When `use_pipes=false`, pipe paths are ignored.  [Actually, pipe communication is turned off in this version].
+Note: When `use_pipes=true`, the program will create the pipes if they do not exist with `0666` permissions.
 
 ## Example
 ```
