@@ -36,13 +36,13 @@ extern int CC_400;
 extern int GAIN_150;
 extern int RM3100_I2C_ADDRESS;
 
-// #ifdef USE_PIPES
-     char fifoCtrl[] = "/var/run/mag-usb-ctl.fifo";
-     char fifoData[] = "/var/run/magd-usb-data.fifo";
-     char fifoHome[] = "/var/run/";
-     int PIPEIN  = -1;
-     int PIPEOUT = -1;
-// #endif //USE_PIPES
+#ifdef USE_PIPES
+     char fifoCtrl[] = "/run/mag-usb/magctl.fifo";
+     char fifoData[] = "/run/mag-usb/magata.fifo";
+     char fifoHome[] = "/run/mag-usb";
+     // int PIPEIN  = -1;
+     // int PIPEOUT = -1;
+#endif //USE_PIPES
 
 #if((USE_LGPIO || USE_RGPIO) && USE_WAITFOREDGE)
 #define PPS_GPIO_PIN    27
@@ -112,20 +112,26 @@ int main(int argc, char** argv)
         return rv;
     }
 
-    if(p->usePipes)
-    {
-        setupPipes(p);
-    }
-
     // If user requested to only show settings, print and exit before hardware init
     if(p->showSettingsOnly)
     {
         showSettings(p);
         free_config_strings(p);
-        if(p->pipeInFd >= 0) close(p->pipeInFd);
-        if(p->pipeOutFd >= 0) close(p->pipeOutFd);
+        if(p->pipeInFd >= 0)
+        {
+            close(p->pipeInFd);
+        }
+        if(p->pipeOutFd >= 0)
+        {
+            close(p->pipeOutFd);
+        }
         printf("Program terminated.\n");
         exit(0);
+    }
+
+    if(p->usePipes)
+    {
+        setupPipes(p);
     }
 
     if(i2c_init(p))

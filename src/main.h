@@ -52,7 +52,7 @@
 #define USE_RGPIO           FALSE
 #define USE_POLOLU          TRUE
 
-//#define USE_PIPES            FALSE
+#define USE_PIPES           TRUE
 //#undef USE_PIPES             FALSE
 #define USE_PTHREADS         TRUE
 
