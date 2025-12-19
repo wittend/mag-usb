@@ -76,7 +76,7 @@
 #define OUTPUT_ERROR        stderr
 #define PPS_TIMEOUTSECS     2.0
 
-#define MAG_USB_VERSION     "0.0.4"
+#define MAG_USB_VERSION     "0.0.5"
 #define UTCBUFLEN           64
 #define MAXPATHBUFLEN       PATH_MAX
 #define XYZ_BUFLEN          9
@@ -150,6 +150,9 @@ typedef struct tag_pList
     char *elevation;
     char *grid_square;
 
+    int  pipeInFd;
+    int  pipeOutFd;
+
     int  showSettingsOnly; // if set by -O, print settings and exit
  } pList;
 
@@ -167,7 +170,7 @@ void setProgramDefaults(pList *p);
 
 long currentTimeMillis();
 struct tm *getUTC();
-// int setupPipes(pList *p);
+int setupPipes(pList *p);
 
 #endif //SWX3100MAIN_h
 

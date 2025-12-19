@@ -7,6 +7,10 @@
 // Date:        December 18, 2023
 // License:     GPL 3.0
 //=========================================================================
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <errno.h>
+#include <unistd.h>
 #include <linux/limits.h>
 #include "main.h"
 #include "i2c.h"
@@ -33,11 +37,11 @@ extern int GAIN_150;
 extern int RM3100_I2C_ADDRESS;
 
 // #ifdef USE_PIPES
-//     char fifoCtrl[] = "/home/PSWS/Sstat/magctl.fifo";
-//     char fifoData[] = "/home/PSWS/Sstat/magdata.fifo";
-//     char fifoHome[] = "/run/user/";
-//     int PIPEIN  = -1;
-//     int PIPEOUT = -1;
+     char fifoCtrl[] = "/var/run/mag-usb-ctl.fifo";
+     char fifoData[] = "/var/run/magd-usb-data.fifo";
+     char fifoHome[] = "/var/run/";
+     int PIPEIN  = -1;
+     int PIPEOUT = -1;
 // #endif //USE_PIPES
 
 #if((USE_LGPIO || USE_RGPIO) && USE_WAITFOREDGE)
@@ -101,11 +105,18 @@ int main(int argc, char** argv)
         return rv;
     }
 
+    if(p->usePipes)
+    {
+        setupPipes(p);
+    }
+
     // If user requested to only show settings, print and exit before hardware init
     if(p->showSettingsOnly)
     {
         showSettings(p);
         free_config_strings(p);
+        if(p->pipeInFd >= 0) close(p->pipeInFd);
+        if(p->pipeOutFd >= 0) close(p->pipeOutFd);
         printf("Program terminated.\n");
         exit(0);
     }
@@ -124,7 +135,7 @@ int main(int argc, char** argv)
     if(rv == 0)
     {
         // Validate the device is the expected Pololu adapter
-        int rv = i2c_pololu_is_device_valid(p->portpath);
+        rv = i2c_pololu_is_device_valid(p->portpath);
         if(rv != 0)
         {
             fprintf(OUTPUT_ERROR, "Unsupported or invalid Pololu adapter at %s (error %d). Exiting...\n", p->portpath, rv);
@@ -283,6 +294,8 @@ int main(int argc, char** argv)
     #endif
 #endif // USE_PTHREADS
     // Free any allocated config strings before exit
+    if(p->pipeInFd >= 0) close(p->pipeInFd);
+    if(p->pipeOutFd >= 0) close(p->pipeOutFd);
     free_config_strings(p);
     printf("Program terminated.\n");
     return 0;
@@ -546,12 +559,11 @@ char *formatOutput(pList *p)
 #if(CONSOLE_OUTPUT)
     fprintf(OUTPUT_PRINT, " %s", outBuf);
     fflush(OUTPUT_PRINT);
-// #elif(USE_PIPES)
-//     write(PIPEOUT, outBuf);
-#else    
-    fprintf(OUTPUT_PRINT, "  %s", outBuf);
-    fflush(OUTPUT_PRINT);
 #endif
+    if(p->usePipes && p->pipeOutFd >= 0)
+    {
+        write(p->pipeOutFd, outBuf, strlen(outBuf));
+    }
     return outBuf;
 }
 
@@ -630,44 +642,70 @@ long currentTimeMillis()
 //------------------------------------------
 // int setupPipes(pList *p)
 //------------------------------------------
-//int setupPipes(pList *p)
-//{
-//     //-----------------------------------------
-//     //  Setup the I/O pipes
-//     //-----------------------------------------
-//     int  fdPipeIn;
-//     int  fdPipeOut;
-//
-//     if(p->usePipes == TRUE)
-//     {
-//         // Notice that fdPipeOut and fdPipeIn are intentionally reversed.
-//         if(!(fdPipeOut = open(p->pipeInPath, O_WRONLY | O_CREAT)))
-//         {
-//             perror("    [CHILD] Open PIPE Out failed: ");
-//             fprintf(OUTPUT_PRINT, "%s", p->pipeInPath);
-//             exit(1);
-//         }
-//         else
-//         {
-//             fprintf(OUTPUT_PRINT, "    [CHILD] Open PIPE Out OK.\n");
-//             fflush(OUTPUT_PRINT);
-//             PIPEOUT = fdPipeOut;
-//         }
-//
-//         if(!(fdPipeIn = open(p->pipeOutPath, O_RDONLY | O_CREAT)))
-//         {
-//             perror("    [CHILD] Open PIPE In failed: ");
-//             fprintf(OUTPUT_PRINT, "%s", p->pipeInPath);
-//             exit(1);
-//         }
-//         else
-//         {
-//             fprintf(OUTPUT_PRINT, "    [CHILD] Open PIPE In OK.\n");
-//             fflush(OUTPUT_PRINT);
-//             PIPEIN = fdPipeIn;
-//         }
-//     }
-//}
+int setupPipes(pList *p)
+{
+     //-----------------------------------------
+     //  Setup the I/O pipes
+     //-----------------------------------------
+     if(p->usePipes == TRUE)
+     {
+         if (p->pipeInPath == NULL || p->pipeOutPath == NULL) {
+             fprintf(OUTPUT_ERROR, "Error: Named pipe paths not specified.\n");
+             return -1;
+         }
+
+         // Create pipes if they don't exist
+         if (mkfifo(p->pipeInPath, 0666) < 0) {
+             if (errno != EEXIST) {
+                 perror("mkfifo Pipe In failed");
+             }
+         } else {
+             chmod(p->pipeInPath, 0666); // Ensure permissions if umask affected it
+         }
+
+         if (mkfifo(p->pipeOutPath, 0666) < 0) {
+             if (errno != EEXIST) {
+                 perror("mkfifo Pipe Out failed");
+             }
+         } else {
+             chmod(p->pipeOutPath, 0666); // Ensure permissions if umask affected it
+         }
+
+         // Open for writing to the dashboard (out)
+         // Note: Opening a FIFO for WRONLY will block until a reader opens it.
+         // Using O_NONBLOCK to avoid blocking here if the dashboard isn't running yet,
+         // but the user might want it to block. 
+         // Given the context "likely to be a local monitor/dashboard program", 
+         // it's probably better if we don't block the whole program.
+         p->pipeOutFd = open(p->pipeOutPath, O_WRONLY | O_NONBLOCK);
+         if(p->pipeOutFd < 0)
+         {
+             if (errno != ENXIO) { // ENXIO means no reader
+                 perror("Open PIPE Out failed");
+                 fprintf(OUTPUT_ERROR, "Path: %s\n", p->pipeOutPath);
+             }
+         }
+         else
+         {
+             fprintf(OUTPUT_PRINT, "Open PIPE Out OK: %s\n", p->pipeOutPath);
+             fflush(OUTPUT_PRINT);
+         }
+
+         // Open for reading from the dashboard (in)
+         p->pipeInFd = open(p->pipeInPath, O_RDONLY | O_NONBLOCK);
+         if(p->pipeInFd < 0)
+         {
+             perror("Open PIPE In failed");
+             fprintf(OUTPUT_ERROR, "Path: %s\n", p->pipeInPath);
+         }
+         else
+         {
+             fprintf(OUTPUT_PRINT, "Open PIPE In OK: %s\n", p->pipeInPath);
+             fflush(OUTPUT_PRINT);
+         }
+     }
+     return 0;
+}
 
 //------------------------------------------
 // int setProgramDefaults(pList *p)
@@ -710,8 +748,10 @@ void setProgramDefaults(pList *p)
     p->mag_translate_z      = 0;
     p->magAddr              = RM3100_I2C_ADDRESS;
     p->usePipes             = FALSE;
-    p->pipeInPath           = NULL;
-    p->pipeOutPath          = NULL;
+    p->pipeInPath           = strdup(fifoCtrl);
+    p->pipeOutPath          = strdup(fifoData);
+    p->pipeInFd             = -1;
+    p->pipeOutFd            = -1;
     p->readBackCCRegs       = FALSE;
     p->showSettingsOnly     = FALSE;
 }

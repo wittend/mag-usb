@@ -76,11 +76,22 @@ int getCommandLine(int argc, char** argv, pList *p)
 {
     int c;
 
-    while((c = getopt(argc, argv, "h?B:c:CD:g:PMSQTVO:")) != -1)
+    while((c = getopt(argc, argv, "h?B:c:CD:g:PMSQTVO:ui:o:")) != -1)
     {
         //int this_option_optind = optind ? optind : 1;
         switch(c)
         {
+            case 'u':
+                p->usePipes = TRUE;
+                break;
+            case 'i':
+                if(p->pipeInPath) free(p->pipeInPath);
+                p->pipeInPath = strdup(optarg);
+                break;
+            case 'o':
+                if(p->pipeOutPath) free(p->pipeOutPath);
+                p->pipeOutPath = strdup(optarg);
+                break;
             case 'B':
                 p->doBistMask = atoi(optarg);
                 break;
@@ -142,6 +153,9 @@ int getCommandLine(int argc, char** argv, pList *p)
                 fprintf(OUTPUT_PRINT, "   -P                     :  Show all current settings and exit.\n");
                 fprintf(OUTPUT_PRINT, "   -S                     :  List devices seen on i2c bus and exit.\n");
                 fprintf(OUTPUT_PRINT, "   -T                     :  Verify Temperature sensor presence and version and exit.\n");
+                fprintf(OUTPUT_PRINT, "   -u                     :  Use named pipes for output.\n");
+                fprintf(OUTPUT_PRINT, "   -i <path>              :  Path for input named pipe.\n");
+                fprintf(OUTPUT_PRINT, "   -o <path>              :  Path for output named pipe.\n");
                 fprintf(OUTPUT_PRINT, "   -V                     :  Display software version and exit.\n");
                 fprintf(OUTPUT_PRINT, "   -h or -?               :  Display this help.\n\n");
                 exit(0);

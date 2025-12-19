@@ -18,6 +18,7 @@ Key points:
 - Reads RM3100 magnetometer X/Y/Z and prints JSON lines including an RFC‑2822 timestamp.
 - Configurable cycle counts, gains, and sampling parameters.
 - Optional orientation translations in 90° increments about X/Y/Z, set in config.toml.
+- Support for concurrent output to `stdout` and named pipes for IPC (local monitoring/dashboards).
 - Convenience flag to print current settings (`-P`).
 - Optional diagnostics: verify devices, scan I²C bus, etc.
 
