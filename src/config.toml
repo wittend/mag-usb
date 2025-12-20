@@ -33,7 +33,7 @@ pipe_out_path = "/run/mag-usb/magdata.fifo"
 # Use external USB to I2C device.
 use_I2C_converter = true
 # Path to the I2C device.
-portpath = "/dev/ttyACM2"
+portpath = "/dev/ttyACM1"
 # I2C bus number (for non-Pololu setups).
 bus_number = 1
 # Scan I2C bus on startup.
