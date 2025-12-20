@@ -353,7 +353,7 @@ int load_config(const char *config_path, pList *p)
         if(errno == ENOENT)
         {
             // File doesn't exist - not an error, will use defaults
-            fprintf(stderr, "File doesn't exist:  '%s'. Will use defaults.", config_path);
+            fprintf(stderr, "File doesn't exist:  '%s'. Will use defaults.\n", config_path);
             return -1;
         }
         else
@@ -361,6 +361,10 @@ int load_config(const char *config_path, pList *p)
             fprintf(stderr, "Error opening config file '%s': %s\n", config_path, strerror(errno));
             return -1;
         }
+    }
+    else
+    {
+        fprintf(stderr, "Using configuration file: '%s'.\n", config_path);
     }
 
     char line[MAX_LINE_LENGTH];
