@@ -97,6 +97,7 @@ Run the test executable directly:
 - Orientation and axes: docs/Orientation-and-Axes.md
 - Data format: docs/Data-Format.md
 - Hardware Setup (wiring, udev rules): docs/Hardware-Setup.md
+- Requirements: docs/Requirements.md
 - Troubleshooting: docs/Troubleshooting.md
 - Development guide: docs/Development.md
 - Contribution guidelines: CONTRIBUTING.md
@@ -129,5 +130,4 @@ Parameters:
 ## Pololu adapter links
 - https://www.pololu.com/product/5397
 - https://www.pololu.com/product/5396
-
 

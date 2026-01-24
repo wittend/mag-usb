@@ -4,6 +4,8 @@ Welcome to the mag-usb documentation site. This project provides a USB-connected
 
 Use the navigation to the left or the links below to explore the documentation.
 
+If you are building a fresh implementation, start with the Requirements page.
+
 ## Contents
 
 ```{toctree}
@@ -15,6 +17,7 @@ Hardware-Setup.md
 Configuration.md
 Data-Format.md
 Orientation-and-Axes.md
+Requirements.md
 Troubleshooting.md
 Limitations.md
 Development.md
