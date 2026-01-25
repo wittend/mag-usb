@@ -76,6 +76,12 @@ Rules:
 
 Note: When `use_pipes=true`, the program will create the pipes if they do not exist with `0666` permissions.
 
+### [websocket]
+- `enable` (bool) — Enable the WebSocket output server. Default: false.
+- `bind_address` (string) — Server bind address. Default: `0.0.0.0`.
+- `port` (int) — Server port. Default: 8765.
+Note: This section is active only when built with `-DENABLE_WEBSOCKET=ON`.
+
 ## Example
 ```
 [node_information]
@@ -121,4 +127,9 @@ write_logs = false
 log_output_path = "./logs"
 create_log_path_if_empty = true
 use_pipes = false
+
+[websocket]
+enable = false
+bind_address = "0.0.0.0"
+port = 8765
 ```

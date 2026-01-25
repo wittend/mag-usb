@@ -340,6 +340,30 @@ static void process_config_value(pList *p, const char *section, const char *key,
             p->pipeOutPath = strdup(value);
         }
     }
+    // [websocket] section
+    else if(strcmp(section, "websocket") == 0)
+    {
+        if(strcmp(key, "enable") == 0)
+        {
+            p->useWebSocket = parse_bool(value);
+        }
+        else if(strcmp(key, "bind_address") == 0)
+        {
+            if(p->webSocketBindAddr)
+            {
+                free(p->webSocketBindAddr);
+            }
+            p->webSocketBindAddr = strdup(value);
+        }
+        else if(strcmp(key, "port") == 0)
+        {
+            int port = parse_int(value);
+            if(port > 0 && port <= 65535)
+            {
+                p->webSocketPort = port;
+            }
+        }
+    }
 }
 
 //---------------------------------------------------------------
@@ -494,5 +518,10 @@ void free_config_strings(pList *p)
     {
         free(p->pipeOutPath);
         p->pipeOutPath = NULL;
+    }
+    if(p->webSocketBindAddr)
+    {
+        free(p->webSocketBindAddr);
+        p->webSocketBindAddr = NULL;
     }
 }

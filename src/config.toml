@@ -29,6 +29,13 @@ use_pipes = false
 pipe_in_path = "/run/mag-usb/magctl.fifo"
 pipe_out_path = "/run/mag-usb/magdata.fifo"
 
+[websocket]
+# Enable WebSocket output server.
+enable = false
+# Bind address and port for WebSocket clients.
+bind_address = "0.0.0.0"
+port = 8765
+
 [i2c]
 # Use external USB to I2C device.
 use_I2C_converter = true

@@ -18,6 +18,9 @@
 #include "config.h"
 #include "sensor_tests.h"
 #include "i2c-pololu.h"
+#ifdef USE_WEBSOCKET
+#include "ws_bridge.h"
+#endif
 
 #include <pthread.h>
 #include <signal.h>
@@ -133,6 +136,26 @@ int main(int argc, char** argv)
     {
         setupPipes(p);
     }
+
+#ifdef USE_WEBSOCKET
+    if(p->useWebSocket)
+    {
+        if(!ws_server_init(p->webSocketBindAddr, (uint16_t)p->webSocketPort))
+        {
+            fprintf(OUTPUT_ERROR, "WebSocket init failed: %s\n", ws_server_last_error());
+            if(p->pipeInFd >= 0)
+            {
+                close(p->pipeInFd);
+            }
+            if(p->pipeOutFd >= 0)
+            {
+                close(p->pipeOutFd);
+            }
+            free_config_strings(p);
+            exit(1);
+        }
+    }
+#endif
 
     if(i2c_init(p))
     {
@@ -304,6 +327,9 @@ int main(int argc, char** argv)
     // Free any allocated config strings before exit
     if(p->pipeInFd >= 0) close(p->pipeInFd);
     if(p->pipeOutFd >= 0) close(p->pipeOutFd);
+#ifdef USE_WEBSOCKET
+    ws_server_shutdown();
+#endif
     free_config_strings(p);
     printf("Program terminated.\n");
     return 0;
@@ -340,6 +366,12 @@ void* print_data(void* arg)
     while (!shutdown_requested)
     {
         pList * p = (pList *) arg;
+#ifdef USE_WEBSOCKET
+        if(p->useWebSocket)
+        {
+            ws_server_poll();
+        }
+#endif
         // Wait for 1000 ms or until shutdown is requested
         // struct timespec ts;
         // clock_gettime(CLOCK_REALTIME, &ts);
@@ -575,6 +607,12 @@ char *formatOutput(pList *p)
     {
         write(p->pipeOutFd, outBuf, strlen(outBuf));
     }
+#ifdef USE_WEBSOCKET
+    if(p->useWebSocket)
+    {
+        ws_server_broadcast(outBuf, strlen(outBuf));
+    }
+#endif
     return outBuf;
 }
 
@@ -759,8 +797,11 @@ void setProgramDefaults(pList *p)
     p->mag_translate_z      = 0;
     p->magAddr              = RM3100_I2C_ADDRESS;
     p->usePipes             = FALSE;
+    p->useWebSocket         = FALSE;
+    p->webSocketPort        = 8765;
     p->pipeInPath           = strdup(fifoCtrl);
     p->pipeOutPath          = strdup(fifoData);
+    p->webSocketBindAddr    = strdup("0.0.0.0");
     p->pipeInFd             = -1;
     p->pipeOutFd            = -1;
     p->readBackCCRegs       = FALSE;

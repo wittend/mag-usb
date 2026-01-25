@@ -138,6 +138,8 @@ typedef struct tag_pList
     int  usePipes;
     int  write_logs;
     int  create_log_path_if_empty;
+    int  useWebSocket;
+    int  webSocketPort;
 
     char *maintainer;
     char *maintainer_email;
@@ -145,6 +147,7 @@ typedef struct tag_pList
     char *pipeInPath;
     char *pipeOutPath;
     char *log_output_path;
+    char *webSocketBindAddr;
     char *latitude;
     char *longitude;
     char *elevation;
@@ -173,4 +176,3 @@ struct tm *getUTC();
 int setupPipes(pList *p);
 
 #endif //SWX3100MAIN_h
-

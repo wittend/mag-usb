@@ -30,6 +30,12 @@ cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build --target mag-usb
 ```
 
+Optional WebSocket support (vendored header-only library):
+```
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DENABLE_WEBSOCKET=ON
+cmake --build build --target mag-usb
+```
+
 CLion IDE (convenient if you happen to have it):
 - Open the project; CLion generates Debug and Release profiles under cmake-build-debug and cmake-build-release.
 - Build the target `mag-usb` from the chosen profile.
@@ -130,4 +136,3 @@ Parameters:
 ## Pololu adapter links
 - https://www.pololu.com/product/5397
 - https://www.pololu.com/product/5396
-

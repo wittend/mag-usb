@@ -50,6 +50,9 @@ void showSettings(pList *p)
     fprintf(OUTPUT_PRINT, "   Use named pipes:                      %s\n",  p->usePipes ? "TRUE" : "FALSE");
     fprintf(OUTPUT_PRINT, "   Pipe IN path:                         %s\n",  p->pipeInPath ? p->pipeInPath : "(null)");
     fprintf(OUTPUT_PRINT, "   Pipe OUT path:                        %s\n",  p->pipeOutPath ? p->pipeOutPath : "(null)");
+    fprintf(OUTPUT_PRINT, "   Use WebSocket output:                 %s\n",  p->useWebSocket ? "TRUE" : "FALSE");
+    fprintf(OUTPUT_PRINT, "   WebSocket bind address:               %s\n",  p->webSocketBindAddr ? p->webSocketBindAddr : "(null)");
+    fprintf(OUTPUT_PRINT, "   WebSocket port:                       %d\n",  p->webSocketPort);
 
     // Magnetometer
     fprintf(OUTPUT_PRINT, "   Magnetometer I2C address:             0x%02X (hex)\n",  (unsigned)(p->magAddr & 0xFF));
@@ -76,11 +79,31 @@ int getCommandLine(int argc, char** argv, pList *p)
 {
     int c;
 
-    while((c = getopt(argc, argv, "h?B:c:CD:g:PMSQTVO:ui:o:")) != -1)
+    while((c = getopt(argc, argv, "h?B:c:CD:g:PMSQTVO:ui:o:Ww:a:")) != -1)
     {
         //int this_option_optind = optind ? optind : 1;
         switch(c)
         {
+            case 'W':
+                p->useWebSocket = TRUE;
+                break;
+            case 'w':
+            {
+                int port = (int) strtol(optarg, NULL, 10);
+                if(port <= 0 || port > 65535)
+                {
+                    fprintf(OUTPUT_ERROR, "\n ERROR Invalid: WebSocket port out of range.\n\n");
+                    exit(1);
+                }
+                p->webSocketPort = port;
+                p->useWebSocket = TRUE;
+                break;
+            }
+            case 'a':
+                if(p->webSocketBindAddr) free(p->webSocketBindAddr);
+                p->webSocketBindAddr = strdup(optarg);
+                p->useWebSocket = TRUE;
+                break;
             case 'u':
                 p->usePipes = TRUE;
                 break;
@@ -156,6 +179,9 @@ int getCommandLine(int argc, char** argv, pList *p)
                 fprintf(OUTPUT_PRINT, "   -u                     :  Use named pipes for output.\n");
                 fprintf(OUTPUT_PRINT, "   -i <path>              :  Path for input named pipe.\n");
                 fprintf(OUTPUT_PRINT, "   -o <path>              :  Path for output named pipe.\n");
+                fprintf(OUTPUT_PRINT, "   -W                     :  Enable WebSocket output.\n");
+                fprintf(OUTPUT_PRINT, "   -w <port>              :  WebSocket server port.\n");
+                fprintf(OUTPUT_PRINT, "   -a <addr>              :  WebSocket bind address.\n");
                 fprintf(OUTPUT_PRINT, "   -V                     :  Display software version and exit.\n");
                 fprintf(OUTPUT_PRINT, "   -h or -?               :  Display this help.\n\n");
                 exit(0);
@@ -176,4 +202,3 @@ int getCommandLine(int argc, char** argv, pList *p)
     }
     return 0;
 }
-

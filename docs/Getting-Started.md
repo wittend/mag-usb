@@ -52,6 +52,24 @@ To enable named pipe output for local monitoring:
 ```
 You can specify custom pipe paths with `-i` and `-o`. Defaults are in `/var/run/`.
 
+## WebSocket Output (Optional)
+Enable WebSocket support at build time:
+```
+cmake -S . -B build -DENABLE_WEBSOCKET=ON
+cmake --build build --target mag-usb
+```
+Then enable it at runtime:
+```
+./build/mag-usb -W -w 8765 -a 0.0.0.0
+```
+Or set the `[websocket]` section in `config.toml`.
+
+For manual testing, build and run the `ws-client` tool:
+```
+cmake --build build --target ws-client
+./build/ws-client 127.0.0.1 8765 /
+```
+
 Run with help:
 ```
 ./mag-usb -h

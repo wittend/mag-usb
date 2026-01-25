@@ -104,7 +104,13 @@ Provide the following options:
   - Write JSON lines to log files in `log_output_path`.
   - Create directory if `create_log_path_if_empty` is true.
 
-### 4.8 Configuration keys
+### 4.8 WebSocket output (optional)
+- Provide a build flag `ENABLE_WEBSOCKET` to include WebSocket server support.
+- When enabled and configured, broadcast each JSON output line to all connected clients.
+- Allow runtime configuration of bind address and port.
+- Accept multiple concurrent clients; send text frames.
+
+### 4.9 Configuration keys
 TOML sections and keys to support:
 
 [node_information]
@@ -147,6 +153,11 @@ TOML sections and keys to support:
 - `use_pipes` (bool)
 - `pipe_in_path` (string)
 - `pipe_out_path` (string)
+
+[websocket]
+- `enable` (bool)
+- `bind_address` (string)
+- `port` (int)
 
 ## 5. Non-functional requirements
 - Language: C11; avoid compiler-specific extensions without guards.
