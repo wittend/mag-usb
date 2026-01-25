@@ -63,6 +63,16 @@ struct Handler {
         (void)payload;
         (void)pl_len;
     }
+
+    void onWSSegment(Connection &conn, uint8_t opcode, const uint8_t *payload, uint32_t pl_len,
+                     uint32_t pl_start_idx, bool fin) {
+        (void)conn;
+        (void)opcode;
+        (void)payload;
+        (void)pl_len;
+        (void)pl_start_idx;
+        (void)fin;
+    }
 };
 
 Server g_server;

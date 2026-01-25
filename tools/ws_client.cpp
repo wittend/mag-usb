@@ -14,18 +14,19 @@ namespace {
 constexpr uint32_t kRecvBufSize = 4096;
 
 struct ClientHandler;
+using ClientConnection = websocket::WSConnection<ClientHandler, char, false, kRecvBufSize, true>;
 using Client = websocket::WSClient<ClientHandler, char, false, kRecvBufSize>;
 
 struct ClientHandler {
     bool running = true;
 
-    void onWSClose(Client &conn, uint16_t status_code, const char *reason) {
+    void onWSClose(ClientConnection &conn, uint16_t status_code, const char *reason) {
         (void)conn;
         fprintf(stderr, "WebSocket closed: %u %s\n", status_code, reason ? reason : "");
         running = false;
     }
 
-    void onWSMsg(Client &conn, uint8_t opcode, const uint8_t *payload, uint32_t pl_len) {
+    void onWSMsg(ClientConnection &conn, uint8_t opcode, const uint8_t *payload, uint32_t pl_len) {
         (void)conn;
         (void)opcode;
         fwrite(payload, 1, pl_len, stdout);
@@ -33,6 +34,16 @@ struct ClientHandler {
             fputc('\n', stdout);
         }
         fflush(stdout);
+    }
+
+    void onWSSegment(ClientConnection &conn, uint8_t opcode, const uint8_t *payload, uint32_t pl_len,
+                     uint32_t pl_start_idx, bool fin) {
+        (void)conn;
+        (void)opcode;
+        (void)payload;
+        (void)pl_len;
+        (void)pl_start_idx;
+        (void)fin;
     }
 };
 
