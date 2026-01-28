@@ -1,0 +1,83 @@
+# mag-usb Configuration File
+# Lines starting with # are comments.
+# Inline comments (Data followed by hashmark) not allowed.
+[node_information]
+maintainer = "Dave Witten, KD0EAG"
+maintainer_email = "wittend@wwrinc.com"
+
+[node_location]
+# Tools:
+#   lat/long: Google Maps or GNSS device.
+#   Altitude: Optional, or Use GNSS device, or find yourself in Google Earth and look at the status bar at the bottom.
+#   Grid square conversion: https://www.giangrandi.org/electronics/radio/qthloccalc.shtml or similar.
+latitude = "38.92263"
+longitude = "-92.29831"
+elevation = "230 M"
+grid_square = "EM38uw"
+
+[output]
+# Write logfiles to log_output_path..
+write_logs = false
+# create logfiles in this location.
+log_output_path = "./logs"
+# create this location if it does not esist.
+create_log_path_if_empty = true
+
+# Use named pipes for IPC.
+use_pipes = false
+# Pipe paths (if use_pipes is true).
+pipe_in_path = "/run/mag-usb/magctl.fifo"
+pipe_out_path = "/run/mag-usb/magdata.fifo"
+
+[websocket]
+# Enable WebSocket output server.
+enable = false
+# Bind address and port for WebSocket clients.
+bind_address = "0.0.0.0"
+port = 8765
+
+[i2c]
+# Use external USB to I2C device.
+use_I2C_converter = true
+# Path to the I2C device.
+portpath = "/dev/ttyACM1"
+# I2C bus number (for non-Pololu setups).
+bus_number = 1
+# Scan I2C bus on startup.
+scan_bus = false
+
+[magnetometer]
+# Magnetometer I2C address (hex format supported).
+address = 0x23
+# Cycle Count registers (200 or 400 typically).
+cc_x = 400
+cc_y = 400
+cc_z = 400
+# Gain values.
+gain_x = 150.0
+gain_y = 150.0
+gain_z = 150.0
+# TMRC Rate register value (hex format).
+tmrc_rate = 0x96
+# Number of samples register value.
+nos_reg_value = 60
+# DRDY delay in microseconds.
+drdy_delay = 10
+# Sampling mode: "POLL" or "CMM".
+sampling_mode = "POLL"
+# CMM sample rate (Hz)
+cmm_sample_rate = 400
+# Read back cycle count registers after setting.
+readback_cc_regs = false
+
+# Magnetometer Orientation in degrees relative to default (See hardware setup docs).
+# Plus and minus 180 are equivalent. Plus and minus 90 are different!
+[mag_orientation]
+# Allowed values: -180, -90, 0, 90, 180
+mag_translate_x = 0
+mag_translate_y = 0
+mag_translate_z = 0
+
+[temperature]
+# Remote temperature sensor I2C address
+remote_temp_address = 0x1F
