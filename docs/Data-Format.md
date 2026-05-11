@@ -35,5 +35,5 @@ If configured, 90° increment rotations are applied to `(x,y,z)` before printing
 ## Logging and pipes
 - If you enable logging or named pipes in the configuration, the same JSON lines are written to files or pipes. 
 - Named pipes (FIFOs) allow real-time IPC with local monitor/dashboard programs.
-- Default pipe paths are `/var/run/mag-usb-ctl.fifo` (input) and `/var/run/magd-usb-data.fifo` (output).
+- Default pipe paths are `/run/mag-usb/magctl.fifo` (input) and `/run/mag-usb/magdata.fifo` (output).
 - See `docs/Configuration.md` (output section) for details.
