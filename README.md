@@ -77,7 +77,7 @@ Allowed values: `-180, -90, 0, 90, 180` (±180 are equivalent). Invalid/missing 
 ## Output format
 Each line is JSON with at least:
 ```
-{ "ts": "DD Mon YYYY HH:MM:SS", "x": NNN.NNN, "y": NNN.NNN, "z": NNN.NNN }
+{ "ts": "DD Mon YYYY HH:MM:SS", "rt": NN.NNN, "x": NNN.NNN, "y": NNN.NNN, "z": NNN.NNN }
 ```
 - Units: nanoTesla (nT)
 - Orientation translations are applied before printing.
