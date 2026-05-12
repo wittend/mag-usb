@@ -33,8 +33,10 @@
 char Version[32];
 int volatile killflag;
 static char outBuf[256];
-// char portpath[PATH_MAX] = "/dev/ttyMAG0";          // default path for pololu i2c emulator.
-char portpath[PATH_MAX] = "/dev/ttyACM0";          // default path for pololu i2c emulator.
+// Default device path matches install/99-PololuI2C.rules, which symlinks
+// any Pololu USB-to-I2C adapter (PID 0x2502 or 0x2503) to /dev/ttyMAG0.
+// Use -O /dev/ttyACMn to override when the udev rule is not installed.
+char portpath[PATH_MAX] = "/dev/ttyMAG0";
 extern int CC_400;
 extern int GAIN_150;
 extern int RM3100_I2C_ADDRESS;

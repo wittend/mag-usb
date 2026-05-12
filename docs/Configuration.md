@@ -31,7 +31,7 @@ Defaults: empty strings.
 
 ### [i2c]
 - `use_I2C_converter` (bool) — Use Pololu USB‑to‑I²C adapter. Default: true (when built with USE_POLOLU=TRUE).
-- `portpath` (string) — Adapter device path. Default: `/dev/ttyACM0`.
+- `portpath` (string) — Adapter device path. Default: `/dev/ttyMAG0` (created by `install/99-PololuI2C.rules`; falls through to a bare `/dev/ttyACM*` if the udev rule is not installed and `-O` is not supplied).
 - `bus_number` (int) — Linux I²C bus number for non‑Pololu setups. Default: 1.
 - `scan_bus` (bool) — Probe for devices on startup. Default: false.
 
@@ -124,7 +124,7 @@ port = 8765
 # Use external USB to I2C device.
 use_I2C_converter = true
 # Path to the I2C device.
-portpath = "/dev/ttyACM0"
+portpath = "/dev/ttyMAG0"
 # I2C bus number (for non-Pololu setups).
 bus_number = 1
 # Scan I2C bus on startup.

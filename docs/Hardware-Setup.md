@@ -32,6 +32,7 @@ sudo udevadm trigger
 ## Verifying connectivity
 - Use mag-usb's quick check flag:
 ```
-./mag-usb -P /dev/ttyACM0 -Q
+./mag-usb -Q                      # uses default /dev/ttyMAG0
+./mag-usb -O /dev/ttyACM0 -Q      # override if udev rule not installed
 ```
 - If you see permission errors, check your udev setup and group membership (dialout or equivalent on your distro), or run temporarily with sudo (not recommended long-term).
