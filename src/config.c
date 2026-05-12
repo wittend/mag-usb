@@ -333,10 +333,22 @@ static void process_config_value(pList *p, const char *section, const char *key,
         }
         else if(strcmp(key, "pipe_in_path") == 0)
         {
+            // setProgramDefaults() already strdup'd a default into
+            // pipeInPath; replacing the pointer here without free()ing
+            // the previous allocation leaks the default string.
+            // Same shape as the [websocket].bind_address branch below.
+            if(p->pipeInPath)
+            {
+                free(p->pipeInPath);
+            }
             p->pipeInPath = strdup(value);
         }
         else if(strcmp(key, "pipe_out_path") == 0)
         {
+            if(p->pipeOutPath)
+            {
+                free(p->pipeOutPath);
+            }
             p->pipeOutPath = strdup(value);
         }
     }
