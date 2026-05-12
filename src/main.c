@@ -41,7 +41,7 @@ extern int RM3100_I2C_ADDRESS;
 
 #ifdef USE_PIPES
      char fifoCtrl[] = "/run/mag-usb/magctl.fifo";
-     char fifoData[] = "/run/mag-usb/magata.fifo";
+     char fifoData[] = "/run/mag-usb/magdata.fifo";
      char fifoHome[] = "/run/mag-usb";
      // int PIPEIN  = -1;
      // int PIPEOUT = -1;
