@@ -61,7 +61,7 @@ gain_z = 150.0
 tmrc_rate = 0x96
 # Number of samples register value.
 nos_reg_value = 60
-# DRDY delay in microseconds.
+# DRDY delay in milliseconds (passed to usleep as ms * 1000).
 drdy_delay = 10
 # Sampling mode: "POLL" or "CMM".
 sampling_mode = "POLL"

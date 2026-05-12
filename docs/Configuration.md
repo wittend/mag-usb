@@ -44,7 +44,7 @@ Notes:
 - `gain_x`, `gain_y`, `gain_z` (double) — Gains. Default: 150.0.
 - `tmrc_rate` (int, decimal or hex) — TMRC register value. Default: 0x96.
 - `nos_reg_value` (int) — Number‑of‑samples register value. Default: 60.
-- `drdy_delay` (int) — DRDY delay in microseconds. Default: 10.
+- `drdy_delay` (int) — Sleep between DRDY-poll iterations in **milliseconds**. Default: 10. (The implementation passes `drdy_delay * 1000` to `usleep()`, which takes microseconds; the configured value is therefore an `ms` count, not a `µs` count.)
 - `sampling_mode` (string) — `"POLL"` or `"CMM"`. Default: `"POLL"`.
 - `cmm_sample_rate` (int) — CMM sample rate (Hz). Default: 400.
 - `readback_cc_regs` (bool) — Read back CC registers after setting. Default: false.
@@ -143,7 +143,7 @@ gain_x = 150.0
 tmrc_rate = 0x96
 # Number of samples register value.
 nos_reg_value = 60
-# DRDY delay in microseconds.
+# DRDY delay in milliseconds (passed to usleep as ms * 1000).
 drdy_delay = 10
 # Sampling mode: "POLL" or "CMM".
 sampling_mode = "POLL"
