@@ -257,6 +257,28 @@ int main(int argc, char** argv)
 #if(USE_PTHREADS)
     pthread_t sensor_thread, print_thread, signal_thread;
     fprintf(OUTPUT_PRINT, "\n");
+
+    // Block SIGHUP/SIGABRT/SIGINT in the calling thread *before* any
+    // pthread_create.  Newly created threads inherit this mask, so
+    // these signals are blocked in every thread except the dedicated
+    // signal_handler thread that calls sigwait().  Without this, the
+    // kernel delivers an arriving signal to whichever thread does not
+    // have it masked -- typically the print or sensor thread -- where
+    // there is no handler, so the process terminates instead of going
+    // through the graceful shutdown_requested path.
+    {
+        sigset_t blocked;
+        sigemptyset(&blocked);
+        sigaddset(&blocked, SIGHUP);
+        sigaddset(&blocked, SIGABRT);
+        sigaddset(&blocked, SIGINT);
+        if (pthread_sigmask(SIG_BLOCK, &blocked, NULL) != 0)
+        {
+            perror("pthread_sigmask(SIG_BLOCK)");
+            exit(1);
+        }
+    }
+
     // Create threads
     if (pthread_create(&sensor_thread, NULL, read_sensors, (void *) p) != 0)
     {
