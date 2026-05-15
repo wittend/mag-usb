@@ -1,5 +1,10 @@
 # CHANGES.txt
 ===========================================================
+# Date: 2026-05-15      # new version to use with pi-eliminator (Pololu Hdw.)
+#--------------------------------------------------------------------------
+Add Code Review document to RTD sources - try to make it readable.
+
+===========================================================
 # Date: 2026-05-14      # new version to use with pi-eliminator (Pololu Hdw.)
 #--------------------------------------------------------------------------
 Merge Pull Request from Mike Hauan and Claude (Thanks Mike!) to address occasionally dropped sample and other issues and potential issues found in the code.
