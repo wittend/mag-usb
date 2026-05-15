@@ -234,14 +234,24 @@ int i2c_pololu_write_to( i2c_pololu_adapter *adapter, uint8_t address, uint8_t r
     {
         return -1;
     }
-    // size is uint8_t, so it cannot exceed 255; no range check needed here.
 
-    uint8_t cmd[258];
+    // Framing is 4 header bytes (CMD_I2C_WRITE, address, length,
+    // reg) followed by up to `size` data bytes.  `size` is uint8_t,
+    // so worst-case 4 + 255 = 259 bytes.  A 258-byte cmd[] was a
+    // 1-byte heap-corruption hazard when size==255: memcpy(&cmd[4],
+    // data, 255) writes cmd[4..258] inclusive, one past the end.
+    // In practice the RM3100 register operations never request more
+    // than ~10 bytes so the hazard was unreachable, but the buffer
+    // size now matches the protocol upper bound.
+    uint8_t cmd[259];
     cmd[0] = CMD_I2C_WRITE;
     cmd[1] = address;
     cmd[2] = 1 + size;  // Length includes register byte + data
     cmd[3] = reg;
-    memcpy(&cmd[4], data, size);
+    if(size > 0 && data != NULL)
+    {
+        memcpy(&cmd[4], data, size);
+    }
     if(write(adapter->fd, cmd, size + 4) != size + 4)
     {
         perror("Failed to write to adapter");

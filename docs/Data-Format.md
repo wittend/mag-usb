@@ -15,6 +15,9 @@ Example:
 { "ts":"26 Oct 2025 14:20:00", "rt":23.125, "x":12345.678, "y":-234.500, "z":987.001 }
 ```
 
+![Data Graph Example](../assets/data-graph.png)
+*Fig. 4: Visualization of recorded magnetic field data.*
+
 ## Units and scaling
 - Raw RM3100 counts are converted using configured gains and `NOS` (number‑of‑samples) register value.
 - Outputs are provided in nanoTesla (nT). Internally the computation converts microTesla to nanoTesla by multiplying by 1000.

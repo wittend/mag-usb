@@ -4,9 +4,12 @@ This guide helps you connect the Pololu USB-to-I²C adapter to the RM3100-based 
 
 ## Hardware
 - Pololu Isolated USB-to-I²C Adapter:
-  - 5396 (no power isolation) or 5397 (with isolated power output)
+  - 5397 (with isolated power output)
 - RM3100 magnetometer board (e.g., TAPR/TangerineSDR magnetometer)
 - Appropriate wiring for SDA, SCL, GND, and optional +5V
+
+![Pololu Adapter and Sensor Setup](../assets/1000002538.jpg)
+*Fig. 1: Pololu USB-to-I²C adapter connected to the RM3100 magnetometer sensor.*
 
 ## Wiring
 - Connect:
@@ -14,6 +17,12 @@ This guide helps you connect the Pololu USB-to-I²C adapter to the RM3100-based 
   - SCL ↔ SCL
   - GND ↔ GND
   - +5V (optional, only if your board requires power from adapter 5397)
+
+![Sensor Wiring Detail](../assets/1000002534.jpg)
+*Fig. 2: Close-up of the sensor wiring and connector pinout.*
+
+![Pololu Adapter Detail](../assets/1000002529.jpg)
+*Fig. 2a: Detail of the Pololu adapter connections.*
 - Confirm pull-ups are present on SDA/SCL (many boards include them).
 
 ## Linux device path
@@ -32,6 +41,7 @@ sudo udevadm trigger
 ## Verifying connectivity
 - Use mag-usb's quick check flag:
 ```
-./mag-usb -P /dev/ttyACM0 -Q
+./mag-usb -Q                      # uses default /dev/ttyMAG0
+./mag-usb -O /dev/ttyACM0 -Q      # override if udev rule not installed
 ```
 - If you see permission errors, check your udev setup and group membership (dialout or equivalent on your distro), or run temporarily with sudo (not recommended long-term).

@@ -135,8 +135,14 @@ int i2c_open(pList *p)
     }
     else
     {
-        char errstr[1024] = "";
-        sprintf(errstr, "Device %s does not exist or is in use. Exiting...", p->portpath);
+        // p->portpath comes from CLI -O / config.toml and can be up
+        // to PATH_MAX bytes (4096 on Linux).  sprintf into a 1024-byte
+        // fixed buffer would overflow on a long but otherwise legal
+        // path; snprintf truncates instead.
+        char errstr[1024];
+        snprintf(errstr, sizeof errstr,
+                 "Device %s does not exist or is in use. Exiting...",
+                 p->portpath ? p->portpath : "(null)");
         perror(errstr);
         return -1;
     }

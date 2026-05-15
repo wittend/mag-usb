@@ -55,6 +55,9 @@ Compound rotations apply these in order X → Y → Z. For example, X=+90°, Z=-
 1) X=+90°: `(X, Y, Z)` → `(X, -Z, Y)`
 2) Z=-90°: `(X, -Z, Y)` → `(-(-Z), -X, Y)` → `(Z, -X, Y)`
 
+![Coordinate System](../assets/1000002537.jpg)
+*Fig. 7: Magnetometer orientation and axis reference.*
+
 ## Verification
 After editing `config.toml`, run:
 ```

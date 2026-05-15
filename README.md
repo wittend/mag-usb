@@ -6,6 +6,8 @@ Official documentation -- https://mag-usb.readthedocs.io/
  
 mag-usb is a Linux command‑line utility for reading a PNI RM3100 3‑axis magnetometer via a USB‑to‑I²C adapter (Pololu 5396/5397). It outputs time‑stamped magnetic field vectors and supports optional configuration via a simple TOML file.
 
+![HamSCI Project](../assets/HamSCI_2025_v3.png)
+
 The RM3100 boards were developed for the HamSCI Personal Space Weather Station (PSWS) TangerineSDR and Grape monitors, but mag-usb can be used as a standalone low‑cost geomagnetic field logger.
  
 Key points:
@@ -42,9 +44,13 @@ CLion IDE (convenient if you happen to have it):
 
 ## Quick start
 - Connect the Pololu USB‑to‑I²C adapter and your RM3100 board.
-- Run with your adapter device path (default is `/dev/ttyACM0`):
+- Install the udev rule from `install/99-PololuI2C.rules` once per host
+  so the adapter consistently appears as `/dev/ttyMAG0` (the new
+  default). Without the rule, override with `-O /dev/ttyACM0` (or
+  whichever ACM device the adapter enumerated as).
 ```
-./build/mag-usb -O /dev/ttyACM0 -Q
+./build/mag-usb -Q                # uses /dev/ttyMAG0 by default
+./build/mag-usb -O /dev/ttyACM0 -Q  # override if no udev rule
 ```
 Flags shown here:
 - `-O` sets the adapter device path.
@@ -105,6 +111,7 @@ Run the test executable directly:
 - Hardware Setup (wiring, udev rules): docs/Hardware-Setup.md
 - Requirements: docs/Requirements.md
 - Troubleshooting: docs/Troubleshooting.md
+- Project Review: docs/Code-Review-and-Critique-2026-05-15-by-gemini-3-flash-preview.md
 - Development guide: docs/Development.md
 - Contribution guidelines: CONTRIBUTING.md
 
