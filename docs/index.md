@@ -21,6 +21,8 @@ Requirements.md
 Troubleshooting.md
 Limitations.md
 Development.md
+WebSocket-Options.md
+Code-Review-and-Critique-2026-05-15-by-gemini-3-flash-preview.md
 ```
  
 ## Local preview
