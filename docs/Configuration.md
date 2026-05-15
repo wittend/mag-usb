@@ -164,3 +164,6 @@ mag_translate_z = 0
 # Remote temperature sensor I2C address
 remote_temp_address = 0x1F
 ```
+
+![Configuration Example](../assets/config_toml.png)
+*Fig. 3: Sample config.toml file for mag-usb.*

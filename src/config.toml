@@ -40,7 +40,7 @@ port = 8765
 # Use external USB to I2C device.
 use_I2C_converter = true
 # Path to the I2C device.
-portpath = "/dev/ttyMAG0"
+portpath = "/dev/ttyACM0"
 # I2C bus number (for non-Pololu setups).
 bus_number = 1
 # Scan I2C bus on startup.
@@ -54,14 +54,13 @@ cc_x = 400
 cc_y = 400
 cc_z = 400
 # Gain values.
-gain_x = 150.0
 gain_y = 150.0
 gain_z = 150.0
 # TMRC Rate register value (hex format).
 tmrc_rate = 0x96
 # Number of samples register value.
 nos_reg_value = 60
-# DRDY delay in milliseconds (passed to usleep as ms * 1000).
+# DRDY delay in microseconds.
 drdy_delay = 10
 # Sampling mode: "POLL" or "CMM".
 sampling_mode = "POLL"
