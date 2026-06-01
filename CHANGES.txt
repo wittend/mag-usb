@@ -1,6 +1,16 @@
 # CHANGES.txt
 ===========================================================
-# Date: 2025-08-19      # new version use with pi-eliminator (Pololu Hdw.)
+# Date: 2026-05-15      # new version to use with pi-eliminator (Pololu Hdw.)
+#--------------------------------------------------------------------------
+Add Code Review document to RTD sources - try to make it readable.
+
+===========================================================
+# Date: 2026-05-14      # new version to use with pi-eliminator (Pololu Hdw.)
+#--------------------------------------------------------------------------
+Merge Pull Request from Mike Hauan and Claude (Thanks Mike!) to address occasionally dropped sample and other issues and potential issues found in the code.
+
+
+# Date: 2025-08-19      # new version to use with pi-eliminator (Pololu Hdw.)
 #--------------------------------------------------------------------------
 Converting Grape2 version to work with any system with USB-2 ports.
 I2C calls targeting Pololu i2c rather than Raspberry Pi hardware.

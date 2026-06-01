@@ -169,7 +169,7 @@ int getCommandLine(int argc, char** argv, pList *p)
                 fprintf(OUTPUT_PRINT, "   -D <rate>              :  Set magnetometer sample rate.         [ TMRC reg 96 hex default ].\n");
                 fprintf(OUTPUT_PRINT, "   -g <mode>              :  Device sampling mode.                 [ POLL=0 (default), CONTINUOUS=1 ]\n");
 #if(USE_POLOLU)
-                fprintf(OUTPUT_PRINT, "   -O                     :  Path to Pololu port in /dev.          [ default: /dev/ttyACM0 ]\n");
+                fprintf(OUTPUT_PRINT, "   -O                     :  Path to Pololu port in /dev.          [ default: /dev/ttyMAG0 ]\n");
                 fprintf(OUTPUT_PRINT, "   -Q                     :  Verify presence of Pololu adaptor and exit.\n");
 #endif
                 fprintf(OUTPUT_PRINT, "   -M                     :  Verify Magnetometer presence and version.\n");

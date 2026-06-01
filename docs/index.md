@@ -12,15 +12,17 @@ If you are building a fresh implementation, start with the Requirements page.
 :caption: Contents
 :maxdepth: 2
 
-Getting-Started.md
-Hardware-Setup.md
-Configuration.md
-Data-Format.md
-Orientation-and-Axes.md
-Requirements.md
-Troubleshooting.md
-Limitations.md
-Development.md
+Getting-Started
+Hardware-Setup
+Configuration
+Data-Format
+Orientation-and-Axes
+Requirements
+Troubleshooting
+Limitations
+Development
+WebSocket-Options
+Code-Review-and-Critique-2026-05-15-by-gemini-3-flash-preview
 ```
  
 ## Local preview
@@ -43,14 +45,14 @@ Open the URL printed by MkDocs (typically http://127.0.0.1:8000/) to preview.
 
 ## Read the Docs
 
-This repository is configured for Read the Docs using `.readthedocs.yaml` and `mkdocs.yml`.
+This repository is configured for Read the Docs using `.readthedocs.yaml` and `docs/conf.py`.
 
 To publish the site on Read the Docs:
 
 1. Push these files to your default branch.
 2. Log in to https://readthedocs.org/ and import the project by pointing it at your repository.
 3. In the RTD project settings, ensure the configuration file path is `.readthedocs.yaml`.
-4. Trigger a build. RTD will install `docs/requirements.txt` and build the MkDocs site.
+4. Trigger a build. RTD will install `docs/requirements.txt` and build the Sphinx site.
 5. Once built, add the RTD URL to your repository README.
 
 If your repository is hosted publicly (e.g., GitHub/GitLab), update `repo_url` in `mkdocs.yml` to enable "Edit this page" links.

@@ -54,7 +54,6 @@ cc_x = 400
 cc_y = 400
 cc_z = 400
 # Gain values.
-gain_x = 150.0
 gain_y = 150.0
 gain_z = 150.0
 # TMRC Rate register value (hex format).

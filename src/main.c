@@ -33,15 +33,17 @@
 char Version[32];
 int volatile killflag;
 static char outBuf[256];
-// char portpath[PATH_MAX] = "/dev/ttyMAG0";          // default path for pololu i2c emulator.
-char portpath[PATH_MAX] = "/dev/ttyACM0";          // default path for pololu i2c emulator.
+// Default device path matches install/99-PololuI2C.rules, which symlinks
+// any Pololu USB-to-I2C adapter (PID 0x2502 or 0x2503) to /dev/ttyMAG0.
+// Use -O /dev/ttyACMn to override when the udev rule is not installed.
+char portpath[PATH_MAX] = "/dev/ttyMAG0";
 extern int CC_400;
 extern int GAIN_150;
 extern int RM3100_I2C_ADDRESS;
 
 #ifdef USE_PIPES
      char fifoCtrl[] = "/run/mag-usb/magctl.fifo";
-     char fifoData[] = "/run/mag-usb/magata.fifo";
+     char fifoData[] = "/run/mag-usb/magdata.fifo";
      char fifoHome[] = "/run/mag-usb";
      // int PIPEIN  = -1;
      // int PIPEOUT = -1;
@@ -255,6 +257,28 @@ int main(int argc, char** argv)
 #if(USE_PTHREADS)
     pthread_t sensor_thread, print_thread, signal_thread;
     fprintf(OUTPUT_PRINT, "\n");
+
+    // Block SIGHUP/SIGABRT/SIGINT in the calling thread *before* any
+    // pthread_create.  Newly created threads inherit this mask, so
+    // these signals are blocked in every thread except the dedicated
+    // signal_handler thread that calls sigwait().  Without this, the
+    // kernel delivers an arriving signal to whichever thread does not
+    // have it masked -- typically the print or sensor thread -- where
+    // there is no handler, so the process terminates instead of going
+    // through the graceful shutdown_requested path.
+    {
+        sigset_t blocked;
+        sigemptyset(&blocked);
+        sigaddset(&blocked, SIGHUP);
+        sigaddset(&blocked, SIGABRT);
+        sigaddset(&blocked, SIGINT);
+        if (pthread_sigmask(SIG_BLOCK, &blocked, NULL) != 0)
+        {
+            perror("pthread_sigmask(SIG_BLOCK)");
+            exit(1);
+        }
+    }
+
     // Create threads
     if (pthread_create(&sensor_thread, NULL, read_sensors, (void *) p) != 0)
     {
@@ -359,36 +383,84 @@ void* read_sensors(void* arg)
 }
 
 //---------------------------------------------------------------
-// Function to print sensor data every 1000 ms
+// Function to print sensor data once per UTC second.
+//
+// The cadence is anchored at the next whole CLOCK_REALTIME second
+// and advanced by exactly +1 s each iteration, using
+// clock_nanosleep() with TIMER_ABSTIME so the wakeup is aligned to
+// the wall clock rather than relative to whenever the previous
+// formatOutput() call finished.
+//
+// The previous implementation (nanosleep(1 s) after each read) drifted
+// by however long the synchronous I2C POLL + DRDY + 9-byte XYZ read
+// + MCP9808 temp read took, and once accumulated drift exceeded one
+// second the corresponding tick was silently skipped — the
+// "occasional missed sample" Dave Witten reports against the
+// pre-rewrite code path.  Aligning to an absolute deadline removes
+// both the drift and the silent skip; the loop also explicitly
+// detects and logs a missed sample whenever formatOutput overruns,
+// so the operator can see *why* a tick disappeared instead of just
+// noticing a gap after the fact.
 //---------------------------------------------------------------
 void* print_data(void* arg)
 {
+    pList * p = (pList *) arg;
+
+    // Anchor on the next whole UTC second.
+    struct timespec deadline;
+    clock_gettime(CLOCK_REALTIME, &deadline);
+    deadline.tv_sec  += 1;
+    deadline.tv_nsec  = 0;
+
     while (!shutdown_requested)
     {
-        pList * p = (pList *) arg;
 #ifdef USE_WEBSOCKET
-        if(p->useWebSocket)
+        if (p->useWebSocket)
         {
             ws_server_poll();
         }
 #endif
-        // Wait for 1000 ms or until shutdown is requested
-        // struct timespec ts;
-        // clock_gettime(CLOCK_REALTIME, &ts);
-        // ts.tv_sec += 1; // Add 1 second
-        //
-        // // Use condition variable with timeout to wait
-        // pthread_mutex_lock(&data_mutex);
-        // int local_data = sensor_data;
-        // pthread_mutex_unlock(&data_mutex);
-        //
-        // // Print data to OUTPUT_PRINT
-        // printf("Sensor Data: %d\n", local_data);
+
+        // Sleep until the absolute deadline.  Retry on EINTR so a
+        // stray signal does not cost us a sample; honour shutdown
+        // between retries so SIGTERM still exits promptly.
+        int rc;
+        do
+        {
+            rc = clock_nanosleep(CLOCK_REALTIME, TIMER_ABSTIME, &deadline, NULL);
+        } while (rc == EINTR && !shutdown_requested);
+
+        if (shutdown_requested)
+        {
+            break;
+        }
+        if (rc != 0)
+        {
+            fprintf(OUTPUT_ERROR,
+                    "clock_nanosleep(CLOCK_REALTIME, TIMER_ABSTIME) failed: %d\n",
+                    rc);
+            break;
+        }
+
         formatOutput(p);
 
-        // Sleep for 1000 ms or until interrupted by signal
-        struct timespec sleep_time = {1, 0}; // 1 second
-        nanosleep(&sleep_time, NULL);
+        // Advance to the next tick.  If formatOutput overran by one
+        // or more whole seconds, skip-advance and log each missed
+        // tick so an operator can correlate gaps with their causes
+        // (slow I2C reads, scheduler preemption, clock steps, etc.).
+        deadline.tv_sec += 1;
+
+        struct timespec now;
+        clock_gettime(CLOCK_REALTIME, &now);
+        while (now.tv_sec  > deadline.tv_sec ||
+              (now.tv_sec == deadline.tv_sec && now.tv_nsec > deadline.tv_nsec))
+        {
+            fprintf(OUTPUT_ERROR,
+                    "{ \"lastStatus\": \"missed_sample\", \"deadline\": %ld.%09ld }\n",
+                    (long)deadline.tv_sec, (long)deadline.tv_nsec);
+            fflush(OUTPUT_ERROR);
+            deadline.tv_sec += 1;
+        }
     }
     return NULL;
 }

@@ -13,7 +13,10 @@ This guide helps you install, build, and run mag-usb on a typical Linux system.
 ## Hardware connection
 1. Connect the Pololu USB-to-I²C adapter to your host via USB.
 2. Wire SDA/SCL/GND (and 5V if required) between the adapter and the sensor board.
-3. On Linux, the adapter typically appears as /dev/ttyACM0 (or ACM1, etc.).
+3. On Linux, the adapter typically appears as /dev/ttyACMn. Installing
+   `install/99-PololuI2C.rules` adds a `/dev/ttyMAG0` symlink that
+   resolves to whichever ACM device the adapter enumerated as — this is
+   the path the program uses by default.
 
 For details and udev rules to stabilize the device path, see docs/Hardware-Setup.md.
 
@@ -33,7 +36,8 @@ cmake --build build --target mag-usb
 
 ## Quick run
 ```
-./build/mag-usb -O /dev/ttyACM0 -Q
+./build/mag-usb -Q                    # default device: /dev/ttyMAG0
+./build/mag-usb -O /dev/ttyACM0 -Q    # explicit override
 ```
 Flags:
 - -O sets the Pololu device path.

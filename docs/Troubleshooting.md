@@ -3,6 +3,11 @@
 Common issues and how to resolve them.
 
 ## Adapter not found or permission denied
+- If you are using an external USB port hub, make certain that it provides the full 5v required by the Pololu adapter. It may require a supplemental power supply to power the device.
+- Be certain that the switchon the Pololu device is in the 5v position and that **_both_** the **BLUE** and the **GREEN** LEDs are visible.
+
+![Adapter LEDs and Switch](../assets/1000002531.jpg)
+*Fig. 5: Pololu adapter LED indicators and 5V switch position.*
 - Symptom: `mag-usb -Q` reports errors opening `/dev/ttyACM0`, or EACCES.
 - Fixes:
   - Ensure your user is in the dialout (or equivalent) group: `sudo usermod -aG dialout $USER` then re-login.
@@ -37,6 +42,9 @@ Common issues and how to resolve them.
 
 ## No data from sensor
 - Check wiring (SDA/SCL/GND, optional 5V).
+
+![Wiring Connections Troubleshooting](../assets/1000002533.jpg)
+*Fig. 6: Verifying sensor wiring connections.*
 - Confirm pull-up resistors present.
 - Verify device addresses match expected values in config (MCP9808/Magnetometer addresses).
 - Use diagnostics:

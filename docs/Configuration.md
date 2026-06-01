@@ -31,7 +31,7 @@ Defaults: empty strings.
 
 ### [i2c]
 - `use_I2C_converter` (bool) — Use Pololu USB‑to‑I²C adapter. Default: true (when built with USE_POLOLU=TRUE).
-- `portpath` (string) — Adapter device path. Default: `/dev/ttyACM0`.
+- `portpath` (string) — Adapter device path. Default: `/dev/ttyMAG0` (created by `install/99-PololuI2C.rules`; falls through to a bare `/dev/ttyACM*` if the udev rule is not installed and `-O` is not supplied).
 - `bus_number` (int) — Linux I²C bus number for non‑Pololu setups. Default: 1.
 - `scan_bus` (bool) — Probe for devices on startup. Default: false.
 
@@ -44,7 +44,7 @@ Notes:
 - `gain_x`, `gain_y`, `gain_z` (double) — Gains. Default: 150.0.
 - `tmrc_rate` (int, decimal or hex) — TMRC register value. Default: 0x96.
 - `nos_reg_value` (int) — Number‑of‑samples register value. Default: 60.
-- `drdy_delay` (int) — DRDY delay in microseconds. Default: 10.
+- `drdy_delay` (int) — Sleep between DRDY-poll iterations in **milliseconds**. Default: 10. (The implementation passes `drdy_delay * 1000` to `usleep()`, which takes microseconds; the configured value is therefore an `ms` count, not a `µs` count.)
 - `sampling_mode` (string) — `"POLL"` or `"CMM"`. Default: `"POLL"`.
 - `cmm_sample_rate` (int) — CMM sample rate (Hz). Default: 400.
 - `readback_cc_regs` (bool) — Read back CC registers after setting. Default: false.
@@ -124,7 +124,7 @@ port = 8765
 # Use external USB to I2C device.
 use_I2C_converter = true
 # Path to the I2C device.
-portpath = "/dev/ttyACM0"
+portpath = "/dev/ttyMAG0"
 # I2C bus number (for non-Pololu setups).
 bus_number = 1
 # Scan I2C bus on startup.
@@ -143,7 +143,7 @@ gain_x = 150.0
 tmrc_rate = 0x96
 # Number of samples register value.
 nos_reg_value = 60
-# DRDY delay in microseconds.
+# DRDY delay in milliseconds (passed to usleep as ms * 1000).
 drdy_delay = 10
 # Sampling mode: "POLL" or "CMM".
 sampling_mode = "POLL"
@@ -164,3 +164,6 @@ mag_translate_z = 0
 # Remote temperature sensor I2C address
 remote_temp_address = 0x1F
 ```
+
+![Configuration Example](../assets/config_toml.png)
+*Fig. 3: Sample config.toml file for mag-usb.*

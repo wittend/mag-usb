@@ -154,6 +154,9 @@ int i2c_verifyTempSensor(pList *p)
 
 //---------------------------------------------------------------
 // int i2c_verifyMagSensor(pList *p)
+//
+// Reads the RM3100 REVID register and compares against the
+// expected value.  Returns 0 on success; non-zero on any failure.
 //---------------------------------------------------------------
 int i2c_verifyMagSensor(pList *p)
 {
@@ -161,39 +164,42 @@ int i2c_verifyMagSensor(pList *p)
 
     i2c_pololu_clear_bus(p->adapter);
 
+    // Use the configured I2C address, not a hardcoded 0x23.  A user
+    // who changes [magnetometer].address in config.toml expects -M
+    // to talk to the same device the main loop uses.
+    const uint8_t addr = (uint8_t)p->magAddr;
+    // RM3100 REVID register lives at 0x36 (see rm3100.h
+    // RM3100I2C_REVID).  We don't include rm3100.h here because the
+    // header defines the const symbols at file scope with external
+    // linkage, so multiple TUs including it would multiply-define.
+    const uint8_t reg  = 0x36;
     uint8_t buf[2] = {0};
-    uint8_t addr = 0x23; // example device
-    uint8_t reg  = 0x36; // example register
-    int rv = -1;
+    int rv;
 
-    // Write register index (no payload bytes)
-    rv = i2c_pololu_write_to(p->adapter, addr, reg, NULL, 0);
-    if (rv < 0)
-    {
-        fprintf(OUTPUT_PRINT, "  Write failed: %s\n", i2c_pololu_error_string(-rv));
-        goto done;
-    }
-    // Read back 2 bytes
-    //    uint8_t buf[2] = {0};
+    // Read 2 bytes starting at REVID.  i2c_pololu_read_from already
+    // performs the register-address-write + read sequence; the
+    // previous explicit write_to(addr, reg, NULL, 0) before
+    // read_from() doubled that up.
     rv = i2c_pololu_read_from(p->adapter, addr, reg, buf, 2);
-    if (rv < 0)
+    if(rv < 0)
     {
         fprintf(OUTPUT_PRINT, "  Read failed: %s\n", i2c_pololu_error_string(-rv));
-        goto done;
+        return 1;
     }
-    //fprintf(OUTPUT_ERROR,"  Data: %02X %02X\n", buf[0], buf[1]);
-    rv = buf[0];
-    if(rv == (uint8_t) RM3100_VER_EXPECTED)
+
+    const uint8_t got = buf[0];
+    if(got == (uint8_t)RM3100_VER_EXPECTED)
     {
-        fprintf(OUTPUT_PRINT, "  Version is OK!: 0x%2X\n", rv);
+        fprintf(OUTPUT_PRINT, "  Version is OK!: 0x%02X\n", got);
         return 0;
     }
-    else
-    {
-        fprintf(OUTPUT_PRINT, "  Version does NOT match!\n");
-        return rv;
-    }
-done:
-    return true;
+
+    // Version mismatch.  Previously the function did `return rv;`
+    // where rv held buf[0]; if the sensor read all zeros (dead bus,
+    // wrong address), that returned 0 -- which the caller interprets
+    // as "success".  Return a distinct non-zero sentinel instead.
+    fprintf(OUTPUT_PRINT, "  Version does NOT match!  got=0x%02X expected=0x%02X\n",
+            got, (unsigned)RM3100_VER_EXPECTED);
+    return 2;
 }
 

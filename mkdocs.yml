@@ -23,6 +23,8 @@ nav:
   - Troubleshooting: Troubleshooting.md
   - Limitations: Limitations.md
   - Development: Development.md
+  - WebSocket Options: WebSocket-Options.md
+  - Project Review: Code-Review-and-Critique-2026-05-15-by-gemini-3-flash-preview.md
 
 docs_dir: docs
 site_dir: site
