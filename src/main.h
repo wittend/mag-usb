@@ -76,7 +76,7 @@
 #define OUTPUT_ERROR        stderr
 #define PPS_TIMEOUTSECS     2.0
 
-#define MAG_USB_VERSION     "0.0.6"
+#define MAG_USB_VERSION     "0.0.8"
 #define UTCBUFLEN           64
 #define MAXPATHBUFLEN       PATH_MAX
 #define XYZ_BUFLEN          9
@@ -170,6 +170,10 @@ void* signal_handler_thread(void* arg);
 double readTemp(pList *p);
 void showErrorMsg(int temp);
 void setProgramDefaults(pList *p);
+void showSettings(pList *p);
+void readCycleCountRegs(pList *p);
+void setCycleCountRegs(pList *p);
+int  setNOSReg(pList *p);
 
 long currentTimeMillis();
 struct tm *getUTC();

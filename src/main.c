@@ -13,6 +13,7 @@
 #include <unistd.h>
 #include <linux/limits.h>
 #include "main.h"
+#include "rm3100.h"
 #include "i2c.h"
 #include "cmdmgr.h"
 #include "config.h"
@@ -37,9 +38,6 @@ static char outBuf[256];
 // any Pololu USB-to-I2C adapter (PID 0x2502 or 0x2503) to /dev/ttyMAG0.
 // Use -O /dev/ttyACMn to override when the udev rule is not installed.
 char portpath[PATH_MAX] = "/dev/ttyMAG0";
-extern int CC_400;
-extern int GAIN_150;
-extern int RM3100_I2C_ADDRESS;
 
 #ifdef USE_PIPES
      char fifoCtrl[] = "/run/mag-usb/magctl.fifo";
@@ -105,11 +103,23 @@ int main(int argc, char** argv)
     //-----------------------------------------
     const char *etc_config = "/etc/mag-usb/config.toml";
     const char *local_config = "config.toml";
+    const char *custom_config = NULL;
 
-    if (load_config(etc_config, p) != 0)
-    {
-        // If /etc config failed or didn't exist, try local directory
-        load_config(local_config, p);
+    // Check for -f flag manually before getCommandLine()
+    for (int i = 1; i < argc; i++) {
+        if (strcmp(argv[i], "-f") == 0 && (i + 1) < argc) {
+            custom_config = argv[i+1];
+            break;
+        }
+    }
+
+    if (custom_config) {
+        load_config(custom_config, p);
+    } else {
+        if (load_config(etc_config, p) != 0) {
+            // If /etc config failed or didn't exist, try local directory
+            load_config(local_config, p);
+        }
     }
 
     if((rv = getCommandLine(argc, argv, p)) != 0)
@@ -121,6 +131,18 @@ int main(int argc, char** argv)
     if(p->showSettingsOnly)
     {
         showSettings(p);
+        
+        // PR-5: also read back chip state if possible
+        if (i2c_init(p) == 0) {
+            if (i2c_pololu_check_device_available(p->portpath, 100) == 0 &&
+                i2c_pololu_is_device_valid(p->portpath) == 0 &&
+                i2c_open(p) >= 0) 
+            {
+                readCycleCountRegs(p);
+                i2c_close(p);
+            }
+        }
+
         free_config_strings(p);
         if(p->pipeInFd >= 0)
         {
@@ -603,16 +625,16 @@ char *formatOutput(pList *p)
 
     i2c_readMagPOLL(p);
 
-    xyz[0] = (((double)p->XYZ[0] / p->NOSRegValue) / p->x_gain) * 1000; // make microTeslas -> nanoTeslas
-    xyz[1] = (((double)p->XYZ[1] / p->NOSRegValue) / p->y_gain) * 1000; // make microTeslas -> nanoTeslas
-    xyz[2] = (((double)p->XYZ[2] / p->NOSRegValue) / p->z_gain) * 1000; // make microTeslas -> nanoTeslas
+    xyz[0] = ((double)p->XYZ[0] / p->x_gain) * 1000; // make microTeslas -> nanoTeslas
+    xyz[1] = ((double)p->XYZ[1] / p->y_gain) * 1000; // make microTeslas -> nanoTeslas
+    xyz[2] = ((double)p->XYZ[2] / p->z_gain) * 1000; // make microTeslas -> nanoTeslas
 
     // Apply orientation translations (rotations) from config
     apply_orientation(p, &xyz[0], &xyz[1], &xyz[2]);
 
-    // xyz[0] = (((double)p->XYZ[0] / p->NOSRegValue) / p->x_gain);
-    // xyz[1] = (((double)p->XYZ[1] / p->NOSRegValue) / p->y_gain);
-    // xyz[2] = (((double)p->XYZ[2] / p->NOSRegValue) / p->z_gain);
+    // xyz[0] = ((double)p->XYZ[0] / p->x_gain);
+    // xyz[1] = ((double)p->XYZ[1] / p->y_gain);
+    // xyz[2] = ((double)p->XYZ[2] / p->z_gain);
 
 #if(FOR_GRAPE2)
     strftime(utcStr, UTCBUFLEN, "%Y%m%e%y%M%S", utcTime);              // YYYYMMDDHHMMSS  (Gaak!)
@@ -848,12 +870,12 @@ void setProgramDefaults(pList *p)
     p->magHandle            = 0;
     p->remoteTempHandle     = 0;
     p->doBistMask           = 0;
-    p->cc_x                 = (int) CC_400;
-    p->cc_y                 = (int) CC_400;
-    p->cc_z                 = (int) CC_400;
-    p->x_gain               = GAIN_150;
-    p->y_gain               = GAIN_150;
-    p->z_gain               = GAIN_150;
+    p->cc_x                 = CC_200;
+    p->cc_y                 = CC_200;
+    p->cc_z                 = CC_200;
+    p->x_gain               = GAIN_75;
+    p->y_gain               = GAIN_75;
+    p->z_gain               = GAIN_75;
     p->tsMilliseconds       = 0;
     p->TMRCRate             = 0x96;
     p->Version              = Version;

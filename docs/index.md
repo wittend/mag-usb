@@ -23,6 +23,7 @@ Limitations
 Development
 WebSocket-Options
 Code-Review-and-Critique-2026-05-15-by-gemini-3-flash-preview
+Code-Review-2026-06-02-by-claude
 ```
  
 ## Local preview

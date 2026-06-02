@@ -8,8 +8,8 @@
 // License:     GPL 3.0
 //=========================================================================
 #include "sensor_tests.h"
+#include "rm3100.h"
 #include "MCP9808.h"
-extern int RM3100_VER_EXPECTED;
 
 //---------------------------------------------------------------
 // i2c_scanForBusDevices(pList *p)

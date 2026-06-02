@@ -49,14 +49,15 @@ scan_bus = false
 [magnetometer]
 # Magnetometer I2C address (hex format supported).
 address = 0x23
-# Cycle Count registers (200 or 400 typically).
-cc_x = 400
-cc_y = 400
-cc_z = 400
-# Gain values.
-gain_x = 150.0
-gain_y = 150.0
-gain_z = 150.0
+# Cycle Count registers (200 is chip default).
+cc_x = 200
+cc_y = 200
+cc_z = 200
+# Gain values (calculated from CC: gain = 0.3671 * CC + 1.5).
+# For CC=200, gain is 74.92 (~75). For CC=400, gain is 148.34 (~148).
+gain_x = 75.0
+gain_y = 75.0
+gain_z = 75.0
 # TMRC Rate register value (hex format).
 tmrc_rate = 0x96
 # Number of samples register value.

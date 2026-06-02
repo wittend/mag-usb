@@ -79,11 +79,17 @@ int getCommandLine(int argc, char** argv, pList *p)
 {
     int c;
 
-    while((c = getopt(argc, argv, "h?B:c:CD:g:PMSQTVO:ui:o:Ww:a:")) != -1)
+    while((c = getopt(argc, argv, "h?B:c:CD:g:PMSQTVO:ui:o:Ww:a:f:A:")) != -1)
     {
         //int this_option_optind = optind ? optind : 1;
         switch(c)
         {
+            case 'f':
+                // Handled in main() for config file loading
+                break;
+            case 'A':
+                p->magAddr = (int)strtol(optarg, NULL, 0);
+                break;
             case 'W':
                 p->useWebSocket = TRUE;
                 break;
@@ -183,6 +189,8 @@ int getCommandLine(int argc, char** argv, pList *p)
                 fprintf(OUTPUT_PRINT, "   -w <port>              :  WebSocket server port.\n");
                 fprintf(OUTPUT_PRINT, "   -a <addr>              :  WebSocket bind address.\n");
                 fprintf(OUTPUT_PRINT, "   -V                     :  Display software version and exit.\n");
+                fprintf(OUTPUT_PRINT, "   -f <path>              :  Path to configuration TOML file.\n");
+                fprintf(OUTPUT_PRINT, "   -A <hex>               :  Override magnetometer I2C address.\n");
                 fprintf(OUTPUT_PRINT, "   -h or -?               :  Display this help.\n\n");
                 exit(0);
                 break;

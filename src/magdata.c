@@ -10,6 +10,7 @@
 #include "main.h"
 #include "magdata.h"
 #include "i2c.h"
+#include "rm3100.h"
 
 //------------------------------------------
 // Static variables
@@ -105,11 +106,16 @@ void showErrorMsg(int rv)
 //------------------------------------------
 int setNOSReg(pList *p)
 {
-    (void)p;
     int rv = 0;
-    //#if __DEBUG
-    //    fprintf(OUTPUT_PRINT, "    [Child]: In setNOSReg():: Setting undocumented NOS register to value: %2X\n", p->NOSRegValue);
-    //#endif
+    uint8_t val = (uint8_t)p->NOSRegValue;
+    rv = i2c_pololu_write_to(p->adapter, (uint8_t)p->magAddr, RM3100I2C_NOS, &val, 1);
+#if __DEBUG
+    if (rv < 1) {
+        fprintf(OUTPUT_ERROR, "    [Child]: Error setting NOS register: %s\n", i2c_pololu_error_string(rv));
+    } else {
+        fprintf(OUTPUT_PRINT, "    [Child]: In setNOSReg():: Setting NOS register to value: %02X\n", p->NOSRegValue);
+    }
+#endif
     return rv;
 }
 
@@ -167,23 +173,37 @@ unsigned short getCCGainEquiv(unsigned short CCVal)
 //------------------------------------------
 void setCycleCountRegs(pList *p)
 {
-    //int i = 0;
-//    i2c_write(p->pi, RM3100I2C_CCX_1, (p->cc_x >> 8));
-//    i2c_write(p->pi, RM3100I2C_CCX_0, (p->cc_x & 0xff));
-    p->x_gain = getCCGainEquiv(p->cc_x);
-//    i2c_write(p->pi, RM3100I2C_CCY_1, (p->cc_y >> 8));
-//    i2c_write(p->pi, RM3100I2C_CCY_0, (p->cc_y & 0xff));
-    p->y_gain = getCCGainEquiv(p->cc_y);
-//    i2c_write(p->pi, RM3100I2C_CCZ_1, (p->cc_y >> 8));
-//    i2c_write(p->pi, RM3100I2C_CCZ_0, (p->cc_y & 0xff));
-    p->z_gain = getCCGainEquiv(p->cc_z);
-    // Write NOSRegValue to  register 0A
-//    i2c_write(p->pi, RM3100I2C_NOS,   (uint8_t)(p->NOSRegValue));
+    uint8_t data[2];
+    int rv;
 
-//        fprintf(OUTPUT_ERROR, "\nIn setCycleCountRegs():: Setting NOS register to value: %2X\n", p->NOSRegValue);
-//        fprintf(OUTPUT_ERROR, "CycleCounts  - X: %u, Y: %u, Z: %u.\n", p->cc_x, p->cc_y, p->cc_x);
-//        fprintf(OUTPUT_ERROR, "Gains        - X: %u, Y: %u, Z: %u.\n", p->x_gain, p->y_gain, p->z_gain);
-//        fprintf(OUTPUT_ERROR, "NOS Register - %2X.\n", p->NOSRegValue);
+    data[0] = (uint8_t)(p->cc_x >> 8);
+    data[1] = (uint8_t)(p->cc_x & 0xff);
+    rv = i2c_pololu_write_to(p->adapter, (uint8_t)p->magAddr, RM3100I2C_CCX_1, data, 2);
+    if (rv < 2) fprintf(OUTPUT_ERROR, "Error writing CCX: %s\n", i2c_pololu_error_string(rv));
+    p->x_gain = getCCGainEquiv(p->cc_x);
+
+    data[0] = (uint8_t)(p->cc_y >> 8);
+    data[1] = (uint8_t)(p->cc_y & 0xff);
+    rv = i2c_pololu_write_to(p->adapter, (uint8_t)p->magAddr, RM3100I2C_CCY_1, data, 2);
+    if (rv < 2) fprintf(OUTPUT_ERROR, "Error writing CCY: %s\n", i2c_pololu_error_string(rv));
+    p->y_gain = getCCGainEquiv(p->cc_y);
+
+    data[0] = (uint8_t)(p->cc_z >> 8);
+    data[1] = (uint8_t)(p->cc_z & 0xff);
+    rv = i2c_pololu_write_to(p->adapter, (uint8_t)p->magAddr, RM3100I2C_CCZ_1, data, 2);
+    if (rv < 2) fprintf(OUTPUT_ERROR, "Error writing CCZ: %s\n", i2c_pololu_error_string(rv));
+    p->z_gain = getCCGainEquiv(p->cc_z);
+
+    // Write NOSRegValue to register 0A
+    uint8_t nos = (uint8_t)p->NOSRegValue;
+    rv = i2c_pololu_write_to(p->adapter, (uint8_t)p->magAddr, RM3100I2C_NOS, &nos, 1);
+    if (rv < 1) fprintf(OUTPUT_ERROR, "Error writing NOS: %s\n", i2c_pololu_error_string(rv));
+
+#if __DEBUG
+    fprintf(OUTPUT_PRINT, "\nIn setCycleCountRegs():: Setting NOS register to value: %02X\n", p->NOSRegValue);
+    fprintf(OUTPUT_PRINT, "CycleCounts  - X: %u, Y: %u, Z: %u.\n", p->cc_x, p->cc_y, p->cc_z);
+    fprintf(OUTPUT_PRINT, "Gains        - X: %u, Y: %u, Z: %u.\n", p->x_gain, p->y_gain, p->z_gain);
+#endif
 }
 
 //------------------------------------------
@@ -191,15 +211,18 @@ void setCycleCountRegs(pList *p)
 //------------------------------------------
 void readCycleCountRegs(pList *p)
 {
-    (void)p;
     uint8_t regCC[7]= { 0, 0, 0, 0, 0, 0, 0 };
+    int rv = i2c_pololu_read_from(p->adapter, (uint8_t)p->magAddr, RM3100I2C_CCX_1, regCC, 7);
 
-    fprintf(OUTPUT_PRINT, "regCC[%i]: 0x%X\n",    0, (uint8_t)regCC[0]);
-    fprintf(OUTPUT_PRINT, "regCC[%i]: 0x%X\n",    1, (uint8_t)regCC[1]);
-    fprintf(OUTPUT_PRINT, "regCC[%i]: 0x%X\n",    2, (uint8_t)regCC[2]);
-    fprintf(OUTPUT_PRINT, "regCC[%i]: 0x%X\n",    3, (uint8_t)regCC[3]);
-    fprintf(OUTPUT_PRINT, "regCC[%i]: 0x%X\n",    4, (uint8_t)regCC[4]);
-    fprintf(OUTPUT_PRINT, "regCC[%i]: 0x%X\n",    5, (uint8_t)regCC[5]);
-    fprintf(OUTPUT_PRINT, "regCC[%i]: 0x%X\n\n",  6, (uint8_t)regCC[6]);
+    if (rv < 7) {
+        fprintf(OUTPUT_ERROR, "Error reading cycle count / NOS registers: %s\n", i2c_pololu_error_string(rv));
+        return;
+    }
+
+    fprintf(OUTPUT_PRINT, "Chip state:\n");
+    fprintf(OUTPUT_PRINT, "  CCX: 0x%02X%02X (%u)\n", regCC[0], regCC[1], (regCC[0] << 8) | regCC[1]);
+    fprintf(OUTPUT_PRINT, "  CCY: 0x%02X%02X (%u)\n", regCC[2], regCC[3], (regCC[2] << 8) | regCC[3]);
+    fprintf(OUTPUT_PRINT, "  CCZ: 0x%02X%02X (%u)\n", regCC[4], regCC[5], (regCC[4] << 8) | regCC[5]);
+    fprintf(OUTPUT_PRINT, "  NOS: 0x%02X (%u)\n", regCC[6], regCC[6]);
 }
 
