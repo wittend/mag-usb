@@ -6,7 +6,7 @@ This guide helps you install, build, and run mag-usb on a typical Linux system.
 - Linux host with USB 2.0 support
 - CMake 3.22+
 - A C compiler (GCC or Clang)
-- Optional: JetBrains CLion for an IDE workflow
+- Optional: Microsoft VS Code, VSCodium, or JetBrains CLion for an IDE workflow
 - Pololu Isolated USB-to-I²C Adapter (products 5396 or 5397)
 - RM3100-based magnetometer board
 

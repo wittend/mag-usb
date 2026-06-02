@@ -16,7 +16,7 @@ This guide helps you connect the Pololu USB-to-I²C adapter to the RM3100-based 
   - SDA ↔ SDA
   - SCL ↔ SCL
   - GND ↔ GND
-  - +5V (optional, only if your board requires power from adapter 5397)
+  - +5V (the USB C connection must providepowre at or near +5V to power the remote sensors and overcome resistive losses.)
 
 ![Sensor Wiring Detail](../assets/1000002534.jpg)
 *Fig. 2: Close-up of the sensor wiring and connector pinout.*
@@ -27,7 +27,9 @@ This guide helps you connect the Pololu USB-to-I²C adapter to the RM3100-based 
 
 ## Linux device path
 - The adapter appears as a ttyACM device (e.g., /dev/ttyACM0).
-- Check dmesg or lsusb for details; examples are in assets/.
+- The full setup should configue a device named /dev/ttyMAG0 that symlinks to the correct ACM device, but you can also use the ACM path directly.
+- If the adapter doesn't appear, try replugging it and check dmesg or lsusb for clues. You should see a new device with a name like "Pololu USB-to-I²C Adapter" and an associated ACM device number.
+- Check dmesg or lsusb for details; examples are in assets.
 
 ## Stable permissions and naming
 - A sample udev rule is provided at install/99-PololuI2C.rules. To install:
