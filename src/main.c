@@ -138,6 +138,8 @@ int main(int argc, char** argv)
                 i2c_pololu_is_device_valid(p->portpath) == 0 &&
                 i2c_open(p) >= 0) 
             {
+                // Ensure registers are set before reading back, or just read back what's there?
+                // The requirement is to correct initialization order.
                 readCycleCountRegs(p);
                 i2c_close(p);
             }
@@ -625,9 +627,11 @@ char *formatOutput(pList *p)
 
     i2c_readMagPOLL(p);
 
-    xyz[0] = ((double)p->XYZ[0] / p->x_gain) * 1000; // make microTeslas -> nanoTeslas
-    xyz[1] = ((double)p->XYZ[1] / p->y_gain) * 1000; // make microTeslas -> nanoTeslas
-    xyz[2] = ((double)p->XYZ[2] / p->z_gain) * 1000; // make microTeslas -> nanoTeslas
+    // Restore division by NOSRegValue to account for hardware averaging
+    double nos = (p->NOSRegValue > 0) ? (double)p->NOSRegValue : 1.0;
+    xyz[0] = (((double)p->XYZ[0] / nos) / p->x_gain) * 1000; // make microTeslas -> nanoTeslas
+    xyz[1] = (((double)p->XYZ[1] / nos) / p->y_gain) * 1000; // make microTeslas -> nanoTeslas
+    xyz[2] = (((double)p->XYZ[2] / nos) / p->z_gain) * 1000; // make microTeslas -> nanoTeslas
 
     // Apply orientation translations (rotations) from config
     apply_orientation(p, &xyz[0], &xyz[1], &xyz[2]);
@@ -870,12 +874,12 @@ void setProgramDefaults(pList *p)
     p->magHandle            = 0;
     p->remoteTempHandle     = 0;
     p->doBistMask           = 0;
-    p->cc_x                 = CC_200;
-    p->cc_y                 = CC_200;
-    p->cc_z                 = CC_200;
-    p->x_gain               = GAIN_75;
-    p->y_gain               = GAIN_75;
-    p->z_gain               = GAIN_75;
+    p->cc_x                 = CC_400;
+    p->cc_y                 = CC_400;
+    p->cc_z                 = CC_400;
+    p->x_gain               = GAIN_150;
+    p->y_gain               = GAIN_150;
+    p->z_gain               = GAIN_150;
     p->tsMilliseconds       = 0;
     p->TMRCRate             = 0x96;
     p->Version              = Version;

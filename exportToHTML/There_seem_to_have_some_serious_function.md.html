@@ -1,0 +1,47 @@
+<html>
+<head>
+<title>There_seem_to_have_some_serious_function.md</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.s0 { color: #cf8e6d;}
+.s1 { color: #bcbec4;}
+.s2 { color: #bcbec4;}
+</style>
+</head>
+<body bgcolor="#191a1c">
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#606060" >
+<tr><td><center>
+<font face="Arial, Helvetica" color="#000000">
+There_seem_to_have_some_serious_function.md</font>
+</center></td></tr></table>
+<pre><span class="s0">### </span><span class="s2">Analysis of Recent Changes and Regressions</span>
+
+<span class="s2">I have analyzed the recent changes to the `mag-usb` project. The regressions are likely caused by commit `466e78f` </span><span class="s1">(&quot;</span><span class="s2">Address PR issues from Mike, Rob, &amp;Claude's second tranche.</span><span class="s1">&quot;)</span><span class="s2">, which was committed yesterday, June 2, 2026.</span>
+
+<span class="s0">#### </span><span class="s2">Key Changes in Commit `466e78f`</span>
+
+<span class="s0">*   </span><span class="s1">**</span><span class="s2">Scaling Logic Regression</span><span class="s1">:**</span>
+    <span class="s2">In `src/main.c`, the formula for calculating magnetic field vectors was changed. It no longer divides the raw values by the Number of Samples </span><span class="s1">(</span><span class="s2">`p-</span><span class="s1">&gt;</span><span class="s2">NOSRegValue`</span><span class="s1">)</span><span class="s2">.</span>
+    <span class="s0">*   </span><span class="s1">**</span><span class="s2">Old</span><span class="s1">:** </span><span class="s2">`xyz</span><span class="s1">[</span><span class="s2">0</span><span class="s1">] </span><span class="s2">= </span><span class="s1">(((</span><span class="s2">double</span><span class="s1">)</span><span class="s2">p-</span><span class="s1">&gt;</span><span class="s2">XYZ</span><span class="s1">[</span><span class="s2">0</span><span class="s1">] </span><span class="s2">/ p-</span><span class="s1">&gt;</span><span class="s2">NOSRegValue</span><span class="s1">) </span><span class="s2">/ p-</span><span class="s1">&gt;</span><span class="s2">x_gain</span><span class="s1">) </span><span class="s2">* 1000;`</span>
+    <span class="s0">*   </span><span class="s1">**</span><span class="s2">New</span><span class="s1">:** </span><span class="s2">`xyz</span><span class="s1">[</span><span class="s2">0</span><span class="s1">] </span><span class="s2">= </span><span class="s1">((</span><span class="s2">double</span><span class="s1">)</span><span class="s2">p-</span><span class="s1">&gt;</span><span class="s2">XYZ</span><span class="s1">[</span><span class="s2">0</span><span class="s1">] </span><span class="s2">/ p-</span><span class="s1">&gt;</span><span class="s2">x_gain</span><span class="s1">) </span><span class="s2">* 1000;`</span>
+    <span class="s2">This will cause output values to be scaled up by a factor equal to `NOSRegValue` </span><span class="s1">(</span><span class="s2">default is usually 1, but if it's higher, the error will be significant</span><span class="s1">)</span><span class="s2">.</span>
+
+<span class="s0">*   </span><span class="s1">**</span><span class="s2">Default Parameter Changes</span><span class="s1">:**</span>
+    <span class="s2">Default values for sensor configuration were changed in `src/main.c`</span><span class="s1">:</span>
+    <span class="s0">*   </span><span class="s1">**</span><span class="s2">Cycle Counts </span><span class="s1">(</span><span class="s2">CC</span><span class="s1">):** </span><span class="s2">Changed from `400` to `200` </span><span class="s1">(</span><span class="s2">`CC_200`</span><span class="s1">)</span><span class="s2">.</span>
+    <span class="s0">*   </span><span class="s1">**</span><span class="s2">Gains</span><span class="s1">:** </span><span class="s2">Changed from `150` to `75` </span><span class="s1">(</span><span class="s2">`GAIN_75`</span><span class="s1">)</span><span class="s2">.</span>
+
+<span class="s0">*   </span><span class="s1">**</span><span class="s2">Active Hardware Initialization</span><span class="s1">:**</span>
+    <span class="s2">Functions like `setCycleCountRegs`, `readCycleCountRegs`, and `setNOSReg` in `src/magdata.c` were converted from stubs/commented-out code to active functions that write to the I2C hardware. If the hardware is not connected or behaves unexpectedly, this could lead to new error states or initialization failures.</span>
+
+<span class="s0">*   </span><span class="s1">**</span><span class="s2">Configuration File Handling</span><span class="s1">:**</span>
+    <span class="s0">*   </span><span class="s2">A new `-f </span><span class="s1">&lt;path&gt;</span><span class="s2">` flag was added to specify a custom TOML configuration file.</span>
+    <span class="s0">*   </span><span class="s2">The magnetometer I2C address can now be overridden via the `-A </span><span class="s1">&lt;hex&gt;</span><span class="s2">` command-line flag.</span>
+
+<span class="s0">*   </span><span class="s1">**</span><span class="s2">Version Update</span><span class="s1">:**</span>
+    <span class="s2">The software version was bumped from `0.0.6` to `0.0.8`.</span>
+
+<span class="s0">#### </span><span class="s2">Recommendation</span>
+<span class="s2">If the output values seem </span><span class="s1">&quot;</span><span class="s2">too large</span><span class="s1">&quot; </span><span class="s2">or </span><span class="s1">&quot;</span><span class="s2">incorrectly scaled,</span><span class="s1">&quot; </span><span class="s2">the removal of `p-</span><span class="s1">&gt;</span><span class="s2">NOSRegValue` from the calculation in `src/main.c` is the most probable cause. Reverting this specific line or ensuring `p-</span><span class="s1">&gt;</span><span class="s2">NOSRegValue` is correctly handled according to the RM3100 datasheet is advised.</span></pre>
+</body>
+</html>
