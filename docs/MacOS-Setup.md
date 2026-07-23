@@ -1,9 +1,9 @@
-# MacOS Setup
+# macOS Setup
 
-This guide helps you install, build, and run mag-usb on a MacOS computer.
+This guide helps you install, build, and run mag-usb on a macOS computer.
 
 ## Prerequisites
-- MacOS host with USB 2.0 support
+- macOS host with USB 2.0 support
 - Docker Desktop
 - socat (install with Homebrew: `brew install socat`)
 - Optional: Microsoft VS Code, VSCodium, or JetBrains CLion for an IDE workflow
@@ -13,9 +13,9 @@ This guide helps you install, build, and run mag-usb on a MacOS computer.
 ## Hardware connection
 1. Connect the Pololu USB-to-I²C adapter to your host via USB.
 2. Wire SDA/SCL/GND (and 5V if required) between the adapter and the sensor board.
-3. Verify the adapter name in MacOS by running `ls -l /dev/cu.*` before and after
-   plugging in the adapter. On MacOS, the adapter typically appears as
-   /dev/cu.usbmodem14n01.
+3. Verify the adapter name in macOS by running `ls -l /dev/cu.*` before and after
+   plugging in the adapter. On macOS, the adapter typically appears as
+   /dev/cu.usbmodem14#01.
 
 ## Adapter Communication
 After installing socat, run the following command in a separate terminal, substituting
@@ -92,7 +92,7 @@ docker compose run --rm -p 8443:8443 host
 The config file must be edited inside the container to reflect any changes:
 
 ```bash
-nano config.toml
+nano /etc/mag-usb/config.toml
 ```
 
 Then, in nano:

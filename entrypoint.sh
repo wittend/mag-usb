@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -e
 
-echo '-----------------------------------'
+echo '-------------------------------------------'
 echo '(1) Starting virtual TTY bridge...'
 socat PTY,link=/dev/ttyACM0,raw,echo=0 TCP:host.docker.internal:${HW_PORT} &
 
@@ -11,8 +11,8 @@ while [ ! -e /dev/ttyACM0 ]; do
 done
 
 echo 'READY!'
-echo '   To edit config: nano config.toml'
+echo '   To edit config: nano /etc/mag-usb/config.toml'
 echo '   To run mag-usb: ./mag-usb'
-echo '-----------------------------------'
+echo '-------------------------------------------'
 
 exec bash

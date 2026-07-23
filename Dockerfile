@@ -6,7 +6,7 @@ RUN apt-get update -q && \
     apt-get install -y build-essential cmake && \
     rm -rf /var/lib/apt/lists/*
 
-WORKDIR /usr/local/src
+WORKDIR /mag-usb
 COPY . .
 
 ## Build mag-usb executable
@@ -30,8 +30,8 @@ WORKDIR /app
 RUN mkdir logs
 
 ## Copy mag-usb binary and config.toml from build stage (reduce container size)
-COPY --from=builder /usr/local/src/build/mag-usb /app/mag-usb
-COPY --from=builder /usr/local/src/src/config.toml /app/config.toml
+COPY --from=builder /mag-usb/build/mag-usb /app/mag-usb
+COPY --from=builder /mag-usb/src/config.toml /etc/mag-usb/config.toml
 
 ## Copy entrypoint script
 COPY entrypoint.sh /entrypoint.sh
