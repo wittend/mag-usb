@@ -19,11 +19,10 @@ This guide helps you install, build, and run mag-usb on a macOS computer.
 
 ## Adapter Communication
 After installing socat, run the following command in a separate terminal, substituting
-`<DEVICE>` for the name of the adapter as verified during hardware setup, and `<PORT>`
-for the port number the device should listen to:
+`<DEVICE>` for the name of the adapter as verified during hardware setup:
 
 ```bash
-socat -d -d TCP-LISTEN:<PORT>,reuseaddr,fork FILE:<DEVICE>,raw,echo=0
+socat -d -d TCP-LISTEN:1234,reuseaddr,fork FILE:<DEVICE>,raw,echo=0
 ```
 
 You should see a similar output:
@@ -32,21 +31,18 @@ You should see a similar output:
 2026/06/04 14:43:09 socat[69640] N listening on LEN=16 AF=2 0.0.0.0:<PORT>
 ```
 
-Example usage with device /dev/cu.usbmodem14101 and port 1234:
+Example usage with device /dev/cu.usbmodem14101:
 
 ```bash
 socat -d -d TCP-LISTEN:1234,reuseaddr,fork FILE:/dev/cu.usbmodem14101,raw,echo=0
 ```
 
-Keep note of what port you have the adapter assigned to. Docker will use this port to
-communicate with the adapter.
-
 ## Deploying mag-usb
-Open Docker Desktop to ensure the Docker daemon is running. In another terminal,
+Open Docker Desktop to ensure the Docker engine is running. In another terminal,
 navigate to the project directory and execute the following command:
 
 ```docker
-docker compose run --rm host
+docker compose up
 ```
 
 This will create a Docker container with mag-usb already built. Upon launching the
@@ -57,9 +53,11 @@ following output being displayed in your terminal:
 (1) Starting virtual TTY bridge...
 (2) Waiting for virtual device...
 READY!
-   To edit config: nano config.toml
+   To edit config: nano /etc/mag-usb/config.toml
    To run mag-usb: ./mag-usb
 ```
+
+Press d inside this terminal to detach the terminal from the container.
 
 The terminal running socat should display an output similar to the example below:
 
@@ -74,28 +72,15 @@ The terminal running socat should display an output similar to the example below
 Refer to the [troubleshooting](#troubleshooting) section at the end of this page if the output in either
 terminal is different.
 
-By default, the container binds to port 1234. If the port you have the adapter
-assigned to in socat is different, you must override the environment variable:
-
-```docker
-docker compose run --rm -e HW_PORT=4321 host
-```
-
 ### Using WebSockets
-For WebSocket broadcasting, the container broadcasts on and exposes port 8765 by
-default. To change the port number, just publish a different port in the command:
-
-```docker
-docker compose run --rm -p 8443:8443 host
-```
-
-The config file must be edited inside the container to reflect any changes:
+For WebSocket broadcasting, the container broadcasts on and exposes port 8765. To make mag-usb broadcast over WebSockets, enter the container and edit the config.toml in nano.
 
 ```bash
+docker compose exec host bash
 nano /etc/mag-usb/config.toml
 ```
 
-Then, in nano:
+Then, under the [websocket] section, change the value for enable from "false" to "true":
 
 ```toml
 [websocket]
@@ -103,8 +88,10 @@ Then, in nano:
 enable = true
 # Bind address and port for WebSocket clients.
 bind_address = "0.0.0.0"
-port = 8443 # Change to port published in docker compose
+port = 8765
 ```
+
+Press ctrl+x to save and exit. Run mag-usb with `./mag-usb &`. You can `exit` the container once mag-usb is up and running.
 
 ## Troubleshooting
 
@@ -117,23 +104,17 @@ If during the execution of the container you see a similar output:
 2026/06/05 00:25:33 socat[7] E connect(7, AF=2 192.168.65.254:1234, 16): Connection refused
 ```
 
-Exit the container with ctrl+c. Check the adapter to make sure it is properly connected
-to your computer by unplugging and plugging it back in.
+Detach the container from the terminal, then run `docker compose down` to kill it.
+
+Check the adapter to make sure it is properly connected to your computer by unplugging and plugging it back in.
 
 Verify that the device name is correct by running `ls -l /dev/cu.*` after unplugging
 and plugging the adapter into your computer.
 
-Check socat to verify that it is running and what port the device is listening to:
+Check socat to verify that it is running and what port the device is listening to. The adapter must listen on port 1234:
 
 ```bash
-socat -d -d TCP-LISTEN:<PORT>,reuseaddr,fork FILE:<DEVICE>,raw,echo=0
-```
-
-Explicitly set the port during execution of the container. The value for `<PORT>` must
-be identical in both socat and docker compose:
-
-```docker
-docker compose run --rm -e HW_PORT=<PORT> host
+socat -d -d TCP-LISTEN:1234,reuseaddr,fork FILE:<DEVICE>,raw,echo=0
 ```
 
 ### Device Unavailable
