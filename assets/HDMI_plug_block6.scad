@@ -57,14 +57,14 @@ module main()
             cube([4, pLen * 2, 15], center = false);
         }
         // Screw Holes
-        translate([2.9, oLen, oHt/2 + 1 ])
+        translate([2.9, oLen, oHt/2 + 2.5 ])
         {
             rotate([90, 0, 0])
             {
                 cylinder(h=10, d=3.35, center=true);
             }
         }
-        translate([29.0, oLen, oHt/2 + 1 ])
+        translate([29.0, oLen, oHt/2 + 2.5 ])
         {
             rotate([90, 0, 0])
             {
