@@ -1,20 +1,20 @@
 # mag-usb
- 
+
 Version: 0.0.8
 
 Official documentation -- https://mag-usb.readthedocs.io/
- 
+
 **mag-usb** is a Linux command‑line utility for reading a PNI RM3100 3‑axis magnetometer via a USB‑to‑I²C adapter (Pololu 5396/5397). It outputs time‑stamped magnetic field vectors and supports optional configuration via a simple TOML file.
 
 ![HamSCI Project](../assets/HamSCI_2025_v3.png)
 
 The RM3100 boards were developed for the HamSCI Personal Space Weather Station (PSWS) TangerineSDR and Grape monitors, but mag-usb can be used as a standalone low‑cost geomagnetic field logger.
- 
+
 Key points:
 - Portable C (no heavyweight dependencies).
 - Designed to use the Pololu Isolated USB‑to‑I²C Adapter family.
 - Works on typical Linux hosts with USB 2.0. Raspberry Pi‑class devices may work but are not the current target.
-- Windows is not supported. macOS may work but is untested.
+- Windows is not supported. MacOS is supported through Docker.
 
 ## Features
 - Reads RM3100 magnetometer X/Y/Z and prints JSON lines including an RFC‑2822 timestamp.
@@ -41,6 +41,14 @@ cmake --build build --target mag-usb
 CLion IDE (convenient if you happen to have it):
 - Open the project; CLion generates Debug and Release profiles under cmake-build-debug and cmake-build-release.
 - Build the target `mag-usb` from the chosen profile.
+
+## Build (using Docker)
+Use socat to create a connection to the adapter. Then, start a container:
+```
+docker compose run --rm host
+```
+
+Refer to the [setup documentation](/docs/MacOS-Setup.md) for more details.
 
 ## Quick start
 - Connect the Pololu USB‑to‑I²C adapter and your RM3100 board.

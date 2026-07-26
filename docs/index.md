@@ -14,6 +14,7 @@ If you are building a fresh implementation, start with the Requirements page.
 
 Getting-Started
 Hardware-Setup
+MacOS-Setup
 Configuration
 Data-Format
 Orientation-and-Axes
@@ -25,7 +26,7 @@ WebSocket-Options
 Code-Review-and-Critique-2026-05-15-by-gemini-3-flash-preview
 Code-Review-2026-06-02-by-claude
 ```
- 
+
 ## Local preview
 
 You can build and preview this site locally with MkDocs. First, create a virtual environment and install the docs dependencies:
