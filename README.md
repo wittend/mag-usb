@@ -122,6 +122,7 @@ Run the test executable directly:
 - Requirements: docs/Requirements.md
 - Troubleshooting: docs/Troubleshooting.md
 - Project Review: docs/Code-Review-and-Critique-2026-05-15-by-gemini-3-flash-preview.md
+- Implementation Summary (MQTT): docs/Implementation-Summary-MQTT.md
 - Development guide: docs/Development.md
 - Contributors: docs/Contributors.md
 - Contribution guidelines: CONTRIBUTING.md

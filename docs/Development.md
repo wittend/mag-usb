@@ -54,6 +54,7 @@ cmake --build build --target i2c-pololu-tests
 
 ## Release process (suggested)
 - Update CHANGES.txt or a future CHANGELOG.md.
+- Implementation Summary (MQTT): [docs/Implementation-Summary-MQTT.md](Implementation-Summary-MQTT.md)
 - Tag versions using SemVer (suggest starting at v0.1.0 when ready).
 - Build Debug and Release; run CTest in both configurations.
 
