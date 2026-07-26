@@ -6,7 +6,7 @@ Official documentation -- https://mag-usb.readthedocs.io/
 
 **mag-usb** is a Linux command‑line utility for reading a PNI RM3100 3‑axis magnetometer via a USB‑to‑I²C adapter (Pololu 5396/5397). It outputs time‑stamped magnetic field vectors and supports optional configuration via a simple TOML file.
 
-![HamSCI Project](../assets/HamSCI_2025_v3.png)
+![HamSCI Project](docs/PSWS_Logo%20Finals-01.png)
 
 The RM3100 boards were developed for the HamSCI Personal Space Weather Station (PSWS) TangerineSDR and Grape monitors, but mag-usb can be used as a standalone low‑cost geomagnetic field logger.
 
