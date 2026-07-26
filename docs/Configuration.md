@@ -64,6 +64,19 @@ Rules:
 ### [temperature]
 - `remote_temp_address` (int, decimal or hex) — MCP9808 temperature sensor address. Default: 0x1F.
 
+### [mqtt]
+- `enable` (bool) — Enable MQTT publication. Default: false.
+- `broker_address` (string) — MQTT broker host. Default: `localhost`.
+- `broker_port` (int) — MQTT broker port. Default: 8883.
+- `username` (string) — Optional username.
+- `password` (string) — Optional password.
+- `topic` (string) — Publication topic. Default: `mag-usb/data`.
+- `client_id` (string) — Client ID. Default: `mag-usb-client`.
+- `use_tls` (bool) — Use secure TLS (mqtts://). Default: true.
+
+Note: Credentials (username/password) are never included in the JSON configuration messages published to the topic.
+Commands like `get_config` can be sent to `<topic>/command` to trigger a re-broadcast of the current settings.
+
 ### [output]
 - `write_logs` (bool) — Write logs to files. Default: false.
 - `log_output_path` (string) — Path for log files. Default: `./logs` (when logging enabled).
@@ -159,6 +172,21 @@ readback_cc_regs = false
 mag_translate_x = 0
 mag_translate_y = 0
 mag_translate_z = 0
+
+[mqtt]
+# Enable MQTT publication.
+enable = false
+# Broker address and port (use 8883 for TLS/MQTTS).
+broker_address = "localhost"
+broker_port = 8883
+# Optional credentials.
+username = ""
+password = ""
+# Topic for data publication.
+topic = "mag-usb/data"
+client_id = "mag-usb-client"
+# Use secure TLS (mqtts://).
+use_tls = true
 
 [temperature]
 # Remote temperature sensor I2C address

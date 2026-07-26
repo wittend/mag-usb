@@ -1,5 +1,17 @@
 # CHANGES.txt
 ===========================================================
+# Date: 2026-07-26      # Integrated MQTT capability and updated documentation
+#--------------------------------------------------------------------------
+- Implemented a custom lightweight MQTT 3.1.1 client with TLS support (OpenSSL).
+- Added [mqtt] section to config.toml for broker address, port, credentials, and topic.
+- Enabled 1Hz batched data publication of magnetometer and temperature readings.
+- Implemented secure configuration broadcast via MQTT (sensitive credentials excluded).
+- Added remote command support via MQTT (e.g., 'get_config').
+- Created 'mqtt-listener' and 'mqtt-command' testing tools in tools/.
+- Updated CMakeLists.txt to handle MQTT build targets and OpenSSL dependencies.
+- Updated documentation (README.md, CHANGES.txt, docs/) to acknowledge contributions from Jackson Conti, Michael Hauen, and AI assistants.
+
+===========================================================
 # Date: 2026-05-15      # new version to use with pi-eliminator (Pololu Hdw.)
 #--------------------------------------------------------------------------
 Add Code Review document to RTD sources - try to make it readable.
@@ -7,7 +19,7 @@ Add Code Review document to RTD sources - try to make it readable.
 ===========================================================
 # Date: 2026-05-14      # new version to use with pi-eliminator (Pololu Hdw.)
 #--------------------------------------------------------------------------
-Merge Pull Request from Mike Hauan and Claude (Thanks Mike!) to address occasionally dropped sample and other issues and potential issues found in the code.
+Merge Pull Request from Michael Hauen and Claude (Thanks Michael!) to address occasionally dropped sample and other issues and potential issues found in the code.
 
 
 # Date: 2025-08-19      # new version to use with pi-eliminator (Pololu Hdw.)

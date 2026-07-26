@@ -21,12 +21,13 @@ Key points:
 - Configurable cycle counts, gains, and sampling parameters.
 - Optional orientation translations in 90° increments about X/Y/Z, set in config.toml.
 - Support for concurrent output to `stdout` and named pipes for IPC (local monitoring/dashboards).
+- MQTT publication support (1Hz batched JSON) with TLS and authentication.
 - Convenience flag to print current settings (`-P`).
 - Optional diagnostics: verify devices, scan I²C bus, etc.
 
 ## Build (using CMake)
 
-Plain CMake:
+Plain CMake (requires OpenSSL):
 ```
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build --target mag-usb
@@ -114,6 +115,7 @@ Run the test executable directly:
 ## Documentation
 - Getting Started: docs/Getting-Started.md
 - Configuration reference: docs/Configuration.md
+- MQTT Testing Tools: tools/mqtt_listener.c, tools/mqtt_command.c
 - Orientation and axes: docs/Orientation-and-Axes.md
 - Data format: docs/Data-Format.md
 - Hardware Setup (wiring, udev rules): docs/Hardware-Setup.md
@@ -121,6 +123,7 @@ Run the test executable directly:
 - Troubleshooting: docs/Troubleshooting.md
 - Project Review: docs/Code-Review-and-Critique-2026-05-15-by-gemini-3-flash-preview.md
 - Development guide: docs/Development.md
+- Contributors: docs/Contributors.md
 - Contribution guidelines: CONTRIBUTING.md
 
 ## Command‑line help
@@ -147,6 +150,16 @@ Parameters:
    -V                     :  Display software version and exit.
    -h or -?               :  Display this help.
 ```
+
+## Contributors
+- **Dave Witten, KD0EAG** - Lead developer and maintainer.
+- **Michael Hauen** - Contribution to sample reliability and code quality.
+- **Jackson Conti** - Core contributions and implementation.
+- **Bill Engelke** - Improvement to output timing and cadence.
+- **Dave Larsen** - Formatting and JSON output enhancements.
+- **Rob** - Integration and system testing support.
+- **Claude (AI)** - Code reviews and project architecture guidance.
+- **Gemini (AI)** - Development of MQTT capabilities, documentation, and technical critiques.
 
 ## Pololu adapter links
 - https://www.pololu.com/product/5397

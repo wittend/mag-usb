@@ -19,10 +19,13 @@ This page is for developers working on mag-usb.
 ## Common targets
 - mag-usb (main CLI)
 - i2c-pololu-tests (unit tests for the Pololu adapter logic)
+- mqtt-listener (MQTT testing tool)
+- mqtt-command (MQTT remote command tool)
 
 ## Local builds
 - Debug profile: faster iteration, symbols
 - Release profile: optimized binary
+- Dependencies: Requires OpenSSL development headers (`libssl-dev` on Debian/Ubuntu).
 
 CLion profiles are preconfigured (cmake-build-debug/release). From CLI:
 ```
@@ -53,6 +56,9 @@ cmake --build build --target i2c-pololu-tests
 - Update CHANGES.txt or a future CHANGELOG.md.
 - Tag versions using SemVer (suggest starting at v0.1.0 when ready).
 - Build Debug and Release; run CTest in both configurations.
+
+## Contributors
+See [docs/Contributors.md](Contributors.md) for the list of individuals and AI assistants who have contributed to this project.
 
 ## Roadmap ideas (for discussion)
 - Expand unit tests to cover error cases and edge conditions in i2c-pololu.c.

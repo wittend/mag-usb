@@ -376,6 +376,47 @@ static void process_config_value(pList *p, const char *section, const char *key,
             }
         }
     }
+    // [mqtt] section
+    else if(strcmp(section, "mqtt") == 0)
+    {
+        if(strcmp(key, "enable") == 0)
+        {
+            p->mqtt_enable = parse_bool(value);
+        }
+        else if(strcmp(key, "broker_address") == 0)
+        {
+            if(p->mqtt_broker_address) free(p->mqtt_broker_address);
+            p->mqtt_broker_address = strdup(value);
+        }
+        else if(strcmp(key, "broker_port") == 0)
+        {
+            p->mqtt_broker_port = parse_int(value);
+        }
+        else if(strcmp(key, "username") == 0)
+        {
+            if(p->mqtt_username) free(p->mqtt_username);
+            p->mqtt_username = strdup(value);
+        }
+        else if(strcmp(key, "password") == 0)
+        {
+            if(p->mqtt_password) free(p->mqtt_password);
+            p->mqtt_password = strdup(value);
+        }
+        else if(strcmp(key, "topic") == 0)
+        {
+            if(p->mqtt_topic) free(p->mqtt_topic);
+            p->mqtt_topic = strdup(value);
+        }
+        else if(strcmp(key, "client_id") == 0)
+        {
+            if(p->mqtt_client_id) free(p->mqtt_client_id);
+            p->mqtt_client_id = strdup(value);
+        }
+        else if(strcmp(key, "use_tls") == 0)
+        {
+            p->mqtt_use_tls = parse_bool(value);
+        }
+    }
 }
 
 //---------------------------------------------------------------
@@ -535,5 +576,30 @@ void free_config_strings(pList *p)
     {
         free(p->webSocketBindAddr);
         p->webSocketBindAddr = NULL;
+    }
+    if(p->mqtt_broker_address)
+    {
+        free(p->mqtt_broker_address);
+        p->mqtt_broker_address = NULL;
+    }
+    if(p->mqtt_username)
+    {
+        free(p->mqtt_username);
+        p->mqtt_username = NULL;
+    }
+    if(p->mqtt_password)
+    {
+        free(p->mqtt_password);
+        p->mqtt_password = NULL;
+    }
+    if(p->mqtt_topic)
+    {
+        free(p->mqtt_topic);
+        p->mqtt_topic = NULL;
+    }
+    if(p->mqtt_client_id)
+    {
+        free(p->mqtt_client_id);
+        p->mqtt_client_id = NULL;
     }
 }
