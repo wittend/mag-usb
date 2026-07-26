@@ -1,0 +1,895 @@
+//=========================================================================
+// main.c
+//
+// A command line interface for the RM3100 3-axis magnetometer from PNI Sensor Corp.
+//
+// Author:      David Witten, KD0EAG
+// Date:        December 18, 2025
+// License:     GPL 3.0
+//=========================================================================
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <errno.h>
+#include <unistd.h>
+#include <linux/limits.h>
+#include "main.h"
+#include "i2c.h"
+#include "cmdmgr.h"
+#include "config.h"
+#include "sensor_tests.h"
+#include "i2c-pololu.h"
+#ifdef USE_WEBSOCKET
+#include "ws_bridge.h"
+#endif
+
+#include <pthread.h>
+#include <signal.h>
+#include <unistd.h>
+#include <time.h>
+
+//------------------------------------------
+// Static and Global variables
+//------------------------------------------
+char Version[32];
+int volatile killflag;
+static char outBuf[256];
+// Default device path matches install/99-PololuI2C.rules, which symlinks
+// any Pololu USB-to-I2C adapter (PID 0x2502 or 0x2503) to /dev/ttyMAG0.
+// Use -O /dev/ttyACMn to override when the udev rule is not installed.
+char portpath[PATH_MAX] = "/dev/ttyMAG0";
+extern int CC_400;
+extern int GAIN_150;
+extern int RM3100_I2C_ADDRESS;
+
+#ifdef USE_PIPES
+     char fifoCtrl[] = "/run/mag-usb/magctl.fifo";
+     char fifoData[] = "/run/mag-usb/magdata.fifo";
+     char fifoHome[] = "/run/mag-usb";
+     // int PIPEIN  = -1;
+     // int PIPEOUT = -1;
+#endif //USE_PIPES
+
+#if((USE_LGPIO || USE_RGPIO) && USE_WAITFOREDGE)
+#define PPS_GPIO_PIN    27
+#define PPS_TIMEOUTSECS 2.0
+void cbTestFunc()
+{
+    printf("Got Callback!/n");
+}
+
+int wait_for_edge(int sbc, int handle, int gpio_pin, int edge, CBFunc_t f, int timeout)
+{
+    int rv = 0;
+    rv = callback(sbc, handle, gpio_pin, edge, f, NULL);
+    return rv;
+}
+int rc = 0;
+// wait_for_edge((int)1, (int)1, PPS_GPIO_PIN, RISING_EDGE, cbTestFunc, PPS_TIMEOUTSECS);
+#endif
+
+//---------------------------------------------------------------
+// Shared state between threads
+//---------------------------------------------------------------
+volatile sig_atomic_t shutdown_requested = 0;   // Signal-safe flag
+pthread_mutex_t data_mutex = PTHREAD_MUTEX_INITIALIZER; // Protect shared data
+int sensor_data = 0;                            // Simulated sensor data
+
+//---------------------------------------------------------------
+//  main()
+//---------------------------------------------------------------
+int main(int argc, char** argv)
+{
+    pList   ctl;
+    pList   *p = &ctl;
+    int     rv = 0;
+
+#if(USE_POLOLU)
+    i2c_pololu_adapter pAdapter;
+#endif
+
+    //-----------------------------------------
+    //  Setup magnetometer parameter defaults.
+    //-----------------------------------------
+    memset(p, 0, sizeof(pList));
+    setProgramDefaults(p);
+#if(USE_POLOLU)
+    p->use_I2C_converter    = 1;
+    p->adapter              = &pAdapter;
+#else
+    p->i2cBusNumber         = RASPI_I2C_BUS1;
+#endif
+
+    //-----------------------------------------
+    //  Load configuration from TOML file
+    //  (command line args will override these)
+    //-----------------------------------------
+    const char *etc_config = "/etc/mag-usb/config.toml";
+    const char *local_config = "config.toml";
+
+    if (load_config(etc_config, p) != 0)
+    {
+        // If /etc config failed or didn't exist, try local directory
+        load_config(local_config, p);
+    }
+
+    if((rv = getCommandLine(argc, argv, p)) != 0)
+    {
+        return rv;
+    }
+
+    // If user requested to only show settings, print and exit before hardware init
+    if(p->showSettingsOnly)
+    {
+        showSettings(p);
+        free_config_strings(p);
+        if(p->pipeInFd >= 0)
+        {
+            close(p->pipeInFd);
+        }
+        if(p->pipeOutFd >= 0)
+        {
+            close(p->pipeOutFd);
+        }
+        printf("Program terminated.\n");
+        exit(0);
+    }
+
+    if(p->usePipes)
+    {
+        setupPipes(p);
+    }
+
+#ifdef USE_WEBSOCKET
+    if(p->useWebSocket)
+    {
+        if(!ws_server_init(p->webSocketBindAddr, (uint16_t)p->webSocketPort))
+        {
+            fprintf(OUTPUT_ERROR, "WebSocket init failed: %s\n", ws_server_last_error());
+            if(p->pipeInFd >= 0)
+            {
+                close(p->pipeInFd);
+            }
+            if(p->pipeOutFd >= 0)
+            {
+                close(p->pipeOutFd);
+            }
+            free_config_strings(p);
+            exit(1);
+        }
+    }
+#endif
+
+    if(i2c_init(p))
+    {
+        fprintf(OUTPUT_ERROR, "Unable to initialize I2C Adaptor handle.\n");
+        exit(1);
+    }
+    rv = i2c_pololu_check_device_available(p->portpath, 1000);
+    if(rv == 0)
+    {
+        // Validate the device is the expected Pololu adapter
+        rv = i2c_pololu_is_device_valid(p->portpath);
+        if(rv != 0)
+        {
+            fprintf(OUTPUT_ERROR, "Unsupported or invalid Pololu adapter at %s (error %d). Exiting...\n", p->portpath, rv);
+            exit(1);
+        }
+        if((rv = i2c_open(p)) < 0)
+        {
+            fprintf(OUTPUT_ERROR, "Failed to open I2C port '%s'. Exiting...\n", portpath);
+            exit(1);
+        }
+    }
+    else
+    {
+        fprintf(OUTPUT_ERROR, "I2C adapter device '%s' not available (error %d). Exiting...\n", p->portpath, rv);
+        exit(1);
+    }
+
+#if(USE_POLOLU)
+    if(p->checkPololuAdaptor)
+    {
+        if(i2c_verifyPololuAdaptor(p))
+        {
+            fprintf(OUTPUT_PRINT, "  Pololu Adapter OK.\n");
+        }
+        else
+        {
+            fprintf(OUTPUT_PRINT, "  Pololu Adapter NOT so OK.\n");
+            // return -1;
+            exit(1);
+        }
+        exit(0);
+}
+
+    //-----------------------------------------------------
+    // Get interface info and scan for i2c devices.
+    //-----------------------------------------------------
+    if(p->scanI2CBUS)
+    {
+        if(i2c_scanForBusDevices(p) <= 0)
+        {
+            exit(1);
+            //return -1;
+        }
+        exit(0);
+    }
+#endif
+
+    //-----------------------------------------------------
+    // Verify the Temp sensor presence and Version.
+    //-----------------------------------------------------
+    if(p->checkTempSensor)
+    {
+        if(!i2c_verifyTempSensor(p))
+        {
+            fprintf(OUTPUT_PRINT, "  Temp Sensor OK.\n");
+         }
+        else
+        {
+            fprintf(OUTPUT_PRINT, "  Temp Sensor NOT so OK.\n");
+            return 1;
+        }
+        exit(0);
+    }
+
+    //-----------------------------------------
+    // Verify the Mag sensor presence and Version.
+    //-----------------------------------------
+    if(p->checkMagSensor)
+    {
+        if(i2c_verifyMagSensor(p))
+        {
+            fprintf(OUTPUT_ERROR, "Unable to Verify the magnetometer.\n");
+            exit(1);
+        }
+        exit(0);
+    }
+
+    //-----------------------------------------
+    //  Initialize the Mag sensor registers.
+    //-----------------------------------------
+    i2c_initMagSensor(p);
+
+    //-----------------------------------------------------
+    //  Main program loop.
+    //-----------------------------------------------------
+#if(USE_PTHREADS)
+    pthread_t sensor_thread, print_thread, signal_thread;
+    fprintf(OUTPUT_PRINT, "\n");
+
+    // Block SIGHUP/SIGABRT/SIGINT in the calling thread *before* any
+    // pthread_create.  Newly created threads inherit this mask, so
+    // these signals are blocked in every thread except the dedicated
+    // signal_handler thread that calls sigwait().  Without this, the
+    // kernel delivers an arriving signal to whichever thread does not
+    // have it masked -- typically the print or sensor thread -- where
+    // there is no handler, so the process terminates instead of going
+    // through the graceful shutdown_requested path.
+    {
+        sigset_t blocked;
+        sigemptyset(&blocked);
+        sigaddset(&blocked, SIGHUP);
+        sigaddset(&blocked, SIGABRT);
+        sigaddset(&blocked, SIGINT);
+        if (pthread_sigmask(SIG_BLOCK, &blocked, NULL) != 0)
+        {
+            perror("pthread_sigmask(SIG_BLOCK)");
+            exit(1);
+        }
+    }
+
+    // Create threads
+    if (pthread_create(&sensor_thread, NULL, read_sensors, (void *) p) != 0)
+    {
+        perror("pthread_create sensor");
+        exit(1);
+    }
+    if (pthread_create(&print_thread, NULL, print_data, (void *) p) != 0)
+    {
+        perror("pthread_create print");
+        exit(1);
+    }
+    if (pthread_create(&signal_thread, NULL, signal_handler_thread, NULL) != 0)
+    {
+        perror("pthread_create signal");
+        exit(1);
+    }
+    // Wait for signal handler thread to complete (it will only return on signal)
+    pthread_join(signal_thread, NULL);
+    // Signal handler has set shutdown_requested, so wait for other threads to finish
+    pthread_join(sensor_thread, NULL);
+    pthread_join(print_thread, NULL);
+    // Clean up
+    pthread_mutex_destroy(&data_mutex);
+#else
+
+    while(1)
+    {
+        // if(PPS_Flag)
+        // {
+        //     PPS_Flag = 0;
+        //     //formatOutput(p, outBuf);
+        //     formatOutput(p);
+        //     fflush(outfp);
+        // }
+#if(USE_WAITFOREDGE)
+        if(!(rv = wait_for_edge(p->po, (unsigned) PPS_GPIO_PIN, RISING_EDGE, PPS_TIMEOUTSECS)))
+        {
+            utcTime = getUTC();
+            strftime(utcStr, UTCBUFLEN, "%d %b %Y %T", utcTime);                // RFC 2822: "%a, %d %b %Y %T %z"      RFC 822: "%a, %d %b %y %T %z"
+    #if(CONSOLE_OUTPUT)
+            fprintf(OUTPUT_PRINT, "   [CHILD]: {ts: \"%s\", lastStatus: \"Missed PPS Timeout!\"}", utcStr);
+            fflush(OUTPUT_PRINT);
+    #else
+            char outstr[MAXPATHBUFLEN] = "";
+            sprintf(outstr, "   [CHILD]: {ts: \"%s\", lastStatus: \"Missed PPS Timeout!\"}", utcStr);
+            write(PIPEOUT, outstr);
+    #endif
+            // Set exit return value.
+            rv = 2;
+            break;
+        }
+#endif
+#if __DEBUG
+        else
+        {
+            fputs(".", OUTPUT_PRINT);
+            fflush(OUTPUT_PRINT);
+        }
+#endif
+    }
+    //-----------------------------------------------------
+    //  Cleanup Callback, PIGPIO, and exit.
+    //-----------------------------------------------------
+    #if(USE_RGPIO || USE_LGPIO)
+        rv = callback_cancel(p->edge_cb_id);
+    #elif (USE_PIGPIO)
+        rv = event_callback_cancel(p->edge_cb_id);
+    #endif
+#endif // USE_PTHREADS
+    // Free any allocated config strings before exit
+    if(p->pipeInFd >= 0) close(p->pipeInFd);
+    if(p->pipeOutFd >= 0) close(p->pipeOutFd);
+#ifdef USE_WEBSOCKET
+    ws_server_shutdown();
+#endif
+    free_config_strings(p);
+    printf("Program terminated.\n");
+    return 0;
+}
+
+// Forward declaration for local helper used below
+static double mcp9808_decode_celsius(uint8_t msb, uint8_t lsb);
+
+//---------------------------------------------------------------
+// Function to simulate reading sensor data
+//---------------------------------------------------------------
+void* read_sensors(void* arg)
+{
+    (void)arg;
+    while (!shutdown_requested)
+    {
+        // Sleep for 1000 ms (1 second)
+        usleep(1000000);
+
+        // Check for shutdown request
+        if (shutdown_requested)
+        {
+            break;
+        }
+    }
+    return NULL;
+}
+
+//---------------------------------------------------------------
+// Function to print sensor data once per UTC second.
+//
+// The cadence is anchored at the next whole CLOCK_REALTIME second
+// and advanced by exactly +1 s each iteration, using
+// clock_nanosleep() with TIMER_ABSTIME so the wakeup is aligned to
+// the wall clock rather than relative to whenever the previous
+// formatOutput() call finished.
+//
+// The previous implementation (nanosleep(1 s) after each read) drifted
+// by however long the synchronous I2C POLL + DRDY + 9-byte XYZ read
+// + MCP9808 temp read took, and once accumulated drift exceeded one
+// second the corresponding tick was silently skipped — the
+// "occasional missed sample" Dave Witten reports against the
+// pre-rewrite code path.  Aligning to an absolute deadline removes
+// both the drift and the silent skip; the loop also explicitly
+// detects and logs a missed sample whenever formatOutput overruns,
+// so the operator can see *why* a tick disappeared instead of just
+// noticing a gap after the fact.
+//---------------------------------------------------------------
+void* print_data(void* arg)
+{
+    pList * p = (pList *) arg;
+
+    // Anchor on the next whole UTC second.
+    struct timespec deadline;
+    clock_gettime(CLOCK_REALTIME, &deadline);
+    deadline.tv_sec  += 1;
+    deadline.tv_nsec  = 0;
+
+    while (!shutdown_requested)
+    {
+#ifdef USE_WEBSOCKET
+        if (p->useWebSocket)
+        {
+            ws_server_poll();
+        }
+#endif
+
+        // Sleep until the absolute deadline.  Retry on EINTR so a
+        // stray signal does not cost us a sample; honour shutdown
+        // between retries so SIGTERM still exits promptly.
+        int rc;
+        do
+        {
+            rc = clock_nanosleep(CLOCK_REALTIME, TIMER_ABSTIME, &deadline, NULL);
+        } while (rc == EINTR && !shutdown_requested);
+
+        if (shutdown_requested)
+        {
+            break;
+        }
+        if (rc != 0)
+        {
+            fprintf(OUTPUT_ERROR,
+                    "clock_nanosleep(CLOCK_REALTIME, TIMER_ABSTIME) failed: %d\n",
+                    rc);
+            break;
+        }
+
+        formatOutput(p);
+
+        // Advance to the next tick.  If formatOutput overran by one
+        // or more whole seconds, skip-advance and log each missed
+        // tick so an operator can correlate gaps with their causes
+        // (slow I2C reads, scheduler preemption, clock steps, etc.).
+        deadline.tv_sec += 1;
+
+        struct timespec now;
+        clock_gettime(CLOCK_REALTIME, &now);
+        while (now.tv_sec  > deadline.tv_sec ||
+              (now.tv_sec == deadline.tv_sec && now.tv_nsec > deadline.tv_nsec))
+        {
+            fprintf(OUTPUT_ERROR,
+                    "{ \"lastStatus\": \"missed_sample\", \"deadline\": %ld.%09ld }\n",
+                    (long)deadline.tv_sec, (long)deadline.tv_nsec);
+            fflush(OUTPUT_ERROR);
+            deadline.tv_sec += 1;
+        }
+    }
+    return NULL;
+}
+
+//---------------------------------------------------------------
+// Signal handler thread function
+//---------------------------------------------------------------
+void* signal_handler_thread(void* arg)
+{
+    (void)arg;
+    sigset_t sigset;
+    int signum;
+
+    // Block SIGHUP, SIGABRT, and SIGINT in this thread
+    sigemptyset(&sigset);
+    sigaddset(&sigset, SIGHUP);
+    sigaddset(&sigset, SIGABRT);
+    sigaddset(&sigset, SIGINT);
+    pthread_sigmask(SIG_BLOCK, &sigset, NULL);
+
+    // Wait for any of the blocked signals
+    while (1)
+    {
+        if (sigwait(&sigset, &signum) == 0)
+        {
+            switch (signum)
+            {
+                case SIGHUP:
+                    printf("Received SIGHUP. Shutting down gracefully.\n");
+                    break;
+                case SIGABRT:
+                    printf("Received SIGABRT. Shutting down gracefully.\n");
+                    break;
+                case SIGINT:
+                    printf("Received SIGINT. Shutting down gracefully.\n");
+                    break;
+                default:
+                    printf("Received unexpected signal %d.\n", signum);
+                    break;
+            }
+            // Set shutdown flag
+            shutdown_requested = 1;
+            break;
+        }
+    }
+    return NULL;
+}
+
+//---------------------------------------------------------------
+// formatOutput(volatile pList *p)
+//---------------------------------------------------------------
+static int norm_angle(int a)
+{
+    if(a == 180 || a == -180) return 180;
+    if(a == 90 || a == -90 || a == 0) return a;
+    return 0;
+}
+
+//---------------------------------------------------------------
+// apply_orientation(volatile pList *p)
+//---------------------------------------------------------------
+static void apply_orientation(const pList *p, double *x, double *y, double *z)
+{
+    double X = *x, Y = *y, Z = *z;
+    int ax = norm_angle(p->mag_translate_x);
+    int ay = norm_angle(p->mag_translate_y);
+    int az = norm_angle(p->mag_translate_z);
+
+    // Rotate around X axis (affects Y,Z)
+    if(ax == 90)
+    {
+        double newY = -Z;
+        double newZ =  Y;
+        Y = newY; Z = newZ;
+    }
+    else if(ax == -90)
+    {
+        double newY =  Z;
+        double newZ = -Y;
+        Y = newY; Z = newZ;
+    }
+    else if(ax == 180)
+    {
+        Y = -Y; Z = -Z;
+    }
+
+    // Rotate around Y axis (affects X,Z)
+    if(ay == 90)
+    {
+        double newX =  Z;
+        double newZ = -X;
+        X = newX; Z = newZ;
+    }
+    else if(ay == -90)
+    {
+        double newX = -Z;
+        double newZ =  X;
+        X = newX; Z = newZ;
+    }
+    else if(ay == 180)
+    {
+        X = -X; Z = -Z;
+    }
+
+    // Rotate around Z axis (affects X,Y)
+    if(az == 90)
+    {
+        double newX = -Y;
+        double newY =  X;
+        X = newX; Y = newY;
+    }
+    else if(az == -90)
+    {
+        double newX =  Y;
+        double newY = -X;
+        X = newX; Y = newY;
+    }
+    else if(az == 180)
+    {
+        X = -X; Y = -Y;
+    }
+
+    *x = X; *y = Y; *z = Z;
+}
+
+//---------------------------------------------------------------
+// formatOutput(volatile pList *p)
+//---------------------------------------------------------------
+char *formatOutput(pList *p)
+{
+#define FMTBUFLEN  200
+    char fmtBuf[FMTBUFLEN + 1] ="";
+    int fmtBuf_len      = sizeof fmtBuf;
+    struct tm *utcTime  = getUTC();
+    char utcStr[128]    ="";
+    double xyz[3];
+    double rcRemoteTemp;
+
+    outBuf[0] = '\0';
+
+    i2c_readMagPOLL(p);
+
+    xyz[0] = (((double)p->XYZ[0] / p->NOSRegValue) / p->x_gain) * 1000; // make microTeslas -> nanoTeslas
+    xyz[1] = (((double)p->XYZ[1] / p->NOSRegValue) / p->y_gain) * 1000; // make microTeslas -> nanoTeslas
+    xyz[2] = (((double)p->XYZ[2] / p->NOSRegValue) / p->z_gain) * 1000; // make microTeslas -> nanoTeslas
+
+    // Apply orientation translations (rotations) from config
+    apply_orientation(p, &xyz[0], &xyz[1], &xyz[2]);
+
+    // xyz[0] = (((double)p->XYZ[0] / p->NOSRegValue) / p->x_gain);
+    // xyz[1] = (((double)p->XYZ[1] / p->NOSRegValue) / p->y_gain);
+    // xyz[2] = (((double)p->XYZ[2] / p->NOSRegValue) / p->z_gain);
+
+#if(FOR_GRAPE2)
+    strftime(utcStr, UTCBUFLEN, "%Y%m%e%y%M%S", utcTime);              // YYYYMMDDHHMMSS  (Gaak!)
+    snprintf(fmtBuf, fmtBuf_len, "\"ts\":%s", utcStr);
+#else
+    strftime(utcStr, UTCBUFLEN, "%d %b %Y %T", utcTime);                // RFC 2822: "%a, %d %b %Y %T %z"
+    snprintf(fmtBuf, fmtBuf_len, "\"ts\":\"%s\"", utcStr);
+#endif
+
+    rcRemoteTemp = readTemp(p);
+
+    utcTime = getUTC();
+    strftime(utcStr, UTCBUFLEN, "%d %b %Y %T", utcTime);                // RFC 2822: "%a, %d %b %Y %T %z"
+    snprintf(fmtBuf, fmtBuf_len, "{ \"ts\":\"%s\"", utcStr);
+    {
+        size_t used = strlen(outBuf);
+        snprintf(outBuf + used, sizeof(outBuf) - used, "%s", fmtBuf);
+    }
+
+    if(rcRemoteTemp < -100.0)
+    {
+        snprintf(fmtBuf, fmtBuf_len, ", \"rt\":0.0");
+        {
+            size_t used = strlen(outBuf);
+            snprintf(outBuf + used, sizeof(outBuf) - used, "%s", fmtBuf);
+        }
+    }
+    else
+    {
+        snprintf(fmtBuf, fmtBuf_len, ", \"rt\":%.2f",  rcRemoteTemp);
+        {
+            size_t used = strlen(outBuf);
+            snprintf(outBuf + used, sizeof(outBuf) - used, "%s", fmtBuf);
+        }
+    }
+
+    snprintf(fmtBuf, fmtBuf_len, ", \"x\":%.3f", xyz[0]);
+    {
+        size_t used = strlen(outBuf);
+        snprintf(outBuf + used, sizeof(outBuf) - used, "%s", fmtBuf);
+    }
+    snprintf(fmtBuf, fmtBuf_len, ", \"y\":%.3f", xyz[1]);
+    {
+        size_t used = strlen(outBuf);
+        snprintf(outBuf + used, sizeof(outBuf) - used, "%s", fmtBuf);
+    }
+    snprintf(fmtBuf, fmtBuf_len, ", \"z\":%.3f", xyz[2]);
+    {
+        size_t used = strlen(outBuf);
+        snprintf(outBuf + used, sizeof(outBuf) - used, "%s", fmtBuf);
+    }
+
+    snprintf(fmtBuf, fmtBuf_len, " }\n");
+    {
+        size_t used = strlen(outBuf);
+        snprintf(outBuf + used, sizeof(outBuf) - used, "%s", fmtBuf);
+    }
+
+#if(CONSOLE_OUTPUT)
+    fprintf(OUTPUT_PRINT, " %s", outBuf);
+    fflush(OUTPUT_PRINT);
+#endif
+    if(p->usePipes && p->pipeOutFd >= 0)
+    {
+        write(p->pipeOutFd, outBuf, strlen(outBuf));
+    }
+#ifdef USE_WEBSOCKET
+    if(p->useWebSocket)
+    {
+        ws_server_broadcast(outBuf, strlen(outBuf));
+    }
+#endif
+    return outBuf;
+}
+
+//---------------------------------------------------------------
+// readTemp(pList *p)
+//---------------------------------------------------------------
+double readTemp(pList *p)
+{
+    uint8_t temp_buf[2] = {0xFF, 0xFF};
+
+    int rv = i2c_pololu_read_from(p->adapter, p->remoteTempAddr, MCP9808_REG_AMBIENT_TEMP, temp_buf, 2);
+    if (rv < 2)
+    {
+        char usingcall[256] = "i2c_pololu_read_from";
+        char ebuf[300] = "";
+        snprintf(ebuf,sizeof(ebuf),"Read with: %s() ", usingcall);
+        perror(ebuf);
+    }
+    double celsius = mcp9808_decode_celsius(temp_buf[0], temp_buf[1]);
+    return celsius;
+}
+
+//------------------------------------------
+//  mcp9808_decode_celsius()
+//------------------------------------------
+static double mcp9808_decode_celsius(uint8_t msb, uint8_t lsb)
+{
+    uint16_t raw = ((uint16_t)msb << 8) | lsb;
+    // First, clear alert flag bits (15, 14, 13)
+    raw &= 0x1FFF;  // Keep only bits 12-0
+
+    double c;
+    if (raw & 0x1000)
+    {
+        // Bit 12 (sign bit) is set - negative temperature
+        // For two's complement of a 13-bit signed value:
+        // Treat bits 12-0 as signed, or manually compute
+        c = -(double)(raw & 0x0FFF) / 16.0 - 256.0;
+    }
+    else
+    {
+        // Positive temperature
+        c = (double)(raw & 0x0FFF) / 16.0;
+    }
+    return c;
+}
+
+//------------------------------------------
+// getUTC()
+//------------------------------------------
+struct tm *getUTC()
+{
+    time_t now = time(&now);
+    if(now == -1)
+    {
+        puts("The time() function failed");
+    }
+    struct tm *ptm = gmtime(&now);
+    if(ptm == NULL)
+    {
+        puts("The gmtime() function failed");
+    }
+    return ptm;
+}
+
+//------------------------------------------
+// currentTimeMillis()
+//------------------------------------------
+long currentTimeMillis()
+{
+    struct timeval time;
+    gettimeofday(&time, NULL);
+    return time.tv_sec * 1000 + time.tv_usec / 1000;
+}
+
+//------------------------------------------
+// int setupPipes(pList *p)
+//------------------------------------------
+int setupPipes(pList *p)
+{
+     //-----------------------------------------
+     //  Setup the I/O pipes
+     //-----------------------------------------
+     if(p->usePipes == TRUE)
+     {
+         if (p->pipeInPath == NULL || p->pipeOutPath == NULL) {
+             fprintf(OUTPUT_ERROR, "Error: Named pipe paths not specified.\n");
+             return -1;
+         }
+
+         // Create pipes if they don't exist
+         if (mkfifo(p->pipeInPath, 0666) < 0) {
+             if (errno != EEXIST) {
+                 perror("mkfifo Pipe In failed");
+             }
+         } else {
+             chmod(p->pipeInPath, 0666); // Ensure permissions if umask affected it
+         }
+
+         if (mkfifo(p->pipeOutPath, 0666) < 0) {
+             if (errno != EEXIST) {
+                 perror("mkfifo Pipe Out failed");
+             }
+         } else {
+             chmod(p->pipeOutPath, 0666); // Ensure permissions if umask affected it
+         }
+
+         // Open for writing to the dashboard (out)
+         // Note: Opening a FIFO for WRONLY will block until a reader opens it.
+         // Using O_NONBLOCK to avoid blocking here if the dashboard isn't running yet,
+         // but the user might want it to block. 
+         // Given the context "likely to be a local monitor/dashboard program", 
+         // it's probably better if we don't block the whole program.
+         p->pipeOutFd = open(p->pipeOutPath, O_WRONLY | O_NONBLOCK);
+         if(p->pipeOutFd < 0)
+         {
+             if (errno != ENXIO) { // ENXIO means no reader
+                 perror("Open PIPE Out failed");
+                 fprintf(OUTPUT_ERROR, "Path: %s\n", p->pipeOutPath);
+             }
+         }
+         else
+         {
+             fprintf(OUTPUT_PRINT, "Open PIPE Out OK: %s\n", p->pipeOutPath);
+             fflush(OUTPUT_PRINT);
+         }
+
+         // Open for reading from the dashboard (in)
+         p->pipeInFd = open(p->pipeInPath, O_RDONLY | O_NONBLOCK);
+         if(p->pipeInFd < 0)
+         {
+             perror("Open PIPE In failed");
+             fprintf(OUTPUT_ERROR, "Path: %s\n", p->pipeInPath);
+         }
+         else
+         {
+             fprintf(OUTPUT_PRINT, "Open PIPE In OK: %s\n", p->pipeInPath);
+             fflush(OUTPUT_PRINT);
+         }
+     }
+     return 0;
+}
+
+//------------------------------------------
+// int setProgramDefaults(pList *p)
+//------------------------------------------
+void setProgramDefaults(pList *p)
+{
+// #if(USE_POLOLU)
+//     i2c_pololu_adapter pAdapter;
+// #endif
+    // Initialize program version string so it is available for -V and -O outputs
+    snprintf(Version, sizeof(Version), "%s", MAG_USB_VERSION);
+
+    p->portpath             = portpath;
+    p->scanI2CBUS           = FALSE;
+    p->checkPololuAdaptor   = FALSE;
+    p->checkMagSensor       = FALSE;
+    p->checkTempSensor      = FALSE;
+    p->ppsHandle            = 0;
+    p->magHandle            = 0;
+    p->remoteTempHandle     = 0;
+    p->doBistMask           = 0;
+    p->cc_x                 = (int) CC_400;
+    p->cc_y                 = (int) CC_400;
+    p->cc_z                 = (int) CC_400;
+    p->x_gain               = GAIN_150;
+    p->y_gain               = GAIN_150;
+    p->z_gain               = GAIN_150;
+    p->tsMilliseconds       = 0;
+    p->TMRCRate             = 0x96;
+    p->Version              = Version;
+    p->samplingMode         = POLL;
+    p->readBackCCRegs       = FALSE;
+    p->CMMSampleRate        = 400;
+    p->NOSRegValue          = 60;
+    p->DRDYdelay            = 10;
+    p->magRevId             = 0x0;
+    p->remoteTempAddr       = 0x1F;
+    p->mag_translate_x      = 0;
+    p->mag_translate_y      = 0;
+    p->mag_translate_z      = 0;
+    p->magAddr              = RM3100_I2C_ADDRESS;
+    p->usePipes             = FALSE;
+    p->useWebSocket         = FALSE;
+    p->webSocketPort        = 8765;
+    p->pipeInPath           = strdup(fifoCtrl);
+    p->pipeOutPath          = strdup(fifoData);
+    p->webSocketBindAddr    = strdup("0.0.0.0");
+    p->pipeInFd             = -1;
+    p->pipeOutFd            = -1;
+    p->readBackCCRegs       = FALSE;
+    p->showSettingsOnly     = FALSE;
+}
+
+#if(USE_RGPIO | USE_LGPIO | USE_PIGPIO)
+//---------------------------------------------------------------
+// void onEdge(void)
+//---------------------------------------------------------------
+void onEdge(void)
+{
+#if(__DEBUG)
+    fputs("|", OUTPUT_PRINT);
+    fflush(OUTPUT_PRINT);
+#endif
+    PPS_Flag = TRUE;
+}
+#endif

@@ -1,7 +1,7 @@
 # Configuration
 
 mag-usb reads an optional `config.toml` at startup. It searches for the configuration file in the following order:
-1. `/etc/mag-usb/config.toml`
+1. `/etc/mag-usb/config.toml` 
 2. `config.toml` in the current working directory.
 
 If neither file is found, defaults are used. Invalid values are ignored or reduced to defaults. Command-line arguments always override both default values and those found in any configuration file.
