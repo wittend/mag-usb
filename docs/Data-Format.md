@@ -32,6 +32,44 @@ If configured, 90° increment rotations are applied to `(x,y,z)` before printing
 ## Errors and diagnostics output
 - Informational and error messages (e.g., adapter checks) are printed to OUTPUT_PRINT/ around the JSON lines. If you need a clean stream of JSON only, redirect  and/or prefilter lines not starting with `{`.
 
+## MQTT Message Formats
+
+When MQTT is enabled, two types of messages are published to the configured topic.
+
+### 1. Telemetry Data (1Hz Batched)
+By default, sensor readings are batched and published once per second to minimize network overhead and avoid timing overlaps.
+```json
+{
+  "ts": "26 Jul 2026 14:20:01",
+  "rt": 23.125,
+  "x": 12345.678,
+  "y": -234.500,
+  "z": 987.001
+}
+```
+
+### 2. Configuration Message
+Published automatically on connection, and whenever a `get_config` command is received on the `<topic>/command` sub-topic.
+```json
+{
+  "msg_type": "config",
+  "version": "0.0.9",
+  "maintainer": "Dave Witten, KD0EAG",
+  "location": {
+    "lat": "38.92263",
+    "lon": "-92.29831",
+    "grid": "EM38uw"
+  },
+  "mqtt_settings": {
+    "broker": "test.mosquitto.org",
+    "port": 8883,
+    "topic": "mag-usb/data",
+    "tls": true
+  }
+}
+```
+**Note:** Sensitive information such as the MQTT password is never included in the configuration message.
+
 ## Logging and pipes
 - If you enable logging or named pipes in the configuration, the same JSON lines are written to files or pipes. 
 - Named pipes (FIFOs) allow real-time IPC with local monitor/dashboard programs.

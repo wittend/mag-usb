@@ -54,6 +54,16 @@ void showSettings(pList *p)
     fprintf(OUTPUT_PRINT, "   WebSocket bind address:               %s\n",  p->webSocketBindAddr ? p->webSocketBindAddr : "(null)");
     fprintf(OUTPUT_PRINT, "   WebSocket port:                       %d\n",  p->webSocketPort);
 
+    fprintf(OUTPUT_PRINT, "\n   [MQTT Settings]\n");
+    fprintf(OUTPUT_PRINT, "   MQTT Enabled:                         %s\n", p->mqtt_enable ? "TRUE" : "FALSE");
+    fprintf(OUTPUT_PRINT, "   Broker Address:                       %s\n", p->mqtt_broker_address ? p->mqtt_broker_address : "(null)");
+    fprintf(OUTPUT_PRINT, "   Broker Port:                          %d\n", p->mqtt_broker_port);
+    fprintf(OUTPUT_PRINT, "   Username:                             %s\n", p->mqtt_username ? p->mqtt_username : "(null)");
+    fprintf(OUTPUT_PRINT, "   Password:                             %s\n", p->mqtt_password ? "********" : "(null)");
+    fprintf(OUTPUT_PRINT, "   Topic:                                %s\n", p->mqtt_topic ? p->mqtt_topic : "(null)");
+    fprintf(OUTPUT_PRINT, "   Client ID:                            %s\n", p->mqtt_client_id ? p->mqtt_client_id : "(null)");
+    fprintf(OUTPUT_PRINT, "   Use TLS:                              %s\n", p->mqtt_use_tls ? "TRUE" : "FALSE");
+
     // Magnetometer
     fprintf(OUTPUT_PRINT, "   Magnetometer I2C address:             0x%02X (hex)\n",  (unsigned)(p->magAddr & 0xFF));
     fprintf(OUTPUT_PRINT, "   Cycle counts (X,Y,Z):                 %d, %d, %d\n",  p->cc_x, p->cc_y, p->cc_z);

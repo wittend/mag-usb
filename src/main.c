@@ -22,6 +22,7 @@
 #ifdef USE_WEBSOCKET
 #include "ws_bridge.h"
 #endif
+#include "mqtt_client.h"
 
 #include <pthread.h>
 #include <signal.h>
@@ -34,6 +35,11 @@
 char Version[32];
 int volatile killflag;
 static char outBuf[256];
+// Prototypes for local helpers
+static double mcp9808_decode_celsius(uint8_t msb, uint8_t lsb);
+static int mqtt_init_client(pList *p);
+static void mqtt_cleanup_client(pList *p);
+static void publish_config_msg(pList *p);
 // Default device path matches install/99-PololuI2C.rules, which symlinks
 // any Pololu USB-to-I2C adapter (PID 0x2502 or 0x2503) to /dev/ttyMAG0.
 // Use -O /dev/ttyACMn to override when the udev rule is not installed.
@@ -163,6 +169,14 @@ int main(int argc, char** argv)
         setupPipes(p);
     }
 
+    if(p->mqtt_enable)
+    {
+        if(mqtt_init_client(p) != 0)
+        {
+            fprintf(OUTPUT_ERROR, "MQTT init failed. Continuing without MQTT.\n");
+        }
+    }
+
 #ifdef USE_WEBSOCKET
     if(p->useWebSocket)
     {
@@ -200,7 +214,7 @@ int main(int argc, char** argv)
         }
         if((rv = i2c_open(p)) < 0)
         {
-            fprintf(OUTPUT_ERROR, "Failed to open I2C port '%s'. Exiting...\n", portpath);
+            fprintf(OUTPUT_ERROR, "Failed to open I2C port '%s'. Exiting...\n", p->portpath);
             exit(1);
         }
     }
@@ -378,13 +392,99 @@ int main(int argc, char** argv)
 #ifdef USE_WEBSOCKET
     ws_server_shutdown();
 #endif
+    mqtt_cleanup_client(p);
     free_config_strings(p);
     printf("Program terminated.\n");
     return 0;
 }
 
-// Forward declaration for local helper used below
+// Prototypes for local helpers
 static double mcp9808_decode_celsius(uint8_t msb, uint8_t lsb);
+static int mqtt_init_client(pList *p);
+static void mqtt_cleanup_client(pList *p);
+static void publish_config_msg(pList *p);
+
+//---------------------------------------------------------------
+// MQTT Helpers
+//---------------------------------------------------------------
+static void publish_config_msg(pList *p) {
+    if (!p->mqtt || !mqtt_client_is_connected(p->mqtt)) return;
+
+    char buf[1024];
+    // Create a JSON config message, explicitly omitting the password
+    snprintf(buf, sizeof(buf), 
+        "{ \"msg_type\": \"config\", \"version\": \"%s\", \"mqtt\": { \"broker\": \"%s\", \"port\": %d, \"topic\": \"%s\", \"client_id\": \"%s\", \"use_tls\": %s }, "
+        "\"mag\": { \"address\": \"0x%02X\", \"cc\": [%d, %d, %d], \"gain\": [%d, %d, %d], \"rate\": \"0x%02x\", \"nos\": %d }, "
+        "\"location\": { \"lat\": \"%s\", \"lon\": \"%s\", \"alt\": \"%s\", \"grid\": \"%s\" } }",
+        p->Version ? p->Version : "unknown",
+        p->mqtt_broker_address ? p->mqtt_broker_address : "null",
+        p->mqtt_broker_port,
+        p->mqtt_topic ? p->mqtt_topic : "null",
+        p->mqtt_client_id ? p->mqtt_client_id : "null",
+        p->mqtt_use_tls ? "true" : "false",
+        p->magAddr, p->cc_x, p->cc_y, p->cc_z, p->x_gain, p->y_gain, p->z_gain, p->TMRCRate, p->NOSRegValue,
+        p->latitude ? p->latitude : "", p->longitude ? p->longitude : "", p->elevation ? p->elevation : "", p->grid_square ? p->grid_square : ""
+    );
+
+    mqtt_client_publish(p->mqtt, p->mqtt_topic, buf, strlen(buf));
+}
+
+static void mqtt_msg_handler(void *user_data, const char *topic, const char *payload, size_t payload_len) {
+    pList *p = (pList *)user_data;
+    
+    // Create a null-terminated copy of the payload for string functions
+    char *payload_str = (char *)malloc(payload_len + 1);
+    if (!payload_str) return;
+    memcpy(payload_str, payload, payload_len);
+    payload_str[payload_len] = '\0';
+
+    // Check if it's a command on the command topic
+    char cmd_topic[256];
+    snprintf(cmd_topic, sizeof(cmd_topic), "%s/command", p->mqtt_topic);
+
+    if (strcmp(topic, cmd_topic) == 0) {
+        if (strstr(payload_str, "get_config")) {
+            publish_config_msg(p);
+        }
+    }
+    free(payload_str);
+}
+
+static int mqtt_init_client(pList *p) {
+    if (!p->mqtt_enable) return 0;
+
+    p->mqtt = mqtt_client_new();
+    if (!p->mqtt) return -1;
+
+    mqtt_client_set_callback(p->mqtt, mqtt_msg_handler, p);
+
+    if (mqtt_client_connect(p->mqtt, p->mqtt_broker_address, p->mqtt_broker_port, p->mqtt_use_tls) != 0) {
+        fprintf(OUTPUT_ERROR, "MQTT connection failed to %s:%d\n", p->mqtt_broker_address, p->mqtt_broker_port);
+        return -1;
+    }
+
+    if (mqtt_client_authenticate(p->mqtt, p->mqtt_username, p->mqtt_password, p->mqtt_client_id) != 0) {
+        fprintf(OUTPUT_ERROR, "MQTT authentication failed for client %s\n", p->mqtt_client_id);
+        return -1;
+    }
+
+    // Subscribe to command topic for configuration requests
+    char cmd_topic[256];
+    snprintf(cmd_topic, sizeof(cmd_topic), "%s/command", p->mqtt_topic);
+    mqtt_client_subscribe(p->mqtt, cmd_topic);
+
+    // Initial config publication
+    publish_config_msg(p);
+
+    return 0;
+}
+
+static void mqtt_cleanup_client(pList *p) {
+    if (p->mqtt) {
+        mqtt_client_free(p->mqtt);
+        p->mqtt = NULL;
+    }
+}
 
 //---------------------------------------------------------------
 // Function to simulate reading sensor data
@@ -467,6 +567,11 @@ void* print_data(void* arg)
         }
 
         formatOutput(p);
+
+        if (p->mqtt_enable && p->mqtt)
+        {
+            mqtt_client_poll(p->mqtt);
+        }
 
         // Advance to the next tick.  If formatOutput overran by one
         // or more whole seconds, skip-advance and log each missed
@@ -711,6 +816,10 @@ char *formatOutput(pList *p)
         ws_server_broadcast(outBuf, strlen(outBuf));
     }
 #endif
+    if(p->mqtt_enable && p->mqtt)
+    {
+        mqtt_client_publish(p->mqtt, p->mqtt_topic, outBuf, strlen(outBuf));
+    }
     return outBuf;
 }
 
@@ -900,6 +1009,14 @@ void setProgramDefaults(pList *p)
     p->pipeInPath           = strdup(fifoCtrl);
     p->pipeOutPath          = strdup(fifoData);
     p->webSocketBindAddr    = strdup("0.0.0.0");
+    p->mqtt_enable          = FALSE;
+    p->mqtt_broker_address  = strdup("localhost");
+    p->mqtt_broker_port     = 8081; // Default for Mosquitto WSS is often different, but we'll use a placeholder
+    p->mqtt_username        = NULL;
+    p->mqtt_password        = NULL;
+    p->mqtt_topic           = strdup("mag-usb/data");
+    p->mqtt_client_id       = strdup("mag-usb-client");
+    p->mqtt_use_tls         = TRUE;
     p->pipeInFd             = -1;
     p->pipeOutFd            = -1;
     p->readBackCCRegs       = FALSE;

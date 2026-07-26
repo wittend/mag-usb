@@ -26,7 +26,12 @@ add_executable(mag-usb
         src/i2c.c
         src/i2c-pololu.c
         src/config.c
-        src/sensor_tests.c)
+        src/sensor_tests.c
+        src/mqtt_client.c)
+
+# Find OpenSSL
+find_package(OpenSSL REQUIRED)
+target_link_libraries(mag-usb PRIVATE OpenSSL::SSL OpenSSL::Crypto)
 
 # Limit public include paths to src/
 target_include_directories(mag-usb PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
@@ -73,3 +78,14 @@ if (ENABLE_WEBSOCKET)
         add_test(NAME websocket-tests COMMAND websocket-tests)
     endif ()
 endif ()
+
+# MQTT Testing Tools
+add_executable(mqtt-listener tools/mqtt_listener.c src/mqtt_client.c)
+target_link_libraries(mqtt-listener PRIVATE OpenSSL::SSL OpenSSL::Crypto)
+target_include_directories(mqtt-listener PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
+target_compile_definitions(mqtt-listener PRIVATE _GNU_SOURCE _DEFAULT_SOURCE)
+
+add_executable(mqtt-command tools/mqtt_command.c src/mqtt_client.c)
+target_link_libraries(mqtt-command PRIVATE OpenSSL::SSL OpenSSL::Crypto)
+target_include_directories(mqtt-command PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
+target_compile_definitions(mqtt-command PRIVATE _GNU_SOURCE _DEFAULT_SOURCE)

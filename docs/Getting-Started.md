@@ -56,6 +56,34 @@ To enable named pipe output for local monitoring:
 ```
 You can specify custom pipe paths with `-i` and `-o`. Defaults are in `/var/run/`.
 
+## MQTT Publication (New)
+MQTT support is included by default but must be enabled in `config.toml`. It publishes sensor data at 1Hz and supports secure `mqtts://` connections.
+
+To use MQTT:
+1. Ensure `libssl-dev` is installed on your system.
+2. Edit `config.toml` (or `/etc/mag-usb/config.toml`) and add:
+```toml
+[mqtt]
+enable = true
+broker_address = "test.mosquitto.org"
+broker_port = 8883
+topic = "mag-usb/your-unique-topic"
+use_tls = true
+```
+3. Run `mag-usb`:
+```
+./build/mag-usb
+```
+
+You can use the built-in testing tools to verify the connection:
+```bash
+# Listen for data
+./build/mqtt-listener test.mosquitto.org 8883 mag-usb/your-unique-topic
+
+# Request configuration remotely
+./build/mqtt-command test.mosquitto.org 8883 mag-usb/your-unique-topic/command get_config
+```
+
 ## WebSocket Output (Optional)
 Enable WebSocket support at build time:
 ```

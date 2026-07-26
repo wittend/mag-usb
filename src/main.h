@@ -153,6 +153,16 @@ typedef struct tag_pList
     char *elevation;
     char *grid_square;
 
+    int   mqtt_enable;
+    char *mqtt_broker_address;
+    int   mqtt_broker_port;
+    char *mqtt_username;
+    char *mqtt_password;
+    char *mqtt_topic;
+    char *mqtt_client_id;
+    int   mqtt_use_tls;
+    struct mqtt_client *mqtt;
+
     int  pipeInFd;
     int  pipeOutFd;
 

@@ -58,4 +58,5 @@ You can also run the test binary directly: ./build/i2c-pololu-tests
 
 ## Roadmap & issues
 - See docs/Development.md for roadmap pointers.
+- See [docs/Contributors.md](docs/Contributors.md) for the list of project contributors.
 - If you’re unsure about direction or design, feel free to open a discussion issue first.

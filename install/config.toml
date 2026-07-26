@@ -80,3 +80,20 @@ mag_translate_z = 0
 [temperature]
 # Remote temperature sensor I2C address
 remote_temp_address = 0x1F
+
+[mqtt]
+# Enable MQTT publication.
+enable = false
+# MQTT broker address and port.
+broker_address = "localhost"
+broker_port = 8883
+# Authentication (optional).
+username = ""
+password = ""
+# Topic for data and configuration publication.
+# (Commands like "get_config" should be sent to <topic>/command).
+topic = "mag-usb/data"
+# Client ID for this device.
+client_id = "mag-usb-client"
+# Use TLS (mqtts://).
+use_tls = true
