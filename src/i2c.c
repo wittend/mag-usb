@@ -298,6 +298,12 @@ int i2c_initMagSensor(pList *p)
 {
     int rv = 0;
     int command = PMMODE_ALL;
+    // Program the cycle-count (CCX/CCY/CCZ) and NOS registers and derive
+    // the matching gains before starting sampling, so the values the chip
+    // uses are the values the conversion path divides by.  Without this
+    // the chip runs at its power-on cycle count while xyz conversion
+    // divides by the configured gain (issue #8).
+    setCycleCountRegs(p);
     // Setup the Mag sensor register initial state here.
     if(p->samplingMode == POLL)                                         // (p->samplingMode == POLL [default])
     {
