@@ -242,21 +242,31 @@ void mqtt_client_poll(mqtt_client* client) {
         fcntl(client->fd, F_SETFL, flags);
 
         if ((header & 0xF0) == 0x30) { // PUBLISH
-            // Decode remaining length (variable byte integer)
+            // Decode remaining length (variable byte integer).
+            // MQTT 3.1.1 (2.2.3) limits this field to 4 bytes; without the
+            // cap a peer holding the continuation bit drives rem_len and
+            // multiplier arbitrarily.
             size_t rem_len = 0;
             size_t multiplier = 1;
             uint8_t byte;
+            int vbi_bytes = 0;
             do {
                 if (recv_all(client, &byte, 1) != 0) return;
+                if (++vbi_bytes > 4) return; // malformed length field
                 rem_len += (byte & 127) * multiplier;
                 multiplier *= 128;
             } while ((byte & 128) != 0);
 
+            // A PUBLISH body starts with the 2-byte topic length; anything
+            // shorter is malformed (and rem_len - 2 below would underflow).
+            if (rem_len < 2) return;
+
             uint8_t *msg = (uint8_t*)malloc(rem_len);
+            if (!msg) return;
             if (recv_all(client, msg, rem_len) == 0) {
                 uint16_t topic_len = (msg[0] << 8) | msg[1];
                 char topic[256];
-                if (topic_len < 255 && topic_len <= rem_len - 2) {
+                if (topic_len < 255 && (size_t)topic_len <= rem_len - 2) {
                     memcpy(topic, msg + 2, topic_len);
                     topic[topic_len] = '\0';
                     const char *payload = (const char*)(msg + 2 + topic_len);
