@@ -161,6 +161,7 @@ typedef struct tag_pList
     char *mqtt_topic;
     char *mqtt_client_id;
     int   mqtt_use_tls;
+    char *mqtt_ca_file;
     struct mqtt_client *mqtt;
 
     int  pipeInFd;
