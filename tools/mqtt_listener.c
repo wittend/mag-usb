@@ -5,6 +5,7 @@
 #include "mqtt_client.h"
 
 void on_message(void *user_data, const char *topic, const char *payload, size_t payload_len) {
+    (void)user_data;
     char *buf = malloc(payload_len + 1);
     memcpy(buf, payload, payload_len);
     buf[payload_len] = '\0';
