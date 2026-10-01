@@ -72,7 +72,10 @@ Rules:
 - `password` (string) — Optional password.
 - `topic` (string) — Publication topic. Default: `mag-usb/data`.
 - `client_id` (string) — Client ID. Default: `mag-usb-client`.
-- `use_tls` (bool) — Use secure TLS (mqtts://). Default: true.
+- `use_tls` (bool) — Use secure TLS (mqtts://). The broker's certificate is verified, and the connection is refused if verification fails. Default: true.
+- `ca_file` (string) — Path to a PEM CA certificate (or bundle) used to verify the broker. Empty uses the system trust store, which covers brokers with certificates from a public CA. Set it for a self-signed or private-CA broker. Default: empty.
+
+TLS verification also checks that the broker's certificate names the host in `broker_address`: a DNS name is matched against the certificate's DNS names, and an IP address against its IP addresses. If the connection fails, the error printed on stderr says why (for example `unable to get local issuer certificate` means the CA isn't trusted, so set `ca_file`).
 
 Note: Credentials (username/password) are never included in the JSON configuration messages published to the topic.
 Commands like `get_config` can be sent to `<topic>/command` to trigger a re-broadcast of the current settings.
@@ -185,8 +188,10 @@ password = ""
 # Topic for data publication.
 topic = "mag-usb/data"
 client_id = "mag-usb-client"
-# Use secure TLS (mqtts://).
+# Use secure TLS (mqtts://). The broker's certificate is verified.
 use_tls = true
+# CA certificate for a self-signed or private-CA broker (empty = system trust store).
+ca_file = ""
 
 [temperature]
 # Remote temperature sensor I2C address

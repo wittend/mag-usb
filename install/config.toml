@@ -95,5 +95,11 @@ password = ""
 topic = "mag-usb/data"
 # Client ID for this device.
 client_id = "mag-usb-client"
-# Use TLS (mqtts://).
+# Use TLS (mqtts://). The broker's certificate is verified.
 use_tls = true
+# CA certificate (PEM) used to verify the broker when use_tls is true.
+# Leave empty to use the system trust store, which is enough for brokers with
+# certificates from a public CA. Set it for a self-signed or private-CA broker,
+# e.g. ca_file = "/etc/mag-usb/broker-ca.pem". The broker's certificate must
+# also name the host given in broker_address (a DNS name or an IP address).
+ca_file = ""
