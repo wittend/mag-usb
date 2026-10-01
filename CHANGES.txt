@@ -1,5 +1,27 @@
 # CHANGES.txt
 ===========================================================
+# Date: 2026-09-30      # Version 0.0.9: corrected scaling, MQTT TLS verification, CI
+#--------------------------------------------------------------------------
+- Program the RM3100 cycle-count and NOS registers at sensor init, so the gain
+  used for conversion matches the chip (PR #10, fixes #8; thanks @mijahauan).
+  Recorded values change: previous releases never programmed these registers
+  and divided by a fixed gain of 150.
+- Keep the gain exact (0.3671 * CC + 1.5, e.g. 148.34 at CC 400) instead of
+  truncating it, which read ~0.23% high at CC 400 and ~1.2% at CC 200
+  (PR #20, fixes #14).
+- [magnetometer] gain_x/gain_y/gain_z are ignored with a warning; the gain is
+  derived from the cycle count. Removed from the sample configs.
+- MQTT: verify the broker's TLS certificate, including hostname/IP (PR #11).
+  New [mqtt] ca_file setting for self-signed or private-CA brokers (docs: PR #18).
+- MQTT: harden the inbound PUBLISH parser; fixes a heap overflow on malformed
+  packets (PR #12).
+- Docker and macOS support via USB passthrough (PR #4; thanks @ContinuumLS).
+- GitHub Actions CI: default and WebSocket builds with gcc and clang,
+  warnings as errors, ctest on every PR and push to master (PR #19).
+  Fixed the warnings this exposed (prototypes, ignored write() results).
+- Known issues: #13, #15, #16, #17; MQTT reconnect and related notes in #7.
+
+===========================================================
 # Date: 2026-07-26      # Integrated MQTT capability and updated documentation
 #--------------------------------------------------------------------------
 - Implemented a custom lightweight MQTT 3.1.1 client with TLS support (OpenSSL).
