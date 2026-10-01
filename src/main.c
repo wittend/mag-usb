@@ -809,7 +809,10 @@ char *formatOutput(pList *p)
 #endif
     if(p->usePipes && p->pipeOutFd >= 0)
     {
-        write(p->pipeOutFd, outBuf, strlen(outBuf));
+        if(write(p->pipeOutFd, outBuf, strlen(outBuf)) < 0)
+        {
+            // Reader gone or pipe full: drop this sample line, as before.
+        }
     }
 #ifdef USE_WEBSOCKET
     if(p->useWebSocket)
@@ -871,7 +874,7 @@ static double mcp9808_decode_celsius(uint8_t msb, uint8_t lsb)
 //------------------------------------------
 // getUTC()
 //------------------------------------------
-struct tm *getUTC()
+struct tm *getUTC(void)
 {
     time_t now = time(&now);
     if(now == -1)
@@ -889,7 +892,7 @@ struct tm *getUTC()
 //------------------------------------------
 // currentTimeMillis()
 //------------------------------------------
-long currentTimeMillis()
+long currentTimeMillis(void)
 {
     struct timeval time;
     gettimeofday(&time, NULL);

@@ -18,6 +18,17 @@ typedef struct
     volatile bool running;
 } mock_ctx_t;
 
+// Writes a mock-adapter response; a short or failed write fails the test run
+// rather than leaving the code under test waiting on a reply.
+static void mock_write(int fd, const void *buf, size_t len)
+{
+    if (write(fd, buf, len) != (ssize_t)len)
+    {
+        perror("mock adapter write");
+        exit(1);
+    }
+}
+
 static void* mock_thread(void* arg)
 {
     mock_ctx_t* ctx = (mock_ctx_t*)arg;
@@ -77,7 +88,7 @@ static void* mock_thread(void* arg)
                             responses[0x10] = ERROR_NONE;
                             responses[0x1A] = ERROR_NONE;
                             responses[0x50] = ERROR_NONE;
-                            write(ctx->sock, responses, 128);
+                            mock_write(ctx->sock, responses, 128);
                             consumed += 128u * 3u;
                             continue;
                         }
@@ -87,7 +98,7 @@ static void* mock_thread(void* arg)
                     // Respond with ERROR_NONE
                     {
                         uint8_t resp = ERROR_NONE;
-                        write(ctx->sock, &resp, 1);
+                        mock_write(ctx->sock, &resp, 1);
                     }
                     consumed += need;
                     continue;
@@ -99,7 +110,7 @@ static void* mock_thread(void* arg)
                         uint8_t resp[1 + 255];
                         resp[0] = ERROR_NONE;
                         for (int i = 0; i < size; ++i) resp[1 + i] = (uint8_t)(0xA0 + i);
-                        write(ctx->sock, resp, 1 + size);
+                        mock_write(ctx->sock, resp, 1 + size);
                     }
                     consumed += need;
                     continue;
@@ -111,7 +122,7 @@ static void* mock_thread(void* arg)
                         uint8_t resp[1 + 255];
                         resp[0] = ERROR_NONE;
                         for (int i = 0; i < size; ++i) resp[1 + i] = (uint8_t)(0xB0 + i);
-                        write(ctx->sock, resp, 1 + size);
+                        mock_write(ctx->sock, resp, 1 + size);
                     }
                     consumed += need;
                     continue;
@@ -130,7 +141,7 @@ static void* mock_thread(void* arg)
                     if (avail < need) break;
                     {
                         uint8_t length = 28;
-                        write(ctx->sock, &length, 1);
+                        mock_write(ctx->sock, &length, 1);
                         struct __attribute__((packed)) raw_info
                         {
                             uint8_t version;
@@ -146,7 +157,7 @@ static void* mock_thread(void* arg)
                         payload.firmware_version_bcd = 0x0102; // 1.02
                         memcpy(payload.firmware_modification, "-\0\0\0\0\0\0\0", 8);
                         for (int i = 0; i < 12; ++i) payload.serial_number[i] = (char)(i + 1);
-                        write(ctx->sock, &payload, sizeof(payload));
+                        mock_write(ctx->sock, &payload, sizeof(payload));
                     }
                     consumed += need;
                     continue;
@@ -161,7 +172,7 @@ static void* mock_thread(void* arg)
                         responses[0x10] = ERROR_NONE;
                         responses[0x1A] = ERROR_NONE;
                         responses[0x50] = ERROR_NONE;
-                        write(ctx->sock, responses, 128);
+                        mock_write(ctx->sock, responses, 128);
                         consumed += needed;
                         continue;
                     }
@@ -232,7 +243,7 @@ static int tests_failed = 0;
     }                                                                                                                  \
     while (0)
 
-static void test_init_and_connection_bits()
+static void test_init_and_connection_bits(void)
 {
     i2c_pololu_adapter ad;
     ASSERT_EQ_INT(i2c_pololu_init(&ad), 0, "init returns 0");
@@ -251,13 +262,13 @@ static void test_init_and_connection_bits()
     ASSERT_EQ_INT(i2c_pololu_connect(&ad, "/dev/does_not_exist"), -1, "connect invalid path fails");
 }
 
-static void test_error_string()
+static void test_error_string(void)
 {
     ASSERT_TRUE(strstr(i2c_pololu_error_string(ERROR_NACK), "NACK") != NULL, "error string contains NACK");
     ASSERT_TRUE(strstr(i2c_pololu_error_string(9999), "Unknown") != NULL, "unknown error string");
 }
 
-static void test_write_read_sequences()
+static void test_write_read_sequences(void)
 {
     int sv[2];
     socketpair(AF_UNIX, SOCK_STREAM, 0, sv);
@@ -292,7 +303,7 @@ static void test_write_read_sequences()
     i2c_pololu_disconnect(&ad);
 }
 
-static void test_frequency_and_clear_bus()
+static void test_frequency_and_clear_bus(void)
 {
     int sv[2];
     socketpair(AF_UNIX, SOCK_STREAM, 0, sv);
@@ -315,7 +326,7 @@ static void test_frequency_and_clear_bus()
     i2c_pololu_disconnect(&ad);
 }
 
-static void test_device_info_and_scan()
+static void test_device_info_and_scan(void)
 {
     int sv[2];
     socketpair(AF_UNIX, SOCK_STREAM, 0, sv);
@@ -350,7 +361,10 @@ static void on_timeout(int sig)
 {
     (void)sig;
     const char msg[] = "\nTEST TIMEOUT: tests did not progress. Failing gracefully.\n";
-    write(STDERR_FILENO, msg, sizeof(msg) - 1);
+    if (write(STDERR_FILENO, msg, sizeof(msg) - 1) < 0)
+    {
+        // Nothing more a signal handler can safely do; exit regardless.
+    }
     _exit(124);
 }
 

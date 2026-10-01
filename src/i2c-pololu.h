@@ -196,25 +196,25 @@ int i2c_pololu_set_i2c_mode(int mode);
  * @brief Set I²C timeout
  * @return
  */
-int i2c_pololu_set_i2c_timeout();
+int i2c_pololu_set_i2c_timeout(void);
 
 /*
  * @brief Set STM32 timing.
  * @return
  */
-int i2c_pololu_set_STM32_timing();
+int i2c_pololu_set_STM32_timing(void);
 
 /**
  * @brief Digital read.
  * @return
  */
-int i2c_pololu_digital_read();
+int i2c_pololu_digital_read(void);
 
 /**
  * @brief Enable VCC Out.
  * @return
  */
-int i2c_pololu_enable_VCC_out();
+int i2c_pololu_enable_VCC_out(void);
 
 /**
  * @brief Returns a string description for an error code.

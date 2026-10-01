@@ -186,8 +186,8 @@ void readCycleCountRegs(pList *p);
 void setCycleCountRegs(pList *p);
 int  setNOSReg(pList *p);
 
-long currentTimeMillis();
-struct tm *getUTC();
+long currentTimeMillis(void);
+struct tm *getUTC(void);
 int setupPipes(pList *p);
 
 #endif //SWX3100MAIN_h

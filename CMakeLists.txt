@@ -45,7 +45,8 @@ if (ENABLE_WEBSOCKET)
     set(CMAKE_CXX_EXTENSIONS OFF)
 
     target_sources(mag-usb PRIVATE src/ws_bridge.cpp)
-    target_include_directories(mag-usb PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/mengrao-websocket)
+    # SYSTEM: vendored code is not held to this project's warning flags.
+    target_include_directories(mag-usb SYSTEM PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/mengrao-websocket)
     target_compile_definitions(mag-usb PRIVATE USE_WEBSOCKET)
 endif ()
 
@@ -66,12 +67,13 @@ endif ()
 
 if (ENABLE_WEBSOCKET)
     add_executable(ws-client tools/ws_client.cpp)
-    target_include_directories(ws-client PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/mengrao-websocket)
+    target_include_directories(ws-client SYSTEM PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/mengrao-websocket)
     set_target_properties(ws-client PROPERTIES CXX_STANDARD 11 CXX_STANDARD_REQUIRED ON CXX_EXTENSIONS OFF)
 
     if (BUILD_TESTING)
         add_executable(websocket-tests tests/test_websocket.cpp src/ws_bridge.cpp)
-        target_include_directories(websocket-tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src
+        target_include_directories(websocket-tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
+        target_include_directories(websocket-tests SYSTEM PRIVATE
                 ${CMAKE_CURRENT_SOURCE_DIR}/third_party/mengrao-websocket)
         target_compile_definitions(websocket-tests PRIVATE USE_WEBSOCKET)
         set_target_properties(websocket-tests PROPERTIES CXX_STANDARD 11 CXX_STANDARD_REQUIRED ON CXX_EXTENSIONS OFF)

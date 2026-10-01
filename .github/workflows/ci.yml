@@ -1,0 +1,63 @@
+name: CI
+
+# Build mag-usb and run its tests on every pull request and on every push to
+# master, so a change that breaks the build or a test can't merge unnoticed.
+# (Pushes to PR branches are covered by the pull_request run, so they aren't
+# built twice.)  There is no sensor hardware here: hardware behaviour still
+# needs checking on a station.
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+# Cancel an in-progress run when a newer commit is pushed to the same ref.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: build (${{ matrix.config }}, ${{ matrix.compiler }})
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        # default: the plain build.  websocket: the build gmag_webui's Docker
+        # image uses, which also compiles and runs websocket-tests.
+        config: [default, websocket]
+        compiler: [gcc, clang]
+        include:
+          - config: default
+            cmake_flags: ""
+          - config: websocket
+            cmake_flags: "-DENABLE_WEBSOCKET=ON"
+          - compiler: gcc
+            cc: gcc
+            cxx: g++
+          - compiler: clang
+            cc: clang
+            cxx: clang++
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y --no-install-recommends cmake libssl-dev clang
+
+      - name: Configure
+        env:
+          CC: ${{ matrix.cc }}
+          CXX: ${{ matrix.cxx }}
+        # ENABLE_WERROR: new compiler warnings fail the build.
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DENABLE_WERROR=ON ${{ matrix.cmake_flags }}
+
+      - name: Build
+        run: cmake --build build --parallel
+
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
