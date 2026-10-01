@@ -457,6 +457,7 @@ static int mqtt_init_client(pList *p) {
     if (!p->mqtt) return -1;
 
     mqtt_client_set_callback(p->mqtt, mqtt_msg_handler, p);
+    mqtt_client_set_ca_file(p->mqtt, p->mqtt_ca_file);
 
     if (mqtt_client_connect(p->mqtt, p->mqtt_broker_address, p->mqtt_broker_port, p->mqtt_use_tls) != 0) {
         fprintf(OUTPUT_ERROR, "MQTT connection failed to %s:%d\n", p->mqtt_broker_address, p->mqtt_broker_port);
@@ -1017,6 +1018,7 @@ void setProgramDefaults(pList *p)
     p->mqtt_topic           = strdup("mag-usb/data");
     p->mqtt_client_id       = strdup("mag-usb-client");
     p->mqtt_use_tls         = TRUE;
+    p->mqtt_ca_file         = NULL;
     p->pipeInFd             = -1;
     p->pipeOutFd            = -1;
     p->readBackCCRegs       = FALSE;

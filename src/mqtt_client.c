@@ -10,6 +10,8 @@
 #include <fcntl.h>
 #include <openssl/ssl.h>
 #include <openssl/err.h>
+#include <openssl/x509.h>
+#include <openssl/x509_vfy.h>
 
 struct mqtt_client {
     int fd;
@@ -17,6 +19,7 @@ struct mqtt_client {
     SSL *ssl;
     int use_tls;
     int connected;
+    char *ca_file;
     char *host;
     int port;
     mqtt_msg_callback callback;
@@ -33,6 +36,7 @@ void mqtt_client_free(mqtt_client* client) {
     if (!client) return;
     mqtt_client_disconnect(client);
     if (client->host) free(client->host);
+    if (client->ca_file) free(client->ca_file);
     free(client);
 }
 
@@ -62,6 +66,16 @@ static int recv_all(mqtt_client *client, void *buf, size_t len) {
         }
         if (n <= 0) return -1;
         total += n;
+    }
+    return 0;
+}
+
+int mqtt_client_set_ca_file(mqtt_client* client, const char* ca_file) {
+    if (!client) return -1;
+    if (client->ca_file) { free(client->ca_file); client->ca_file = NULL; }
+    if (ca_file && ca_file[0] != '\0') {
+        client->ca_file = strdup(ca_file);
+        if (!client->ca_file) return -1;
     }
     return 0;
 }
@@ -103,10 +117,56 @@ int mqtt_client_connect(mqtt_client* client, const char* host, int port, int use
         SSL_load_error_strings();
         client->ssl_ctx = SSL_CTX_new(TLS_client_method());
         if (!client->ssl_ctx) return -1;
-        
+
+        /* Verify the broker.  Without SSL_VERIFY_PEER OpenSSL accepts any
+         * certificate, so use_tls gives confidentiality but no
+         * authentication - anything answering on the broker's address can
+         * terminate the session, read telemetry and issue commands on the
+         * <topic>/command subscription. */
+        SSL_CTX_set_verify(client->ssl_ctx, SSL_VERIFY_PEER, NULL);
+        if (client->ca_file) {
+            if (SSL_CTX_load_verify_locations(client->ssl_ctx, client->ca_file, NULL) != 1) {
+                fprintf(stderr, "MQTT TLS: cannot load CA file %s\n", client->ca_file);
+                return -1;
+            }
+        } else {
+            if (SSL_CTX_set_default_verify_paths(client->ssl_ctx) != 1) {
+                fprintf(stderr, "MQTT TLS: cannot load default trust store\n");
+                return -1;
+            }
+        }
+
         client->ssl = SSL_new(client->ssl_ctx);
+        if (!client->ssl) return -1;
+
+        /* Pin the expected identity: IP literals check the IP SAN,
+         * names get SNI + hostname verification. */
+        struct in_addr ipv4;
+        if (inet_pton(AF_INET, host, &ipv4) == 1) {
+            X509_VERIFY_PARAM_set1_ip_asc(SSL_get0_param(client->ssl), host);
+        } else {
+            SSL_set_tlsext_host_name(client->ssl, host);
+            SSL_set1_host(client->ssl, host);
+        }
+
         SSL_set_fd(client->ssl, client->fd);
-        if (SSL_connect(client->ssl) <= 0) return -1;
+        if (SSL_connect(client->ssl) <= 0) {
+            unsigned long e = ERR_get_error();
+            long vr = SSL_get_verify_result(client->ssl);
+            if (vr != X509_V_OK) {
+                fprintf(stderr, "MQTT TLS: certificate verification failed: %s\n",
+                        X509_verify_cert_error_string(vr));
+            } else if (e) {
+                fprintf(stderr, "MQTT TLS: handshake failed: %s\n",
+                        ERR_error_string(e, NULL));
+            }
+            return -1;
+        }
+        if (SSL_get_verify_result(client->ssl) != X509_V_OK) {
+            fprintf(stderr, "MQTT TLS: certificate verification failed: %s\n",
+                    X509_verify_cert_error_string(SSL_get_verify_result(client->ssl)));
+            return -1;
+        }
     }
 
     client->connected = 1;

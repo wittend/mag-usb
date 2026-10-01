@@ -17,6 +17,11 @@ void mqtt_client_free(mqtt_client* client);
 
 void mqtt_client_set_callback(mqtt_client* client, mqtt_msg_callback cb, void *user_data);
 
+/* Optional: CA bundle for TLS peer verification.  When unset, the
+ * system default trust store is used.  Must be called before
+ * mqtt_client_connect().  Returns 0 on success. */
+int mqtt_client_set_ca_file(mqtt_client* client, const char* ca_file);
+
 int mqtt_client_connect(mqtt_client* client, 
                         const char* host, 
                         int port, 

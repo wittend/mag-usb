@@ -416,6 +416,11 @@ static void process_config_value(pList *p, const char *section, const char *key,
         {
             p->mqtt_use_tls = parse_bool(value);
         }
+        else if(strcmp(key, "ca_file") == 0)
+        {
+            if(p->mqtt_ca_file) free(p->mqtt_ca_file);
+            p->mqtt_ca_file = strdup(value);
+        }
     }
 }
 
