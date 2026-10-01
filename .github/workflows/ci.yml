@@ -1,11 +1,13 @@
 name: CI
 
-# Build mag-usb and run its tests on every push and pull request, so a change
-# that breaks the build or a test can't merge unnoticed.  There is no sensor
-# hardware here: hardware behaviour still needs checking on a station.
+# Build mag-usb and run its tests on every pull request and on every push to
+# master, so a change that breaks the build or a test can't merge unnoticed.
+# (Pushes to PR branches are covered by the pull_request run, so they aren't
+# built twice.)  There is no sensor hardware here: hardware behaviour still
+# needs checking on a station.
 on:
   push:
-    branches: ["**"]
+    branches: [master]
   pull_request:
 
 # Cancel an in-progress run when a newer commit is pushed to the same ref.
