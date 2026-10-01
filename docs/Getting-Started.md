@@ -61,7 +61,11 @@ MQTT support is included by default but must be enabled in `config.toml`. It pub
 
 To use MQTT:
 1. Ensure `libssl-dev` is installed on your system.
-2. Edit `config.toml` (or `/etc/mag-usb/config.toml`) and add:
+2. The broker's TLS certificate is verified. `test.mosquitto.org` uses its own CA, so download it:
+```bash
+sudo curl -o /etc/mag-usb/mosquitto.org.crt https://test.mosquitto.org/ssl/mosquitto.org.crt
+```
+3. Edit `config.toml` (or `/etc/mag-usb/config.toml`) and add:
 ```toml
 [mqtt]
 enable = true
@@ -69,8 +73,10 @@ broker_address = "test.mosquitto.org"
 broker_port = 8883
 topic = "mag-usb/your-unique-topic"
 use_tls = true
+ca_file = "/etc/mag-usb/mosquitto.org.crt"
 ```
-3. Run `mag-usb`:
+For a broker with a certificate from a public CA, leave `ca_file` out.
+4. Run `mag-usb`:
 ```
 ./build/mag-usb
 ```
