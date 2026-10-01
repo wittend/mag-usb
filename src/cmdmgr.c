@@ -67,7 +67,7 @@ void showSettings(pList *p)
     // Magnetometer
     fprintf(OUTPUT_PRINT, "   Magnetometer I2C address:             0x%02X (hex)\n",  (unsigned)(p->magAddr & 0xFF));
     fprintf(OUTPUT_PRINT, "   Cycle counts (X,Y,Z):                 %d, %d, %d\n",  p->cc_x, p->cc_y, p->cc_z);
-    fprintf(OUTPUT_PRINT, "   Gains (X,Y,Z):                        %d, %d, %d\n",  p->x_gain, p->y_gain, p->z_gain);
+    fprintf(OUTPUT_PRINT, "   Gains (X,Y,Z):                        %.4f, %.4f, %.4f\n",  p->x_gain, p->y_gain, p->z_gain);
     fprintf(OUTPUT_PRINT, "   TMRC register value:                  0x%02X (hex)\n",  (unsigned)(p->TMRCRate & 0xFF));
     fprintf(OUTPUT_PRINT, "   NOS register value:                   %d\n",  p->NOSRegValue);
     fprintf(OUTPUT_PRINT, "   DRDY delay (us):                      %d\n",  p->DRDYdelay);

@@ -75,14 +75,6 @@ static int parse_int(const char *value)
 }
 
 //---------------------------------------------------------------
-// Helper: Parse double/float value
-//---------------------------------------------------------------
-static double parse_double(const char *value)
-{
-    return strtod(value, NULL);
-}
-
-//---------------------------------------------------------------
 // Helper: Check if line is a section header [section]
 //---------------------------------------------------------------
 static int is_section_header(const char *line, char *section_name)
@@ -242,17 +234,14 @@ static void process_config_value(pList *p, const char *section, const char *key,
         {
             p->cc_z = parse_int(value);
         }
-        else if(strcmp(key, "gain_x") == 0)
+        else if(strcmp(key, "gain_x") == 0 || strcmp(key, "gain_y") == 0
+                || strcmp(key, "gain_z") == 0)
         {
-            p->x_gain = parse_double(value);
-        }
-        else if(strcmp(key, "gain_y") == 0)
-        {
-            p->y_gain = parse_double(value);
-        }
-        else if(strcmp(key, "gain_z") == 0)
-        {
-            p->z_gain = parse_double(value);
+            // Gains are derived from the cycle counts when the sensor is
+            // programmed (setCycleCountRegs), so a configured gain would only
+            // disagree with what the chip is running at.
+            fprintf(OUTPUT_ERROR, "WARNING: config key [magnetometer] %s is ignored; "
+                    "gain is derived from the cycle count (cc_x/cc_y/cc_z).\n", key);
         }
         else if(strcmp(key, "tmrc_rate") == 0)
         {

@@ -414,7 +414,7 @@ static void publish_config_msg(pList *p) {
     // Create a JSON config message, explicitly omitting the password
     snprintf(buf, sizeof(buf), 
         "{ \"msg_type\": \"config\", \"version\": \"%s\", \"mqtt\": { \"broker\": \"%s\", \"port\": %d, \"topic\": \"%s\", \"client_id\": \"%s\", \"use_tls\": %s }, "
-        "\"mag\": { \"address\": \"0x%02X\", \"cc\": [%d, %d, %d], \"gain\": [%d, %d, %d], \"rate\": \"0x%02x\", \"nos\": %d }, "
+        "\"mag\": { \"address\": \"0x%02X\", \"cc\": [%d, %d, %d], \"gain\": [%.4f, %.4f, %.4f], \"rate\": \"0x%02x\", \"nos\": %d }, "
         "\"location\": { \"lat\": \"%s\", \"lon\": \"%s\", \"alt\": \"%s\", \"grid\": \"%s\" } }",
         p->Version ? p->Version : "unknown",
         p->mqtt_broker_address ? p->mqtt_broker_address : "null",
@@ -990,9 +990,9 @@ void setProgramDefaults(pList *p)
     p->cc_x                 = CC_400;
     p->cc_y                 = CC_400;
     p->cc_z                 = CC_400;
-    p->x_gain               = GAIN_150;
-    p->y_gain               = GAIN_150;
-    p->z_gain               = GAIN_150;
+    p->x_gain               = getCCGainEquiv(CC_400);
+    p->y_gain               = getCCGainEquiv(CC_400);
+    p->z_gain               = getCCGainEquiv(CC_400);
     p->tsMilliseconds       = 0;
     p->TMRCRate             = 0x96;
     p->Version              = Version;

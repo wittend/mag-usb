@@ -16,7 +16,7 @@ Example:
 ```
 
 ## Units and scaling
-- Raw RM3100 counts are converted using configured gains and `NOS` (number‑of‑samples) register value.
+- Raw RM3100 counts are converted using the gain for each axis's cycle count (`gain = 0.3671 × CC + 1.5`) and the `NOS` (number‑of‑samples) register value.
 - Outputs are provided in nanoTesla (nT). Internally the computation converts microTesla to nanoTesla by multiplying by 1000.
 
 ## Orientation translations

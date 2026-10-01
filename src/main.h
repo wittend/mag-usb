@@ -121,9 +121,9 @@ typedef struct tag_pList
     int  cc_y;
     int  cc_z;
 
-    int  x_gain;
-    int  y_gain;
-    int  z_gain;
+    double x_gain;      // counts per uT, derived from the cycle count
+    double y_gain;
+    double z_gain;
 
     int32_t XYZ[9];
 
@@ -185,6 +185,7 @@ void showSettings(pList *p);
 void readCycleCountRegs(pList *p);
 void setCycleCountRegs(pList *p);
 int  setNOSReg(pList *p);
+double getCCGainEquiv(unsigned short CCVal);
 
 long currentTimeMillis(void);
 struct tm *getUTC(void);
