@@ -29,7 +29,7 @@ int  startCMM(pList *p);
 
 unsigned short setMagSampleRate(pList *p, unsigned short sample_rate);
 unsigned short getMagSampleRate(pList *p);
-unsigned short getCCGainEquiv(unsigned short CCVal);
+double getCCGainEquiv(unsigned short CCVal);
 
 void showErrorMsg(int rv);
 

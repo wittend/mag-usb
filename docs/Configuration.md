@@ -41,7 +41,7 @@ Notes:
 ### [magnetometer]
 - `address` (int, decimal or hex `0xNN`) — RM3100 I²C address. Default: build‑time default from `RM3100_I2C_ADDRESS`.
 - `cc_x`, `cc_y`, `cc_z` (int) — Cycle counts. Typical values: 200, 400. Default: 400 (if set in config.toml).
-- `gain_x`, `gain_y`, `gain_z` (double) — Gains. Default: 150.0.
+- `gain_x`, `gain_y`, `gain_z` — No longer used. The gain is derived from each axis's cycle count (`gain = 0.3671 × CC + 1.5`, e.g. 148.34 at CC 400), so it always matches what the sensor is programmed with. If these keys are present, a warning is printed and they are ignored.
 - `tmrc_rate` (int, decimal or hex) — TMRC register value. Default: 0x96.
 - `nos_reg_value` (int) — Number‑of‑samples register value. Default: 60.
 - `drdy_delay` (int) — Sleep between DRDY-poll iterations in **milliseconds**. Default: 10. (The implementation passes `drdy_delay * 1000` to `usleep()`, which takes microseconds; the configured value is therefore an `ms` count, not a `µs` count.)
@@ -153,8 +153,7 @@ address = 0x23
 cc_x = 400
 cc_y = 400
 cc_z = 400
-# Gain values.
-gain_x = 150.0
+# Gain is derived from the cycle count: gain = 0.3671 * CC + 1.5.
 # TMRC Rate register value (hex format).
 tmrc_rate = 0x96
 # Number of samples register value.

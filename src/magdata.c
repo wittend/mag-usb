@@ -160,12 +160,11 @@ int startCMM(pList *p)
 // getCCGainEquiv()
 //   Gn=(Aval*(0.3671*Cycnt+1.5)/1000)
 //------------------------------------------
-unsigned short getCCGainEquiv(unsigned short CCVal)
+double getCCGainEquiv(unsigned short CCVal)
 {
-    unsigned short gain = 0;
-    double dGain = (0.3671 * CCVal + 1.5); 
-    gain = (unsigned short) dGain;
-    return gain;
+    // Kept as a double: truncating to an integer (as this once did) biased
+    // readings high by ~0.23% at CC 400 and ~1.2% at CC 200 (issue #14).
+    return 0.3671 * CCVal + 1.5;
 }
 
 //------------------------------------------
@@ -202,7 +201,7 @@ void setCycleCountRegs(pList *p)
 #if __DEBUG
     fprintf(OUTPUT_PRINT, "\nIn setCycleCountRegs():: Setting NOS register to value: %02X\n", p->NOSRegValue);
     fprintf(OUTPUT_PRINT, "CycleCounts  - X: %u, Y: %u, Z: %u.\n", p->cc_x, p->cc_y, p->cc_z);
-    fprintf(OUTPUT_PRINT, "Gains        - X: %u, Y: %u, Z: %u.\n", p->x_gain, p->y_gain, p->z_gain);
+    fprintf(OUTPUT_PRINT, "Gains        - X: %.4f, Y: %.4f, Z: %.4f.\n", p->x_gain, p->y_gain, p->z_gain);
 #endif
 }
 

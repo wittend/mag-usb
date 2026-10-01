@@ -53,11 +53,8 @@ address = 0x23
 cc_x = 200
 cc_y = 200
 cc_z = 200
-# Gain values (calculated from CC: gain = 0.3671 * CC + 1.5).
-# For CC=200, gain is 74.92 (~75). For CC=400, gain is 148.34 (~148).
-gain_x = 75.0
-gain_y = 75.0
-gain_z = 75.0
+# Gain is derived from the cycle count: gain = 0.3671 * CC + 1.5
+# (74.92 at CC=200, 148.34 at CC=400).
 # TMRC Rate register value (hex format).
 tmrc_rate = 0x96
 # Number of samples register value.
