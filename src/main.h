@@ -159,7 +159,10 @@ typedef struct tag_pList
     int   mqtt_broker_port;
     char *mqtt_username;
     char *mqtt_password;
-    char *mqtt_topic;
+    char *mqtt_topic_prefix;   // e.g. "hamsci/mag"; station topics are built from it and node_id
+    char *mqtt_topic;          // <prefix>/<node_id>/data, built at connect
+    char *mqtt_command_topic;  // <prefix>/<node_id>/data/command
+    char *mqtt_config_topic;   // <prefix>/<node_id>/config
     char *mqtt_client_id;
     int   mqtt_use_tls;
     char *mqtt_ca_file;

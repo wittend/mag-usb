@@ -84,6 +84,7 @@ ctrl createRole station-test
 ctrl addRoleACL station-test publishClientSend hamsci/mag/TEST/data allow
 ctrl addRoleACL station-test subscribeLiteral hamsci/mag/TEST/data/command allow
 ctrl addRoleACL station-test publishClientReceive hamsci/mag/TEST/data/command allow
+ctrl addRoleACL station-test publishClientSend hamsci/mag/TEST/config allow
 ctrl createClient station-TEST -p "$STATION_PW"
 ctrl addClientRole station-TEST station-test
 
@@ -97,12 +98,14 @@ ctrl addClientRole cmd-TEST command-issuer
 ctrl createRole viewer
 ctrl addRoleACL viewer subscribeLiteral hamsci/mag/TEST/data allow
 ctrl addRoleACL viewer publishClientReceive hamsci/mag/TEST/data allow
+ctrl addRoleACL viewer subscribeLiteral hamsci/mag/TEST/config allow
+ctrl addRoleACL viewer publishClientReceive hamsci/mag/TEST/config allow
 ctrl createClient viewer-TEST -p "$VIEW_PW"
 ctrl addClientRole viewer-TEST viewer
 
 # Probe: can see every topic.  Used by acl_test.sh to check what others send.
 ctrl createRole probe
-for t in hamsci/mag/TEST/data hamsci/mag/TEST/data/command hamsci/mag/TEST/other; do
+for t in hamsci/mag/TEST/data hamsci/mag/TEST/data/command hamsci/mag/TEST/config hamsci/mag/TEST/other; do
     ctrl addRoleACL probe subscribeLiteral "$t" allow
     ctrl addRoleACL probe publishClientReceive "$t" allow
 done

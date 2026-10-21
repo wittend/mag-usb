@@ -13,6 +13,14 @@ static void expect(int want, const char *s) {
     }
 }
 
+static void expect_prefix(int want, const char *s) {
+    int got = mqtt_topic_prefix_is_valid(s);
+    if (got != want) {
+        printf("FAIL: mqtt_topic_prefix_is_valid(\"%s\") = %d, want %d\n", s ? s : "(null)", got, want);
+        failures++;
+    }
+}
+
 int main(void) {
     char longest[NODE_ID_MAX_LEN + 1];
     char too_long[NODE_ID_MAX_LEN + 2];
@@ -33,6 +41,20 @@ int main(void) {
     expect(0, "quote\"here");
     expect(0, "back\\slash");
     expect(0, "caf\xC3\xA9");  // non-ASCII bytes
+    expect(0, "a/b");          // would add a topic level
+    expect(0, "a+b");          // wildcard
+    expect(0, "a#");           // wildcard
+
+    expect_prefix(1, "hamsci/mag");
+    expect_prefix(1, "mag-usb");
+    expect_prefix(0, NULL);
+    expect_prefix(0, "");
+    expect_prefix(0, "/hamsci/mag");
+    expect_prefix(0, "hamsci/mag/");
+    expect_prefix(0, "hamsci//mag");
+    expect_prefix(0, "hamsci/+/mag");
+    expect_prefix(0, "hamsci/mag/#");
+    expect_prefix(0, "hamsci mag");
 
     if (failures) {
         printf("%d failure(s)\n", failures);

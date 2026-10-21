@@ -37,6 +37,7 @@ C=hamsci/mag/TEST/data/command
 O=hamsci/mag/TEST/other
 
 check viewer-TEST "$VIEW_PW"  $D station-TEST "$STATION_PW" $D yes   # station sends samples
+check viewer-TEST "$VIEW_PW"  hamsci/mag/TEST/config station-TEST "$STATION_PW" hamsci/mag/TEST/config yes   # station sends its config
 check probe-TEST  "$PROBE_PW" $O station-TEST "$STATION_PW" $O no    # station is not allowed off its topics
 check probe-TEST  "$PROBE_PW" $C cmd-TEST     "$CMD_PW"     $C yes   # command issuer reaches the station's command topic
 check probe-TEST  "$PROBE_PW" $C viewer-TEST  "$VIEW_PW"    $C no    # viewer cannot send commands
