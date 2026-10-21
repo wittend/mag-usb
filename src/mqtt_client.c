@@ -6,6 +6,7 @@
 #include <errno.h>
 #include <sys/socket.h>
 #include <sys/time.h>
+#include <signal.h>
 #include <netdb.h>
 #include <arpa/inet.h>
 #include <fcntl.h>
@@ -132,6 +133,11 @@ int mqtt_client_connect(mqtt_client* client, const char* host, int port, int use
     struct addrinfo hints, *res, *ai;
     struct timeval timeout = { .tv_sec = MQTT_IO_TIMEOUT_SEC, .tv_usec = 0 };
     char port_str[8];
+
+    // A write to a connection the broker has closed raises SIGPIPE, whose
+    // default action ends the process.  Ignore it so the write fails with an
+    // error the caller can handle.  This is process-wide, which is fine for mag-usb.
+    signal(SIGPIPE, SIG_IGN);
 
     // Release anything left over from an earlier connection or failed attempt
     mqtt_close_transport(client);

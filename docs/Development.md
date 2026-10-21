@@ -40,6 +40,12 @@ cmake --build build --target i2c-pololu-tests
 (cd build && ctest --output-on-failure)
 ```
 
+## Local MQTT broker for testing
+
+`tests/mqtt/` sets up a Mosquitto broker on this machine with TLS and
+per-role accounts, for testing the MQTT client against a real broker. See
+`tests/mqtt/README.md`.
+
 ## Coding patterns
 - Keep internal helper functions static and out of public headers.
 - Avoid global state where possible; prefer passing pList* explicitly.
