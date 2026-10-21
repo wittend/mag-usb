@@ -7,6 +7,11 @@
   stations can connect. An IPv6 literal may be given in brackets, e.g.
   broker_address = "[2001:db8::1]". TLS hostname pinning treats IPv6 literals
   the same as IPv4 ones.
+- WebSocket: the server accepts standard handshake headers regardless of
+  case, and Upgrade/Connection values as token lists (fixes #13). Clients
+  such as Deno's WebSocket that send lowercase header names no longer get
+  400 Bad Request. The change is to the vendored third_party/mengrao-websocket
+  header; see third_party/mengrao-websocket/MAG_USB_CHANGES.md.
 
 ===========================================================
 # Date: 2026-09-30      # Version 0.0.9: corrected scaling, MQTT TLS verification, CI
