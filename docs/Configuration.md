@@ -66,7 +66,7 @@ Rules:
 
 ### [mqtt]
 - `enable` (bool) — Enable MQTT publication. Default: false.
-- `broker_address` (string) — MQTT broker host. Default: `localhost`.
+- `broker_address` (string) — MQTT broker host: a host name, an IPv4 address, or an IPv6 address in brackets (e.g. `[2001:db8::1]`). The host name is resolved for both IPv4 and IPv6, and each address is tried in turn. Default: `localhost`.
 - `broker_port` (int) — MQTT broker port. Default: 8883.
 - `username` (string) — Optional username.
 - `password` (string) — Optional password.
