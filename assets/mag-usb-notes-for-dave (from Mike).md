@@ -66,6 +66,10 @@ Happy to send patches for any of these if that's easier than describing them.
 
 ### 2.1 TLS is encrypted but not authenticated — highest priority
 
+**Status: resolved.** Peer verification, the CA file or default trust store, and
+hostname/IP pinning are in `mqtt_client_connect()`, and the verify result is
+checked after the handshake (commit `c17411c`).
+
 `mqtt_client_connect()`, around line 104:
 
 ```c
@@ -106,6 +110,11 @@ expect to be common for station brokers.
 
 ### 2.2 Inbound parser hardening
 
+**Status: resolved.** The length decode is capped at 4 bytes, `rem_len >= 2` is
+checked, and the topic length is bounds-checked (commit `6f0be41`). The receive
+path now reads and discards unhandled packet types so the stream stays aligned,
+and it drops the connection on a mid-packet failure.
+
 The receive loop (around line 246) is the one place broker-controlled bytes are
 parsed, so it's worth tightening:
 
@@ -145,6 +154,10 @@ missing reconnect is the bigger problem anyway. Mentioning it only so the
 absent `PINGREQ` doesn't look like an oversight worth fixing on its own.
 
 ### 2.4 CONNECT remaining-length limit
+
+**Status: resolved (uncommitted).** CONNECT and SUBSCRIBE are now built on the
+heap, sized from their contents, with a variable-byte remaining-length encoder.
+Strings over 65535 bytes are rejected.
 
 You've already flagged this in the code:
 
