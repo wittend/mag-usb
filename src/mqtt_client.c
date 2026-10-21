@@ -129,9 +129,9 @@ void mqtt_client_set_callback(mqtt_client* client, mqtt_msg_callback cb, void *u
 }
 
 int mqtt_client_connect(mqtt_client* client, const char* host, int port, int use_tls) {
-    struct hostent *server;
-    struct sockaddr_in serv_addr;
+    struct addrinfo hints, *res, *ai;
     struct timeval timeout = { .tv_sec = MQTT_IO_TIMEOUT_SEC, .tv_usec = 0 };
+    char port_str[8];
 
     // Release anything left over from an earlier connection or failed attempt
     mqtt_close_transport(client);
@@ -139,22 +139,37 @@ int mqtt_client_connect(mqtt_client* client, const char* host, int port, int use
     client->host = strdup(host);
     client->port = port;
     client->use_tls = use_tls;
+    if (!client->host) return -1;
 
-    client->fd = socket(AF_INET, SOCK_STREAM, 0);
+    // Accept an IPv6 literal in brackets, e.g. "[::1]"; getaddrinfo() wants it bare
+    size_t hlen = strlen(client->host);
+    if (hlen > 2 && client->host[0] == '[' && client->host[hlen - 1] == ']') {
+        memmove(client->host, client->host + 1, hlen - 2);
+        client->host[hlen - 2] = '\0';
+    }
+    const char *name = client->host;
+
+    memset(&hints, 0, sizeof(hints));
+    hints.ai_family = AF_UNSPEC; // IPv4 or IPv6
+    hints.ai_socktype = SOCK_STREAM;
+    snprintf(port_str, sizeof(port_str), "%d", port);
+    if (getaddrinfo(name, port_str, &hints, &res) != 0) return -1;
+
+    // Try each address the name resolves to until one accepts the connection
+    for (ai = res; ai; ai = ai->ai_next) {
+        client->fd = socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
+        if (client->fd < 0) continue;
+
+        setsockopt(client->fd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
+        setsockopt(client->fd, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout));
+
+        if (connect(client->fd, ai->ai_addr, ai->ai_addrlen) == 0) break;
+
+        close(client->fd);
+        client->fd = -1;
+    }
+    freeaddrinfo(res);
     if (client->fd < 0) return -1;
-
-    setsockopt(client->fd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
-    setsockopt(client->fd, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout));
-
-    server = gethostbyname(host);
-    if (server == NULL) goto fail;
-
-    memset(&serv_addr, 0, sizeof(serv_addr));
-    serv_addr.sin_family = AF_INET;
-    memcpy(&serv_addr.sin_addr.s_addr, server->h_addr, server->h_length);
-    serv_addr.sin_port = htons(port);
-
-    if (connect(client->fd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) goto fail;
 
     if (use_tls) {
         SSL_library_init();
@@ -184,14 +199,15 @@ int mqtt_client_connect(mqtt_client* client, const char* host, int port, int use
         client->ssl = SSL_new(client->ssl_ctx);
         if (!client->ssl) goto fail;
 
-        /* Pin the expected identity: IP literals check the IP SAN,
-         * names get SNI + hostname verification. */
+        /* Pin the expected identity: IP literals (IPv4 or IPv6) check the IP
+         * SAN, names get SNI + hostname verification. */
         struct in_addr ipv4;
-        if (inet_pton(AF_INET, host, &ipv4) == 1) {
-            X509_VERIFY_PARAM_set1_ip_asc(SSL_get0_param(client->ssl), host);
+        struct in6_addr ipv6;
+        if (inet_pton(AF_INET, name, &ipv4) == 1 || inet_pton(AF_INET6, name, &ipv6) == 1) {
+            X509_VERIFY_PARAM_set1_ip_asc(SSL_get0_param(client->ssl), name);
         } else {
-            SSL_set_tlsext_host_name(client->ssl, host);
-            SSL_set1_host(client->ssl, host);
+            SSL_set_tlsext_host_name(client->ssl, name);
+            SSL_set1_host(client->ssl, name);
         }
 
         SSL_set_fd(client->ssl, client->fd);
