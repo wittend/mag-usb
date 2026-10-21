@@ -27,12 +27,35 @@ SOFTWARE.
 #include <arpa/inet.h>
 #include <netinet/tcp.h>
 #include <string.h>
+#include <strings.h>
 #include <limits>
 #include <memory>
 #include <stdio.h>
 #include <errno.h>
 
 namespace websocket {
+
+// HTTP header names are case-insensitive (RFC 9110 5.1). name/len is the raw
+// header name from the request; the caller has already matched the length.
+static bool header_is(const char* name, uint32_t len, const char* expected) {
+  return len == strlen(expected) && !strncasecmp(name, expected, len);
+}
+
+// True if the comma-separated token list contains token, compared
+// case-insensitively (RFC 6455 4.2.1, RFC 9110 5.6.1).
+static bool has_token(const char* list, uint32_t len, const char* token) {
+  size_t token_len = strlen(token);
+  const char* end = list + len;
+  while (list < end) {
+    while (list < end && (*list == ' ' || *list == ',')) list++;
+    const char* tok_end = list;
+    while (tok_end < end && *tok_end != ',') tok_end++;
+    while (tok_end > list && tok_end[-1] == ' ') tok_end--;
+    if ((size_t)(tok_end - list) == token_len && !strncasecmp(list, token, token_len)) return true;
+    list = tok_end;
+  }
+  return false;
+}
 
 template<uint32_t RecvBufSize>
 class SocketTcpConnection
@@ -694,34 +717,34 @@ private:
         uint32_t key_len = colon - data;
         uint32_t val_len = val_end - val;
         if (val_len < ValueBufSize) {
-          if (key_len == 4 && !memcmp(data, "Host", 4)) {
+          if (header_is(data, key_len, "Host")) {
             memcpy(host, val, val_len);
             host[val_len] = 0;
           }
-          else if (key_len == 6 && !memcmp(data, "Origin", 6)) {
+          else if (header_is(data, key_len, "Origin")) {
             memcpy(origin, val, val_len);
             origin[val_len] = 0;
           }
-          else if (key_len == 7 && !memcmp(data, "Upgrade", 7)) {
-            if (memcmp(val, "websocket", 9)) break;
+          else if (header_is(data, key_len, "Upgrade")) {
+            if (!has_token(val, val_len, "websocket")) break;
             upgrade_checked = true;
           }
-          else if (key_len == 10 && !memcmp(data, "Connection", 10)) {
-            if (!memcmp(val, "Upgrade", 7)) connection_checked = true;
+          else if (header_is(data, key_len, "Connection")) {
+            if (has_token(val, val_len, "Upgrade")) connection_checked = true;
           }
-          else if (key_len == 17 && !memcmp(data, "Sec-WebSocket-Key", 17)) {
+          else if (header_is(data, key_len, "Sec-WebSocket-Key")) {
             if (val_len != 24) break;
             memcpy(wskey, val, val_len);
           }
-          else if (key_len == 21 && !memcmp(data, "Sec-WebSocket-Version", 21)) {
+          else if (header_is(data, key_len, "Sec-WebSocket-Version")) {
             if (val_len != 2 || memcmp(val, "13", 2)) break;
             wsversion_checked = true;
           }
-          else if (key_len == 22 && !memcmp(data, "Sec-WebSocket-Protocol", 22)) {
+          else if (header_is(data, key_len, "Sec-WebSocket-Protocol")) {
             memcpy(wsprotocol, val, val_len);
             wsprotocol[val_len] = 0;
           }
-          else if (key_len == 24 && !memcmp(data, "Sec-WebSocket-Extensions", 24)) {
+          else if (header_is(data, key_len, "Sec-WebSocket-Extensions")) {
             memcpy(wsextensions, val, val_len);
             wsextensions[val_len] = 0;
           }
