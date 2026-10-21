@@ -5,6 +5,7 @@
 //=========================================================================
 #include "config.h"
 #include "main.h"
+#include "node_id.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -166,6 +167,19 @@ static void process_config_value(pList *p, const char *section, const char *key,
         else if(strcmp(key, "maintainer_email") == 0)
         {
             p->maintainer_email = strdup(value);
+        }
+        else if(strcmp(key, "node_id") == 0)
+        {
+            if(node_id_is_valid(value))
+            {
+                free(p->node_id);
+                p->node_id = strdup(value);
+            }
+            else
+            {
+                fprintf(OUTPUT_ERROR, "Ignoring node_id: must be 1 to %d printable ASCII characters, "
+                        "with no spaces, double quotes or backslashes.\n", NODE_ID_MAX_LEN);
+            }
         }
     }
     // [node_location] section
@@ -530,6 +544,11 @@ void free_config_strings(pList *p)
     {
         free(p->maintainer_email);
         p->maintainer_email = NULL;
+    }
+    if(p->node_id)
+    {
+        free(p->node_id);
+        p->node_id = NULL;
     }
     if(p->latitude)
     {

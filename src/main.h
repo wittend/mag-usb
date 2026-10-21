@@ -143,6 +143,7 @@ typedef struct tag_pList
 
     char *maintainer;
     char *maintainer_email;
+    char *node_id;
     char *Version;
     char *pipeInPath;
     char *pipeOutPath;

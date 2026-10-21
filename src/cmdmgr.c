@@ -13,6 +13,7 @@
 #include "main.h"
 #include "magdata.h"
 #include "cmdmgr.h"
+#include "node_id.h"
 
 //------------------------------------------
 // showSettings()
@@ -89,13 +90,23 @@ int getCommandLine(int argc, char** argv, pList *p)
 {
     int c;
 
-    while((c = getopt(argc, argv, "h?B:c:CD:g:PMSQTVO:ui:o:Ww:a:f:A:")) != -1)
+    while((c = getopt(argc, argv, "h?B:c:CD:g:PMSQTVO:ui:o:Ww:a:f:A:N:")) != -1)
     {
         //int this_option_optind = optind ? optind : 1;
         switch(c)
         {
             case 'f':
                 // Handled in main() for config file loading
+                break;
+            case 'N':
+                if(!node_id_is_valid(optarg))
+                {
+                    fprintf(OUTPUT_ERROR, "\n ERROR Invalid: node_id must be 1 to %d printable ASCII characters, "
+                            "with no spaces, double quotes or backslashes.\n\n", NODE_ID_MAX_LEN);
+                    exit(1);
+                }
+                free(p->node_id);
+                p->node_id = strdup(optarg);
                 break;
             case 'A':
                 p->magAddr = (int)strtol(optarg, NULL, 0);
@@ -201,6 +212,7 @@ int getCommandLine(int argc, char** argv, pList *p)
                 fprintf(OUTPUT_PRINT, "   -V                     :  Display software version and exit.\n");
                 fprintf(OUTPUT_PRINT, "   -f <path>              :  Path to configuration TOML file.\n");
                 fprintf(OUTPUT_PRINT, "   -A <hex>               :  Override magnetometer I2C address.\n");
+                fprintf(OUTPUT_PRINT, "   -N <id>                :  Node ID for the MQTT config message (up to %d characters).\n", NODE_ID_MAX_LEN);
                 fprintf(OUTPUT_PRINT, "   -h or -?               :  Display this help.\n\n");
                 exit(0);
                 break;
