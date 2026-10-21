@@ -405,10 +405,23 @@ static void process_config_value(pList *p, const char *section, const char *key,
             if(p->mqtt_password) free(p->mqtt_password);
             p->mqtt_password = strdup(value);
         }
+        else if(strcmp(key, "topic_prefix") == 0)
+        {
+            if(mqtt_topic_prefix_is_valid(value))
+            {
+                free(p->mqtt_topic_prefix);
+                p->mqtt_topic_prefix = strdup(value);
+            }
+            else
+            {
+                fprintf(OUTPUT_ERROR, "Ignoring [mqtt] topic_prefix: use levels separated by '/', "
+                        "with no leading or trailing slash, spaces, + or #.\n");
+            }
+        }
         else if(strcmp(key, "topic") == 0)
         {
-            if(p->mqtt_topic) free(p->mqtt_topic);
-            p->mqtt_topic = strdup(value);
+            fprintf(OUTPUT_ERROR, "[mqtt] topic is no longer used. Topics are now built from "
+                    "[node_information] node_id and [mqtt] topic_prefix.\n");
         }
         else if(strcmp(key, "client_id") == 0)
         {
@@ -609,6 +622,21 @@ void free_config_strings(pList *p)
     {
         free(p->mqtt_topic);
         p->mqtt_topic = NULL;
+    }
+    if(p->mqtt_command_topic)
+    {
+        free(p->mqtt_command_topic);
+        p->mqtt_command_topic = NULL;
+    }
+    if(p->mqtt_config_topic)
+    {
+        free(p->mqtt_config_topic);
+        p->mqtt_config_topic = NULL;
+    }
+    if(p->mqtt_topic_prefix)
+    {
+        free(p->mqtt_topic_prefix);
+        p->mqtt_topic_prefix = NULL;
     }
     if(p->mqtt_client_id)
     {

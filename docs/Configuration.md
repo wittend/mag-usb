@@ -18,7 +18,7 @@ Below is the complete reference of supported sections/keys, their types, default
 ### [node_information]
 - `maintainer` (string)
 - `maintainer_email` (string)
-- `node_id` (string) — identifies this station in the MQTT configuration message. 1 to 65 printable ASCII characters: letters, digits and punctuation. Spaces, double quotes and backslashes are not allowed. Set it to a unique value for each station. It can also be given on the command line with `-N <id>`, which overrides the config file. If it's unset, the configuration message carries an empty `node_id`, and mag-usb prints a warning when MQTT is enabled.
+- `node_id` (string) — identifies this station in the MQTT configuration message. 1 to 65 printable ASCII characters: letters, digits and punctuation. Spaces, double quotes, backslashes, slashes, `+` and `#` are not allowed, since the node_id becomes part of the topic. Set it to a unique value for each station. It can also be given on the command line with `-N <id>`, which overrides the config file. If it's unset, the configuration message carries an empty `node_id`, and mag-usb prints a warning when MQTT is enabled.
 
 Defaults: empty strings.
 
@@ -71,7 +71,7 @@ Rules:
 - `broker_port` (int) — MQTT broker port. Default: 8883.
 - `username` (string) — Optional username.
 - `password` (string) — Optional password.
-- `topic` (string) — Publication topic. Default: `mag-usb/data`.
+- `topic_prefix` (string) — Base of the station topics. Default: `hamsci/mag`. The station publishes samples to `<prefix>/<node_id>/data`, its configuration to `<prefix>/<node_id>/config`, and receives commands on `<prefix>/<node_id>/data/command`. MQTT does not start without a `node_id` in `[node_information]` or `-N`. An old `topic` key is ignored with a warning.
 - `client_id` (string) — Client ID. Default: `mag-usb-client`.
 - `use_tls` (bool) — Use secure TLS (mqtts://). The broker's certificate is verified, and the connection is refused if verification fails. Default: true.
 - `ca_file` (string) — Path to a PEM CA certificate (or bundle) used to verify the broker. Empty uses the system trust store, which covers brokers with certificates from a public CA. Set it for a self-signed or private-CA broker. Default: empty.
@@ -79,7 +79,7 @@ Rules:
 TLS verification also checks that the broker's certificate names the host in `broker_address`: a DNS name is matched against the certificate's DNS names, and an IP address against its IP addresses. If the connection fails, the error printed on stderr says why (for example `unable to get local issuer certificate` means the CA isn't trusted, so set `ca_file`).
 
 Note: Credentials (username/password) are never included in the JSON configuration messages published to the topic.
-Commands like `get_config` can be sent to `<topic>/command` to trigger a re-broadcast of the current settings.
+Commands like `get_config` can be sent to `<prefix>/<node_id>/data/command` to trigger a re-broadcast of the current settings.
 
 ### [output]
 - `write_logs` (bool) — Write logs to files. Default: false.
@@ -185,8 +185,8 @@ broker_port = 8883
 # Optional credentials.
 username = ""
 password = ""
-# Topic for data publication.
-topic = "mag-usb/data"
+# Base of the station topics: <prefix>/<node_id>/data, /data/command and /config.
+topic_prefix = "hamsci/mag"
 client_id = "mag-usb-client"
 # Use secure TLS (mqtts://). The broker's certificate is verified.
 use_tls = true

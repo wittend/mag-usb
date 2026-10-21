@@ -4,7 +4,7 @@
 [node_information]
 maintainer = "Dave Witten, KD0EAG"
 maintainer_email = "wittend@wwrinc.com"
-# Unique. 1 to 65 printable ASCII characters: letters, numbers and punctuation. No spaces, double quotes or backslashes.
+# Unique. 1 to 65 printable ASCII characters: letters, numbers and punctuation. No spaces, double quotes, backslashes, slashes, + or #.
 node_id="KD0EAG"
 
 [node_location]

@@ -34,7 +34,7 @@ If configured, 90° increment rotations are applied to `(x,y,z)` before printing
 
 ## MQTT Message Formats
 
-When MQTT is enabled, two types of messages are published to the configured topic.
+When MQTT is enabled, two types of messages are published, to different topics for each station: samples to `<prefix>/<node_id>/data`, and the configuration to `<prefix>/<node_id>/config`.
 
 ### 1. Telemetry Data (1Hz Batched)
 By default, sensor readings are batched and published once per second to minimize network overhead and avoid timing overlaps.
@@ -49,7 +49,7 @@ By default, sensor readings are batched and published once per second to minimiz
 ```
 
 ### 2. Configuration Message
-Published automatically on connection, and whenever a `get_config` command is received on the `<topic>/command` sub-topic.
+Published to `<prefix>/<node_id>/config` on connection, and whenever a `get_config` command is received on `<prefix>/<node_id>/data/command`.
 ```json
 {
   "msg_type": "config",
@@ -64,7 +64,7 @@ Published automatically on connection, and whenever a `get_config` command is re
   "mqtt_settings": {
     "broker": "test.mosquitto.org",
     "port": 8883,
-    "topic": "mag-usb/data",
+    "topic": "hamsci/mag/KD0EAG/data",
     "tls": true
   }
 }

@@ -116,7 +116,7 @@ TOML sections and keys to support:
 [node_information]
 - `maintainer` (string)
 - `maintainer_email` (string)
-- `node_id` (string, 1 to 65 printable ASCII characters, no spaces, double quotes or backslashes; overridable with `-N`)
+- `node_id` (string, 1 to 65 printable ASCII characters, no spaces, double quotes, backslashes, slashes, `+` or `#`; overridable with `-N`)
 
 [node_location]
 - `latitude` (string)
