@@ -18,6 +18,7 @@ Below is the complete reference of supported sections/keys, their types, default
 ### [node_information]
 - `maintainer` (string)
 - `maintainer_email` (string)
+- `node_id` (string) — identifies this station in the MQTT configuration message. 1 to 65 printable ASCII characters: letters, digits and punctuation. Spaces, double quotes and backslashes are not allowed. Set it to a unique value for each station. It can also be given on the command line with `-N <id>`, which overrides the config file. If it's unset, the configuration message carries an empty `node_id`, and mag-usb prints a warning when MQTT is enabled.
 
 Defaults: empty strings.
 

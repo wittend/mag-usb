@@ -413,10 +413,11 @@ static void publish_config_msg(pList *p) {
     char buf[1024];
     // Create a JSON config message, explicitly omitting the password
     snprintf(buf, sizeof(buf), 
-        "{ \"msg_type\": \"config\", \"version\": \"%s\", \"mqtt\": { \"broker\": \"%s\", \"port\": %d, \"topic\": \"%s\", \"client_id\": \"%s\", \"use_tls\": %s }, "
+        "{ \"msg_type\": \"config\", \"version\": \"%s\", \"node_id\": \"%s\", \"mqtt\": { \"broker\": \"%s\", \"port\": %d, \"topic\": \"%s\", \"client_id\": \"%s\", \"use_tls\": %s }, "
         "\"mag\": { \"address\": \"0x%02X\", \"cc\": [%d, %d, %d], \"gain\": [%.4f, %.4f, %.4f], \"rate\": \"0x%02x\", \"nos\": %d }, "
         "\"location\": { \"lat\": \"%s\", \"lon\": \"%s\", \"alt\": \"%s\", \"grid\": \"%s\" } }",
         p->Version ? p->Version : "unknown",
+        p->node_id ? p->node_id : "",
         p->mqtt_broker_address ? p->mqtt_broker_address : "null",
         p->mqtt_broker_port,
         p->mqtt_topic ? p->mqtt_topic : "null",
@@ -452,6 +453,11 @@ static void mqtt_msg_handler(void *user_data, const char *topic, const char *pay
 
 static int mqtt_init_client(pList *p) {
     if (!p->mqtt_enable) return 0;
+
+    if (!p->node_id) {
+        fprintf(OUTPUT_ERROR, "MQTT: no node_id set in [node_information] or with -N; "
+                "config messages will carry an empty node_id.\n");
+    }
 
     p->mqtt = mqtt_client_new();
     if (!p->mqtt) return -1;

@@ -54,6 +54,7 @@ Published automatically on connection, and whenever a `get_config` command is re
 {
   "msg_type": "config",
   "version": "0.0.9",
+  "node_id": "KD0EAG",
   "maintainer": "Dave Witten, KD0EAG",
   "location": {
     "lat": "38.92263",

@@ -26,6 +26,7 @@ add_executable(mag-usb
         src/i2c.c
         src/i2c-pololu.c
         src/config.c
+        src/node_id.c
         src/sensor_tests.c
         src/mqtt_client.c)
 
@@ -59,10 +60,17 @@ target_include_directories(i2c-pololu-tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/
 # Enable GNU/POSIX extensions for tests as well (sigaction, clock_gettime)
 target_compile_definitions(i2c-pololu-tests PRIVATE _GNU_SOURCE _DEFAULT_SOURCE)
 
+# Unit tests for node_id validation
+add_executable(node-id-tests
+        tests/test_node_id.c
+        src/node_id.c)
+target_include_directories(node-id-tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
+
 # CTest integration
 if (BUILD_TESTING)
     include(CTest)
     add_test(NAME i2c-pololu-tests COMMAND i2c-pololu-tests)
+    add_test(NAME node-id-tests COMMAND node-id-tests)
 endif ()
 
 if (ENABLE_WEBSOCKET)

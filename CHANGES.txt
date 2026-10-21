@@ -2,6 +2,9 @@
 ===========================================================
 # Unreleased
 #--------------------------------------------------------------------------
+- Node ID: [node_information] node_id (or -N <id>) is now included as "node_id"
+  in the MQTT configuration message. 1 to 65 printable ASCII characters; spaces,
+  double quotes and backslashes are refused.
 - MQTT: the client now works over IPv6 (fixes #15). The broker name is
   resolved with getaddrinfo() and each address is tried in turn, so IPv6-only
   stations can connect. An IPv6 literal may be given in brackets, e.g.
