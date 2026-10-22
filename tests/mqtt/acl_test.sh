@@ -36,6 +36,10 @@ D=hamsci/mag/TEST/data
 C=hamsci/mag/TEST/data/command
 O=hamsci/mag/TEST/other
 
+# Clear any retained config left by an earlier run, so the config check below
+# sees only its own probe message.
+mosquitto_pub "${B[@]}" -u station-TEST -P "$STATION_PW" -t hamsci/mag/TEST/config -r -n 2>/dev/null
+
 check viewer-TEST "$VIEW_PW"  $D station-TEST "$STATION_PW" $D yes   # station sends samples
 check viewer-TEST "$VIEW_PW"  hamsci/mag/TEST/config station-TEST "$STATION_PW" hamsci/mag/TEST/config yes   # station sends its config
 check probe-TEST  "$PROBE_PW" $O station-TEST "$STATION_PW" $O no    # station is not allowed off its topics

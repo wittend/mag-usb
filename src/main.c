@@ -171,10 +171,8 @@ int main(int argc, char** argv)
 
     if(p->mqtt_enable)
     {
-        if(mqtt_init_client(p) != 0)
-        {
-            fprintf(OUTPUT_ERROR, "MQTT init failed. Continuing without MQTT.\n");
-        }
+        // mqtt_init_client reports why it failed, so no extra message here.
+        mqtt_init_client(p);
     }
 
 #ifdef USE_WEBSOCKET
@@ -489,7 +487,10 @@ static int mqtt_init_client(pList *p) {
     }
 
     p->mqtt = mqtt_client_new();
-    if (!p->mqtt) return -1;
+    if (!p->mqtt) {
+        fprintf(OUTPUT_ERROR, "MQTT disabled: could not allocate the MQTT client.\n");
+        return -1;
+    }
 
     mqtt_client_set_callback(p->mqtt, mqtt_msg_handler, p);
     mqtt_client_set_ca_file(p->mqtt, p->mqtt_ca_file);
@@ -515,6 +516,11 @@ static int mqtt_init_client(pList *p) {
 
 static void mqtt_cleanup_client(pList *p) {
     if (p->mqtt) {
+        // An empty retained message clears the config the broker is holding,
+        // so it doesn't look current after this station stops.
+        if (mqtt_client_is_connected(p->mqtt) && p->mqtt_config_topic) {
+            mqtt_client_publish_retained(p->mqtt, p->mqtt_config_topic, "", 0);
+        }
         mqtt_client_free(p->mqtt);
         p->mqtt = NULL;
     }
