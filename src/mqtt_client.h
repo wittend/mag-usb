@@ -37,6 +37,13 @@ int mqtt_client_publish(mqtt_client* client,
                         const char* payload,
                         size_t payload_len);
 
+/* Like mqtt_client_publish, but the broker keeps the message and sends it to
+ * any client that subscribes later. */
+int mqtt_client_publish_retained(mqtt_client* client,
+                                 const char* topic,
+                                 const char* payload,
+                                 size_t payload_len);
+
 int mqtt_client_subscribe(mqtt_client* client,
                           const char* topic);
 
