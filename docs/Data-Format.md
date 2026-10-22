@@ -49,7 +49,7 @@ By default, sensor readings are batched and published once per second to minimiz
 ```
 
 ### 2. Configuration Message
-Published to `<prefix>/<node_id>/config` on connection, and whenever a `get_config` command is received on `<prefix>/<node_id>/data/command`.
+Published retained to `<prefix>/<node_id>/config` on connection, so a subscriber that connects later still gets it. It is also sent whenever a `get_config` command is received on `<prefix>/<node_id>/data/command`.
 ```json
 {
   "msg_type": "config",

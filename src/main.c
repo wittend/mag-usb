@@ -427,7 +427,8 @@ static void publish_config_msg(pList *p) {
         p->latitude ? p->latitude : "", p->longitude ? p->longitude : "", p->elevation ? p->elevation : "", p->grid_square ? p->grid_square : ""
     );
 
-    mqtt_client_publish(p->mqtt, p->mqtt_config_topic, buf, strlen(buf));
+    // Retained, so a subscriber that connects later still gets the current config.
+    mqtt_client_publish_retained(p->mqtt, p->mqtt_config_topic, buf, strlen(buf));
 }
 
 static void mqtt_msg_handler(void *user_data, const char *topic, const char *payload, size_t payload_len) {
