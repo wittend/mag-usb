@@ -427,7 +427,7 @@ static void publish_config_msg(pList *p) {
         p->latitude ? p->latitude : "", p->longitude ? p->longitude : "", p->elevation ? p->elevation : "", p->grid_square ? p->grid_square : ""
     );
 
-    mqtt_client_publish(p->mqtt, p->mqtt_topic, buf, strlen(buf));
+    mqtt_client_publish(p->mqtt, p->mqtt_config_topic, buf, strlen(buf));
 }
 
 static void mqtt_msg_handler(void *user_data, const char *topic, const char *payload, size_t payload_len) {
@@ -440,10 +440,7 @@ static void mqtt_msg_handler(void *user_data, const char *topic, const char *pay
     payload_str[payload_len] = '\0';
 
     // Check if it's a command on the command topic
-    char cmd_topic[256];
-    snprintf(cmd_topic, sizeof(cmd_topic), "%s/command", p->mqtt_topic);
-
-    if (strcmp(topic, cmd_topic) == 0) {
+    if (strcmp(topic, p->mqtt_command_topic) == 0) {
         if (strstr(payload_str, "get_config")) {
             publish_config_msg(p);
         }
@@ -451,12 +448,43 @@ static void mqtt_msg_handler(void *user_data, const char *topic, const char *pay
     free(payload_str);
 }
 
+// Builds the station's three topics from the topic prefix and node_id:
+//   <prefix>/<node_id>/data          samples
+//   <prefix>/<node_id>/data/command  commands (get_config)
+//   <prefix>/<node_id>/config        configuration message
+static int mqtt_build_topics(pList *p) {
+    char buf[256];
+    int n;
+
+    n = snprintf(buf, sizeof(buf), "%s/%s/data", p->mqtt_topic_prefix, p->node_id);
+    if (n < 0 || n >= (int)sizeof(buf)) return -1;
+    free(p->mqtt_topic);
+    p->mqtt_topic = strdup(buf);
+
+    n = snprintf(buf, sizeof(buf), "%s/%s/data/command", p->mqtt_topic_prefix, p->node_id);
+    if (n < 0 || n >= (int)sizeof(buf)) return -1;
+    free(p->mqtt_command_topic);
+    p->mqtt_command_topic = strdup(buf);
+
+    n = snprintf(buf, sizeof(buf), "%s/%s/config", p->mqtt_topic_prefix, p->node_id);
+    if (n < 0 || n >= (int)sizeof(buf)) return -1;
+    free(p->mqtt_config_topic);
+    p->mqtt_config_topic = strdup(buf);
+
+    return (p->mqtt_topic && p->mqtt_command_topic && p->mqtt_config_topic) ? 0 : -1;
+}
+
 static int mqtt_init_client(pList *p) {
     if (!p->mqtt_enable) return 0;
 
+    // The topics are built from node_id, so MQTT cannot start without one.
     if (!p->node_id) {
-        fprintf(OUTPUT_ERROR, "MQTT: no node_id set in [node_information] or with -N; "
-                "config messages will carry an empty node_id.\n");
+        fprintf(OUTPUT_ERROR, "MQTT disabled: set node_id in [node_information] or with -N.\n");
+        return -1;
+    }
+    if (mqtt_build_topics(p) != 0) {
+        fprintf(OUTPUT_ERROR, "MQTT disabled: topic prefix and node_id are too long for the topic buffer.\n");
+        return -1;
     }
 
     p->mqtt = mqtt_client_new();
@@ -476,9 +504,7 @@ static int mqtt_init_client(pList *p) {
     }
 
     // Subscribe to command topic for configuration requests
-    char cmd_topic[256];
-    snprintf(cmd_topic, sizeof(cmd_topic), "%s/command", p->mqtt_topic);
-    mqtt_client_subscribe(p->mqtt, cmd_topic);
+    mqtt_client_subscribe(p->mqtt, p->mqtt_command_topic);
 
     // Initial config publication
     publish_config_msg(p);
@@ -1024,7 +1050,8 @@ void setProgramDefaults(pList *p)
     p->mqtt_broker_port     = 8081; // Default for Mosquitto WSS is often different, but we'll use a placeholder
     p->mqtt_username        = NULL;
     p->mqtt_password        = NULL;
-    p->mqtt_topic           = strdup("mag-usb/data");
+    p->mqtt_topic_prefix    = strdup("hamsci/mag");
+    p->mqtt_topic           = NULL;   // built from node_id when MQTT starts
     p->mqtt_client_id       = strdup("mag-usb-client");
     p->mqtt_use_tls         = TRUE;
     p->mqtt_ca_file         = NULL;

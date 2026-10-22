@@ -61,7 +61,9 @@ void showSettings(pList *p)
     fprintf(OUTPUT_PRINT, "   Broker Port:                          %d\n", p->mqtt_broker_port);
     fprintf(OUTPUT_PRINT, "   Username:                             %s\n", p->mqtt_username ? p->mqtt_username : "(null)");
     fprintf(OUTPUT_PRINT, "   Password:                             %s\n", p->mqtt_password ? "********" : "(null)");
-    fprintf(OUTPUT_PRINT, "   Topic:                                %s\n", p->mqtt_topic ? p->mqtt_topic : "(null)");
+    fprintf(OUTPUT_PRINT, "   Topic prefix:                         %s\n", p->mqtt_topic_prefix ? p->mqtt_topic_prefix : "(null)");
+    fprintf(OUTPUT_PRINT, "   Data topic:                           %s\n", p->mqtt_topic ? p->mqtt_topic : "(set at MQTT start)");
+    fprintf(OUTPUT_PRINT, "   Config topic:                         %s\n", p->mqtt_config_topic ? p->mqtt_config_topic : "(set at MQTT start)");
     fprintf(OUTPUT_PRINT, "   Client ID:                            %s\n", p->mqtt_client_id ? p->mqtt_client_id : "(null)");
     fprintf(OUTPUT_PRINT, "   Use TLS:                              %s\n", p->mqtt_use_tls ? "TRUE" : "FALSE");
 

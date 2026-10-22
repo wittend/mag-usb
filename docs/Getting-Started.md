@@ -71,7 +71,7 @@ sudo curl -o /etc/mag-usb/mosquitto.org.crt https://test.mosquitto.org/ssl/mosqu
 enable = true
 broker_address = "test.mosquitto.org"
 broker_port = 8883
-topic = "mag-usb/your-unique-topic"
+topic_prefix = "hamsci/mag"   # node_id is set in [node_information]
 use_tls = true
 ca_file = "/etc/mag-usb/mosquitto.org.crt"
 ```
@@ -84,10 +84,10 @@ For a broker with a certificate from a public CA, leave `ca_file` out.
 You can use the built-in testing tools to verify the connection:
 ```bash
 # Listen for data
-./build/mqtt-listener test.mosquitto.org 8883 mag-usb/your-unique-topic
+./build/mqtt-listener test.mosquitto.org 8883 hamsci/mag/<node_id>/data
 
 # Request configuration remotely
-./build/mqtt-command test.mosquitto.org 8883 mag-usb/your-unique-topic/command get_config
+./build/mqtt-command test.mosquitto.org 8883 hamsci/mag/<node_id>/data/command get_config
 ```
 
 ## WebSocket Output (Optional)
