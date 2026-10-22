@@ -6,6 +6,8 @@
   commands to .../data/command, and the configuration message to
   hamsci/mag/<node_id>/config. [mqtt] topic is replaced by topic_prefix
   (default hamsci/mag). MQTT does not start without a node_id.
+- The configuration message is published retained, so subscribers that
+  connect later get the current configuration right away.
 - Node ID: [node_information] node_id (or -N <id>) is now included as "node_id"
   in the MQTT configuration message. 1 to 65 printable ASCII characters; spaces,
   double quotes and backslashes are refused.

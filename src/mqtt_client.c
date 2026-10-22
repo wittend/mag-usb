@@ -339,11 +339,12 @@ int mqtt_client_authenticate(mqtt_client* client, const char* username, const ch
     return 0;
 }
 
-int mqtt_client_publish(mqtt_client* client, const char* topic, const char* payload, size_t payload_len) {
+// Sends a PUBLISH packet with the given fixed-header byte (0x30 is QoS 0, no retain).
+static int publish_packet(mqtt_client* client, uint8_t header, const char* topic, const char* payload, size_t payload_len) {
     uint8_t buf[2048];
     uint8_t *ptr = buf;
 
-    *ptr++ = 0x30; // PUBLISH packet type, QoS 0
+    *ptr++ = header;
 
     size_t remaining_len = 2 + strlen(topic) + payload_len;
     if (remaining_len > 2000) return -1; // Basic safety
@@ -357,6 +358,14 @@ int mqtt_client_publish(mqtt_client* client, const char* topic, const char* payl
     if (send_all(client, buf, ptr - buf) < 0) return -1;
 
     return 0;
+}
+
+int mqtt_client_publish(mqtt_client* client, const char* topic, const char* payload, size_t payload_len) {
+    return publish_packet(client, 0x30, topic, payload, payload_len);
+}
+
+int mqtt_client_publish_retained(mqtt_client* client, const char* topic, const char* payload, size_t payload_len) {
+    return publish_packet(client, 0x31, topic, payload, payload_len); // retain bit set
 }
 
 int mqtt_client_subscribe(mqtt_client* client, const char* topic) {
